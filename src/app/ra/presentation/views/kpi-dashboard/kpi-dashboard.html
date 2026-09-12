@@ -1,0 +1,33 @@
+<main class="dashboard-container">
+  <div class="section-header">
+    <div class="title-group"><mat-icon class="title-icon">insights</mat-icon>
+      <h2>{{ 'kpi-dashboard.title' | translate }}</h2>
+    </div>
+    <button mat-stroked-button (click)="reload()" [disabled]="store.isLoading()">
+      <mat-icon>refresh</mat-icon>{{ 'common.refresh' | translate }}
+    </button>
+  </div>
+  @if (store.isLoading()) {
+    <div class="empty-state" role="status"><mat-spinner diameter="40" /><p>{{ 'onboarding.loading-data' | translate }}</p></div>
+  } @else if (store.error()) {
+    <p class="error-message" role="alert">{{ 'onboarding.load-error' | translate }}</p>
+  } @else if (store.dashboard(); as dashboard) {
+    @if (dashboard.metrics.length) {
+      <div class="summary-cards">
+        @for (metric of dashboard.metrics; track metric.name) {
+          <mat-card class="stat-card"><mat-card-content>
+            <h3>{{ 'operational-metrics.' + metric.name | translate }}</h3>
+            <strong class="stat-value">{{ metric.value | number }}</strong>
+            <p class="last-update">{{ metric.recordedAt | date:'short' }}</p>
+          </mat-card-content></mat-card>
+        }
+      </div>
+      <div class="chart-container">
+        <canvas baseChart [data]="chartData()" [options]="barChartOptions" [type]="barChartType"
+          role="img" [attr.aria-label]="'kpi-dashboard.title' | translate"></canvas>
+      </div>
+    } @else {
+      <div class="empty-state"><mat-icon>insights</mat-icon><p>{{ 'onboarding.insufficient-data' | translate }}</p></div>
+    }
+  }
+</main>
