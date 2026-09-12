@@ -1,0 +1,94 @@
+<!-- Fixed toolbar -->
+<mat-toolbar class="toolbar">
+  @if (hasOperationalAccess()) {
+  <button
+    mat-icon-button
+    type="button"
+    [attr.aria-label]="'onboarding.navigation' | translate"
+    [attr.aria-expanded]="drawer.opened"
+    (click)="drawer.toggle()"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+  }
+
+  <img src="/qualitrack-logo.png" alt="QualiTrack logo">
+  <span class="toolbar-title">QualiTrack</span>
+  <span class="spacer"></span>
+
+  <div class="toolbar-actions">
+    <app-user-session-section />
+    <app-language-switcher />
+  </div>
+</mat-toolbar>
+
+<!-- Body with sidenav -->
+<div class="layout-body">
+  <mat-sidenav-container class="sidenav-container">
+
+    <mat-sidenav
+      #drawer
+      [mode]="sidenavMode()"
+      [opened]="hasOperationalAccess() && sidenavOpened()"
+      (openedChange)="sidenavOpened.set($event)"
+    >
+      <nav class="nav-menu" [attr.aria-label]="'onboarding.navigation' | translate">
+        @for (option of options; track option.label) {
+          @if (!option.children) {
+            <button type="button"
+              class="nav-item"
+              [class.active]="isActive(option.link)"
+              [matTooltip]="option.label | translate"
+              matTooltipPosition="right"
+              (click)="navigateTo(option.link)"
+            >
+              <div class="nav-icon-wrapper">
+                <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+              </div>
+
+              <span class="nav-label">{{ option.label | translate }}</span>
+
+              @if (isActive(option.link)) {
+                <div class="active-indicator"></div>
+              }
+            </button>
+          } @else {
+            <mat-expansion-panel
+              [expanded]="isActive(option.link)"
+              class="mat-elevation-z0 nav-expansion-panel"
+            >
+              <mat-expansion-panel-header class="nav-item-header">
+                <mat-panel-title class="nav-item-title">
+                  <div class="nav-icon-wrapper">
+                    <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+                  </div>
+
+                  <span class="nav-label">{{ option.label | translate }}</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <div class="sub-menu-container">
+                @for (child of option.children; track child.link) {
+                  <button type="button"
+                    class="sub-nav-item"
+                    [class.sub-active]="isActive(child.link)"
+                    (click)="navigateTo(child.link)"
+                  >
+                    <span class="sub-nav-label">{{ child.label | translate }}</span>
+                  </button>
+                }
+              </div>
+            </mat-expansion-panel>
+          }
+        }
+      </nav>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <div class="content-wrapper">
+        <router-outlet />
+      </div>
+    </mat-sidenav-content>
+
+  </mat-sidenav-container>
+</div>

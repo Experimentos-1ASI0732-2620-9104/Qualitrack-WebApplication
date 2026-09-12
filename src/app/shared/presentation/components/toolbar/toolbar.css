@@ -1,0 +1,73 @@
+.toolbar {
+  background: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 0 2rem;
+  transition: box-shadow 0.3s ease;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 64px;
+}
+
+.toolbar:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.toolbar-logo {
+  height: 40px;
+  width: auto;
+  margin-right: 12px;
+  transition: transform 0.3s ease;
+}
+
+.toolbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.toolbar-title {
+  font-weight: 700;
+  font-size: 24px;
+  color: #1a3a5c; /* Azul corporativo de QualiTrack */
+  letter-spacing: 0;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.toolbar-title:hover {
+  color: #148f77; /* Efecto hover con el verde azulado */
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Integración del Language Switcher */
+::ng-deep app-language-switcher {
+  margin-left: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 0 1rem;
+  }
+  .toolbar-logo {
+    height: 36px;
+  }
+  .toolbar-title {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar-logo {
+    height: 32px;
+    margin-right: 8px;
+  }
+  .toolbar-title {
+    font-size: 18px;
+  }
+  ::ng-deep app-language-switcher {
+    margin-left: 0.5rem;
+  }
+}
