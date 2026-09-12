@@ -1,0 +1,132 @@
+.alert-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.header-content p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  text-align: center;
+  padding: 24px 16px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.kpi-label {
+  font-size: 14px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.kpi-value {
+  margin: 12px 0 0 0;
+  font-size: 36px;
+  font-weight: 600;
+}
+
+.warning-text {
+  color: #f59e0b;
+}
+
+.danger-text {
+  color: #ef4444;
+}
+
+.loading-shade {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px;
+}
+
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-left: 4px solid #ef4444;
+  border-radius: 4px;
+}
+
+.error-container p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.table-container {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+}
+
+.bold-text {
+  font-weight: 500;
+}
+
+.critical, .unresolved {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.warning {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.warning,
+.acknowledged {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.low,
+.resolved {
+  background-color: #e0e7ff !important;
+  color: #4338ca !important;
+}
+
+@media (max-width: 480px) {
+  .alert-dashboard-container { padding: 8px 0; }
+}

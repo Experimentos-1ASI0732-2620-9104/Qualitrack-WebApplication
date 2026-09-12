@@ -1,0 +1,115 @@
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  align-items: center;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.header-content p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Layout */
+.content-grid {
+  max-width: 600px;
+}
+
+.form-card {
+  border-radius: 8px;
+  background: white;
+  position: relative; /* Para el loading-overlay */
+  overflow: hidden;
+}
+
+.form-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography & Sections */
+.section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.section-subtitle {
+  margin: 4px 0 20px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.divider {
+  margin: 24px 0;
+}
+
+/* Form Controls */
+.toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.actions-container {
+  padding: 16px 24px;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Loading & Error Overlays */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-left: 4px solid #ef4444;
+  border-radius: 4px;
+  max-width: 600px;
+}
+
+.error-container p {
+  margin: 0;
+  font-weight: 500;
+}

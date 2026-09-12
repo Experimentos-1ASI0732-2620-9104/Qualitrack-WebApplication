@@ -1,0 +1,145 @@
+<div class="history-container">
+
+  <!-- Cabecera -->
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../alert-dashboard" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>{{ 'ca-alerts.history.title' | translate }}</h1>
+        <p>{{ 'ca-alerts.history.subtitle' | translate }}</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de Filtros -->
+  <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter-bar mat-elevation-z1">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'ca-alerts.fields.equipment' | translate }}</mat-label>
+      <input matInput formControlName="equipmentId" placeholder="Ej. 1020" type="number">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'ca-alerts.fields.batch' | translate }}</mat-label>
+      <input matInput formControlName="batchId" placeholder="Ej. 15" type="number">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'ca-alerts.fields.severity' | translate }}</mat-label>
+      <mat-select formControlName="severity">
+        <mat-option value="">{{ 'common.all' | translate }}</mat-option>
+        <mat-option value="LOW">{{ 'ca-alerts.severity.low' | translate }}</mat-option>
+        <mat-option value="WARNING">{{ 'ca-alerts.severity.warning' | translate }}</mat-option>
+        <mat-option value="CRITICAL">{{ 'ca-alerts.severity.critical' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'common.status' | translate }}</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="">{{ 'common.all' | translate }}</mat-option>
+        <mat-option value="UNRESOLVED">{{ 'ca-alerts.status.unresolved' | translate }}</mat-option>
+        <mat-option value="ACKNOWLEDGED">{{ 'ca-alerts.status.acknowledged' | translate }}</mat-option>
+        <mat-option value="RESOLVED">{{ 'ca-alerts.status.resolved' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <button mat-button type="button" (click)="clearFilters()" [disabled]="store.loading()">
+        {{ 'common.clear' | translate }}
+      </button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="store.loading()">
+        <mat-icon>search</mat-icon>
+        {{ 'common.search' | translate }}
+      </button>
+    </div>
+  </form>
+
+  <!-- Estado de Carga -->
+  @if (store.loading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  <!-- Estado de Error -->
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <!-- Tabla de Historial -->
+  <div class="table-container mat-elevation-z2">
+    <table mat-table [dataSource]="store.alerts()">
+
+      <!-- Timestamp Column -->
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.timestamp' | translate }}</th>
+        <td mat-cell *matCellDef="let element"> {{ element.timestamp | date:'short' }} </td>
+      </ng-container>
+
+      <!-- Equipment ID Column -->
+      <ng-container matColumnDef="equipmentId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.equipment' | translate }}</th>
+        <td mat-cell *matCellDef="let element" class="mono-text"> {{ element.equipmentId }} </td>
+      </ng-container>
+
+      <!-- Parameter Column -->
+      <ng-container matColumnDef="parameter">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.parameter' | translate }}</th>
+        <td mat-cell *matCellDef="let element" class="bold-text">
+          {{ element.parameterName }}
+          <span style="font-weight: normal; color: #666;">({{ element.recordedValue }} {{ element.unit }})</span>
+        </td>
+      </ng-container>
+
+      <!-- Severity Column -->
+      <ng-container matColumnDef="severity">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.severity' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-chip-set>
+            <mat-chip [class]="element.severity.toLowerCase()">
+              {{ 'ca-alerts.severity.' + element.severity.toLowerCase() | translate }}
+            </mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'common.status' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-chip-set>
+            <mat-chip [class]="element.status.toLowerCase()">
+              {{ 'ca-alerts.status.' + element.status.toLowerCase() | translate }}
+            </mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-icon-button (click)="viewDetails(element.id)" color="primary"
+                  [matTooltip]="'ca-alerts.actions.view-details' | translate">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <!-- Empty State -->
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="6" style="text-align: center; padding: 2rem;">
+          {{ 'ca-alerts.empty' | translate }}
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

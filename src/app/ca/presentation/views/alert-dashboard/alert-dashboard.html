@@ -1,0 +1,126 @@
+<div class="alert-dashboard-container">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>{{ 'nav.alerts' | translate }}</h1>
+      <p>{{ 'ca-alerts.subtitle' | translate }}</p>
+    </div>
+
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ 'ca-alerts.fields.equipment' | translate }}</mat-label>
+        <mat-select
+          [ngModel]="selectedEquipmentId()"
+          (ngModelChange)="selectedEquipmentId.set($event); onEquipmentChange()">
+          @for (equipment of equipmentStore.equipmentList(); track equipment.id) {
+            <mat-option [value]="equipment.id">
+              {{ equipment.name }} - {{ equipment.serialNumber }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-icon-button [attr.aria-label]="'common.refresh' | translate" (click)="onRefresh()" [disabled]="store.loading() || !selectedEquipmentId()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+
+      <button mat-raised-button color="primary" routerLink="../notification-settings">
+        <mat-icon>settings</mat-icon>
+        {{ 'ca-alerts.actions.settings' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (selectedEquipmentId() && !store.loading() && !store.error()) {
+  <div class="kpi-grid">
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-label">{{ 'ca-alerts.kpi.unresolved' | translate }}</span>
+        <h2 class="kpi-value warning-text">{{ store.unresolvedAlertsCount() }}</h2>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-label">{{ 'ca-alerts.kpi.critical' | translate }}</span>
+        <h2 class="kpi-value danger-text">{{ store.criticalAlertsCount() }}</h2>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  }
+
+  @if (store.loading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="table-container mat-elevation-z2">
+    <table mat-table [dataSource]="store.alerts()">
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.timestamp' | translate }}</th>
+        <td mat-cell *matCellDef="let element">{{ element.timestamp | date:'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="parameter">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.parameter' | translate }}</th>
+        <td mat-cell *matCellDef="let element" class="bold-text">
+          {{ element.parameterName }}
+          <span style="font-weight: normal; color: #666;">
+            ({{ element.recordedValue }} {{ element.unit }})
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="severity">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ca-alerts.fields.severity' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-chip-set>
+            <mat-chip [class]="element.severity.toLowerCase()">
+              {{ 'ca-alerts.severity.' + element.severity.toLowerCase() | translate }}
+            </mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'common.status' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-chip-set>
+            <mat-chip [class]="element.status.toLowerCase()">
+              {{ 'ca-alerts.status.' + element.status.toLowerCase() | translate }}
+            </mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element">
+          <button
+            mat-icon-button
+            color="primary"
+            (click)="viewDetails(element.id)"
+            [matTooltip]="'ca-alerts.actions.view-details' | translate">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="5" style="text-align: center; padding: 2rem;">
+          {{ 'ca-alerts.empty' | translate }}
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

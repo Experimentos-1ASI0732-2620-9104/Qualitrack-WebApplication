@@ -1,0 +1,110 @@
+<div class="detail-container">
+
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../../alert-dashboard" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>{{ 'ca-alerts.detail.title' | translate }}</h1>
+        <p>{{ 'ca-alerts.detail.subtitle' | translate }} - {{ alertId }}</p>
+      </div>
+    </div>
+  </header>
+
+  @if (store.loading() && !alert()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (alert()) {
+    <div class="content-grid">
+      <mat-card class="detail-card mat-elevation-z2">
+        <mat-card-header>
+          <mat-icon mat-card-avatar color="warn">report_problem</mat-icon>
+          <mat-card-title>{{ alert()?.parameterName }}</mat-card-title>
+          <mat-card-subtitle>{{ alert()?.timestamp | date:'medium' }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-divider></mat-divider>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="label">{{ 'ca-alerts.fields.severity' | translate }}</span>
+              <mat-chip-set>
+                <mat-chip [class]="alert()?.severity?.toLowerCase()">
+                  {{ 'ca-alerts.severity.' + alert()?.severity?.toLowerCase() | translate }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+
+            <div class="info-item">
+              <span class="label">{{ 'common.status' | translate }}</span>
+              <mat-chip-set>
+                <mat-chip [class]="alert()?.status?.toLowerCase()">
+                  {{ 'ca-alerts.status.' + alert()?.status?.toLowerCase() | translate }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+
+            <div class="info-item">
+              <span class="label">{{ 'ca-alerts.fields.recorded' | translate }}</span>
+              <span class="value danger-text">{{ alert()?.recordedValue }} {{ alert()?.unit }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="label">{{ 'ca-alerts.fields.threshold' | translate }}</span>
+              <span class="value">{{ alert()?.thresholdValue }} {{ alert()?.unit }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="label">{{ 'ca-alerts.fields.equipment' | translate }}</span>
+              <span class="value mono-text">{{ alert()?.equipmentId }}</span>
+            </div>
+
+            @if (alert()?.batchId) {
+              <div class="info-item">
+                <span class="label">{{ 'ca-alerts.fields.batch' | translate }}</span>
+                <span class="value mono-text">{{ alert()?.batchId }}</span>
+              </div>
+            }
+
+          </div>
+
+          @if (alert()?.status === 'UNRESOLVED') {
+            <form [formGroup]="resolutionForm" class="resolution-form">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'ca-alerts.fields.resolution-notes' | translate }}</mat-label>
+                <textarea matInput rows="3" formControlName="resolutionNotes"></textarea>
+              </mat-form-field>
+            </form>
+          }
+        </mat-card-content>
+
+        <mat-card-actions align="end" class="actions-container">
+          <button mat-button routerLink="../../alert-dashboard">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="resolveAlert()"
+            [disabled]="alert()?.status !== 'UNRESOLVED' || resolutionForm.invalid || store.loading()"
+          >
+            <mat-icon>check_circle</mat-icon>
+            {{ 'ca-alerts.actions.resolve' | translate }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  }
+  @else if (!store.loading()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ 'ca-alerts.not-found' | translate }}</p>
+    </div>
+  }
+
+</div>

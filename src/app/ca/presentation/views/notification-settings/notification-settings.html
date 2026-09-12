@@ -1,0 +1,81 @@
+<div class="settings-container">
+
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../alert-dashboard" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>{{ 'ca-alerts.settings.title' | translate }}</h1>
+        <p>{{ 'ca-alerts.settings.subtitle' | translate }}</p>
+      </div>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="content-grid">
+    <mat-card class="form-card mat-elevation-z2">
+
+      @if (store.loading()) {
+        <div class="loading-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      }
+
+      <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+        <mat-card-content class="form-content">
+
+          <h3 class="section-title">{{ 'ca-alerts.settings.channels-title' | translate }}</h3>
+          <p class="section-subtitle">{{ 'ca-alerts.settings.channels-subtitle' | translate }}</p>
+
+          <div class="toggle-group">
+            <mat-slide-toggle formControlName="inAppEnabled" color="primary">
+              {{ 'ca-alerts.settings.in-app' | translate }}
+            </mat-slide-toggle>
+
+            <mat-slide-toggle formControlName="emailEnabled" color="primary">
+              {{ 'ca-alerts.settings.email' | translate }}
+            </mat-slide-toggle>
+
+            <mat-slide-toggle formControlName="smsEnabled" color="primary">
+              {{ 'ca-alerts.settings.sms' | translate }}
+            </mat-slide-toggle>
+          </div>
+
+          <mat-divider class="divider"></mat-divider>
+
+          <h3 class="section-title">{{ 'ca-alerts.settings.threshold-title' | translate }}</h3>
+          <p class="section-subtitle">{{ 'ca-alerts.settings.threshold-subtitle' | translate }}</p>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'ca-alerts.fields.minimum-severity' | translate }}</mat-label>
+            <mat-select formControlName="minimumSeverity">
+              <mat-option value="LOW">{{ 'ca-alerts.severity.low' | translate }}</mat-option>
+              <mat-option value="WARNING">{{ 'ca-alerts.severity.warning' | translate }}</mat-option>
+              <mat-option value="CRITICAL">{{ 'ca-alerts.severity.critical' | translate }}</mat-option>
+            </mat-select>
+            <mat-hint>{{ 'ca-alerts.settings.severity-hint' | translate }}</mat-hint>
+          </mat-form-field>
+
+        </mat-card-content>
+
+        <mat-card-actions align="end" class="actions-container">
+          <button mat-button type="button" routerLink="../alert-dashboard">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="settingsForm.invalid || store.loading()">
+            <mat-icon>save</mat-icon>
+            {{ 'common.save' | translate }}
+          </button>
+        </mat-card-actions>
+      </form>
+    </mat-card>
+  </div>
+</div>
