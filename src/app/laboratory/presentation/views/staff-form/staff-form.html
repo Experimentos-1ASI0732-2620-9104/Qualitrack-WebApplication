@@ -1,0 +1,80 @@
+<div class="form-container">
+  <mat-card class="staff-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="header-icon">person_add</mat-icon>
+      <mat-card-title>{{ 'staff-form.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'staff-form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.error()) {
+        <div class="error-box" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="staff-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'staff-form.fullName' | translate }}</mat-label>
+          <input matInput formControlName="fullName" placeholder="John Doe">
+          <mat-icon matPrefix>person</mat-icon>
+
+          @if (form.get('fullName')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'staff-form.role' | translate }}</mat-label>
+          <mat-select formControlName="role">
+            @for (role of roles; track role) {
+              <mat-option [value]="role">{{ role }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>admin_panel_settings</mat-icon>
+
+          @if (form.get('role')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'staff-form.email' | translate }}</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="email@company.com">
+          <mat-icon matPrefix>email</mat-icon>
+
+          @if (form.get('email')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+
+          @if (form.get('email')?.hasError('email')) {
+            <mat-error>{{ 'common.invalidEmail' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="onCancel()">
+            {{ 'common.cancel' | translate }}
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || store.isLoading()"
+          >
+            @if (store.isLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <ng-container>
+                <mat-icon>person_add</mat-icon>
+                {{ 'common.register' | translate }}
+              </ng-container>
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

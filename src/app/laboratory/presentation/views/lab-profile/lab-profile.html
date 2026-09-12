@@ -1,0 +1,119 @@
+<div class="container-with-spacing">
+  <h2>{{ 'lab-profile.title' | translate }}</h2>
+
+  @if (store.isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48" aria-label="Loading laboratory profile"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="alert alert-error" role="alert">
+      <p class="error-message">{{ store.error() }}</p>
+    </div>
+  }
+
+  @if (store.successMsg()) {
+    <div class="alert alert-success" role="status">
+      <p class="success-message">{{ store.successMsg() }}</p>
+    </div>
+  }
+
+  @if (store.laboratory(); as laboratory) {
+    @if (!isEditing()) {
+      <mat-card class="lab-card">
+        <mat-card-header>
+          <div mat-card-avatar class="lab-avatar">
+            <mat-icon>science</mat-icon>
+          </div>
+
+          <mat-card-title>{{ laboratory.name }}</mat-card-title>
+          <mat-card-subtitle>RUC: {{ laboratory.ruc || 'N/A' }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content class="lab-details">
+          <p>
+            <strong>{{ 'lab-profile.address' | translate }}:</strong>
+            {{ laboratory.address }}
+          </p>
+
+          <p>
+            <strong>{{ 'lab-profile.phone' | translate }}:</strong>
+            {{ laboratory.phone }}
+          </p>
+
+          <p>
+            <strong>{{ 'lab-profile.regulations' | translate }}:</strong>
+            <span class="regulations-tags">
+              @for (regulation of laboratory.applicableRegulations; track regulation) {
+                <span class="tag">{{ regulation }}</span>
+              }
+            </span>
+          </p>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            aria-label="Edit laboratory profile"
+            (click)="onEdit()"
+          >
+            <mat-icon>edit</mat-icon>
+            {{ 'lab-profile.edit' | translate }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    } @else {
+      <mat-card class="lab-card">
+        <mat-card-content>
+          <form [formGroup]="form" (ngSubmit)="onSave()" class="edit-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'lab-profile.name' | translate }}</mat-label>
+              <input matInput formControlName="name" aria-label="Laboratory name">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'lab-profile.address' | translate }}</mat-label>
+              <input matInput formControlName="address" aria-label="Laboratory address">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'lab-profile.phone' | translate }}</mat-label>
+              <input matInput formControlName="phone" aria-label="Laboratory phone number">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'lab-profile.regulations' | translate }}</mat-label>
+              <mat-select
+                formControlName="applicableRegulations"
+                multiple
+                aria-label="Applicable regulations"
+              >
+                @for (regulation of regulations; track regulation) {
+                  <mat-option [value]="regulation">{{ regulation }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="form.invalid || store.isLoading()"
+              >
+                {{ 'common.save' | translate }}
+              </button>
+
+              <button mat-button type="button" (click)="onCancel()">
+                {{ 'common.cancel' | translate }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

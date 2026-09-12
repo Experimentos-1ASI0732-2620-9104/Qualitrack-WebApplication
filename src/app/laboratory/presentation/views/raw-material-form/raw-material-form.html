@@ -1,0 +1,99 @@
+<div class="form-container">
+  <mat-card class="raw-material-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="header-icon">inventory_2</mat-icon>
+      <mat-card-title>{{ 'raw-material-form.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'raw-material-form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.error()) {
+        <div class="error-box" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="raw-form">
+        <div class="grid-row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.name' | translate }}</mat-label>
+            <input matInput formControlName="name">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.code' | translate }}</mat-label>
+            <input matInput formControlName="code">
+          </mat-form-field>
+        </div>
+
+        <div class="grid-row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.supplier' | translate }}</mat-label>
+            <input matInput formControlName="supplier">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.batchNumber' | translate }}</mat-label>
+            <input matInput formControlName="batchNumber">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'raw-material-form.expirationDate' | translate }}</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="expirationDate">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <div class="grid-row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.quantityInStock' | translate }}</mat-label>
+            <input matInput type="number" formControlName="quantityInStock" min="0" step="0.001">
+            @if (form.get('quantityInStock')?.hasError('wholeUnits')) {<mat-error>{{ 'batch-usage.errors.whole-units' | translate }}</mat-error>}
+            @if (form.get('quantityInStock')?.hasError('precision')) {<mat-error>{{ 'batch-usage.errors.precision' | translate }}</mat-error>}
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'raw-material-form.unit' | translate }}</mat-label>
+            <mat-select formControlName="unit">
+              @for (unit of units; track unit) {
+                <mat-option [value]="unit">{{ unit }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'raw-material-form.minimumStock' | translate }}</mat-label>
+          <input matInput type="number" formControlName="minimumStock" min="0" step="0.001">
+          @if (form.get('minimumStock')?.hasError('wholeUnits')) {<mat-error>{{ 'batch-usage.errors.whole-units' | translate }}</mat-error>}
+          @if (form.get('minimumStock')?.hasError('precision')) {<mat-error>{{ 'batch-usage.errors.precision' | translate }}</mat-error>}
+          <mat-hint>{{ 'raw-material-form.minimumStockHint' | translate }}</mat-hint>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="onCancel()">
+            {{ 'common.cancel' | translate }}
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || store.isLoading()"
+          >
+            @if (store.isLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <ng-container>
+                <mat-icon>inventory_2</mat-icon>
+                {{ 'common.register' | translate }}
+              </ng-container>
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
