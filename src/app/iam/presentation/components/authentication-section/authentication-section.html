@@ -1,0 +1,32 @@
+<div class="auth-section">
+  <p class="auth-hint">{{ 'iam.auth.already-have-account' | translate }}</p>
+
+  <button mat-flat-button class="btn-primary auth-main-btn" routerLink="/iam/sign-in">
+    <mat-icon>login</mat-icon>
+    {{ 'iam.auth.sign-in' | translate }}
+  </button>
+
+  <div class="auth-divider">
+    <span class="divider-line"></span>
+    <span class="divider-text">{{ 'iam.auth.or-create-account' | translate }}</span>
+    <span class="divider-line"></span>
+  </div>
+
+  <div class="role-buttons">
+    <button
+      mat-stroked-button
+      class="btn-role"
+      [routerLink]="['/iam/sign-up']"
+      [queryParams]="{ role: 'qa-manager' }">
+      {{ 'iam.sign-up.roles.manager' | translate }}
+    </button>
+
+    <button
+      mat-stroked-button
+      class="btn-role"
+      [routerLink]="['/iam/sign-up']"
+      [queryParams]="{ role: 'lab-operator' }">
+      {{ 'iam.sign-up.roles.operator' | translate }}
+    </button>
+  </div>
+</div>
