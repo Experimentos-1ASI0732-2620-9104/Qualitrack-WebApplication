@@ -1,0 +1,365 @@
+@startuml ra-frontend-diagram
+
+title QualiTrack - Reporting and Analysis Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "shared" {
+  interface BaseEntity
+  class BaseApi
+  class BaseApiEndpoint
+  interface BaseAssembler
+  interface BaseResource
+  interface BaseResponse
+}
+
+package "iam.application" {
+  class IamStore {
+    +currentUserId()
+    +currentLaboratoryId()
+    +isSignedIn()
+  }
+}
+
+package "equipment.application" {
+  class EquipmentStore {
+    +equipmentList
+    +loadEquipment(labId: number): void
+  }
+}
+
+package "ra.domain.model" {
+  class KpiDashboard {
+    +id: number
+    +laboratoryId: number
+    +timestamp: string
+    +overallHealthScore: number
+    +metrics: KpiMetric[]
+  }
+
+  class KpiMetric {
+    +id: number
+    +name: string
+    +value: number
+    +unit: string
+    +targetValue: number
+    +status: "ON_TRACK | AT_RISK | CRITICAL | UNKNOWN"
+    +recordedAt: string
+  }
+
+  class DeviationTrend {
+    +id: number
+    +parameterName: string
+    +equipmentId: number
+    +trendDirection: "STABLE | INCREASING | DECREASING"
+    +dataPoints: DataPoint[]
+  }
+
+  interface DataPoint {
+    +timestamp: string
+    +recordedValue: number
+    +upperThreshold: number
+    +lowerThreshold: number
+  }
+
+  class AuditLogEntry {
+    +id: number
+    +action: AuditAction
+    +entityType: string
+    +entityId: number
+    +performedBy: number
+    +timestamp: string
+    +details: string
+  }
+
+  interface GenerateBatchReportCommand {
+    +batchId: number
+    +includeTelemetry: boolean
+    +includeDeviations: boolean
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+
+  interface GenerateComplianceReportCommand {
+    +laboratoryId: number
+    +startDate: string
+    +endDate: string
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+
+  interface ExportEquipmentLogCommand {
+    +equipmentId: number
+    +startDate: string
+    +endDate: string
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+}
+
+package "ra.application" {
+  class RaStore {
+    -api: RaApi
+    -_dashboard
+    -_deviationTrends
+    -_auditLogs
+    -_isLoading
+    -_error
+    -_successMsg
+
+    +dashboard
+    +deviationTrends
+    +auditLogs
+    +isLoading
+    +error
+    +successMsg
+    +criticalMetrics
+    +atRiskMetrics
+    +hasCriticalDeviations
+
+    +loadDashboard(laboratoryId: number): void
+    +loadDeviationTrends(equipmentId: number): void
+    +loadAuditLog(filters?): void
+    +generateBatchReport(command: GenerateBatchReportCommand): void
+    +generateComplianceReport(command: GenerateComplianceReportCommand): void
+    +exportEquipmentLog(command: ExportEquipmentLogCommand): void
+    +clearMessages(): void
+  }
+}
+
+package "ra.infrastructure" {
+  class RaApi {
+    -_kpiEndpoint: KpiApiEndpoint
+    -_deviationTrendEndpoint: DeviationTrendApiEndpoint
+    -_auditLogEndpoint: AuditLogApiEndpoint
+    -_reportEndpoint: ReportApiEndpoint
+
+    +getDashboardByLaboratory(laboratoryId: number)
+    +getTrendsByEquipment(equipmentId: number)
+    +getAuditLog(filters?)
+    +generateBatchReport(request: GenerateBatchReportRequest)
+    +generateComplianceReport(request: GenerateComplianceReportRequest)
+    +exportEquipmentLog(request: ExportEquipmentLogRequest)
+  }
+
+  class KpiApiEndpoint {
+    +getDashboardByLaboratory(laboratoryId: number)
+  }
+
+  class DeviationTrendApiEndpoint {
+    +getTrendsByEquipment(equipmentId: number)
+  }
+
+  class AuditLogApiEndpoint {
+    +getAuditLog(filters?)
+  }
+
+  class ReportApiEndpoint {
+    +generateBatchReport(request: GenerateBatchReportRequest)
+    +generateComplianceReport(request: GenerateComplianceReportRequest)
+    +exportEquipmentLog(request: ExportEquipmentLogRequest)
+  }
+
+  class KpiAssembler
+  class DeviationTrendAssembler
+  class AuditLogAssembler
+
+  interface KpiMetricResource {
+    +id: number
+    +name: string
+    +value: number
+    +unit: string
+    +targetValue: number
+    +status: "ON_TRACK | AT_RISK | CRITICAL | UNKNOWN"
+    +recordedAt: string
+  }
+
+  interface KpiDashboardResource {
+    +id: number
+    +laboratoryId: number
+    +timestamp: string
+    +overallHealthScore: number
+    +metrics: KpiMetricResource[]
+  }
+
+  interface KpiDashboardsResponse {
+    +dashboards: KpiDashboardResource[]
+  }
+
+  interface DataPointResource {
+    +timestamp: string
+    +recordedValue: number
+    +upperThreshold: number
+    +lowerThreshold: number
+  }
+
+  interface DeviationTrendResource {
+    +id: number
+    +parameterName: string
+    +equipmentId: number
+    +trendDirection: "STABLE | INCREASING | DECREASING"
+    +dataPoints: DataPointResource[]
+  }
+
+  interface DeviationTrendsResponse {
+    +trends: DeviationTrendResource[]
+  }
+
+  interface AuditLogEntryResource {
+    +id: number
+    +action: AuditAction
+    +entityType: string
+    +entityId: number
+    +performedBy: number
+    +timestamp: string
+    +details: string
+  }
+
+  interface AuditLogEntriesResponse {
+    +auditLogs: AuditLogEntryResource[]
+  }
+
+  interface GenerateBatchReportRequest {
+    +batchId: number
+    +includeTelemetry: boolean
+    +includeDeviations: boolean
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+
+  interface GenerateComplianceReportRequest {
+    +laboratoryId: number
+    +startDate: string
+    +endDate: string
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+
+  interface ExportEquipmentLogRequest {
+    +equipmentId: number
+    +startDate: string
+    +endDate: string
+    +format: "PDF | CSV"
+    +requestedBy: number
+  }
+}
+
+package "ra.presentation" {
+  class RaRoutes
+
+  class KpiDashboardComponent {
+    +displayedColumns
+    +barChartOptions
+    +barChartType
+    +chartData
+    +ngOnInit(): void
+  }
+
+  class DeviationTrendChartComponent {
+    +equipmentId: number
+    +selectedEquipmentId
+    +displayedColumns
+    +ngOnInit(): void
+    +onEquipmentSelected(equipmentId: number): void
+    +loadTrends(): void
+    +getTrendIcon(direction): string
+    +isDeviated(value: number, min: number, max: number): boolean
+  }
+
+  class ReportGeneratorComponent {
+    +batchForm
+    +complianceForm
+    +equipmentForm
+    +onGenerateBatchReport(): void
+    +onGenerateComplianceReport(): void
+    +onExportEquipmentLog(): void
+  }
+
+  class AuditLogViewerComponent {
+    +displayedColumns
+    +filters
+    +ngOnInit(): void
+    +loadLogs(): void
+    +clearFilters(): void
+    +getActionBadgeClass(action): string
+  }
+}
+
+KpiDashboard ..|> BaseEntity
+KpiMetric ..|> BaseEntity
+DeviationTrend ..|> BaseEntity
+AuditLogEntry ..|> BaseEntity
+
+KpiDashboard *-- KpiMetric
+DeviationTrend *-- DataPoint
+
+RaApi --|> BaseApi
+KpiApiEndpoint --|> BaseApiEndpoint
+DeviationTrendApiEndpoint --|> BaseApiEndpoint
+AuditLogApiEndpoint --|> BaseApiEndpoint
+
+KpiAssembler ..|> BaseAssembler
+DeviationTrendAssembler ..|> BaseAssembler
+AuditLogAssembler ..|> BaseAssembler
+
+KpiDashboardResource ..|> BaseResource
+KpiDashboardsResponse ..|> BaseResponse
+DeviationTrendResource ..|> BaseResource
+DeviationTrendsResponse ..|> BaseResponse
+AuditLogEntryResource ..|> BaseResource
+AuditLogEntriesResponse ..|> BaseResponse
+
+RaStore --> RaApi
+
+RaStore ..> KpiDashboard
+RaStore ..> DeviationTrend
+RaStore ..> AuditLogEntry
+RaStore ..> GenerateBatchReportCommand
+RaStore ..> GenerateComplianceReportCommand
+RaStore ..> ExportEquipmentLogCommand
+
+RaApi --> KpiApiEndpoint
+RaApi --> DeviationTrendApiEndpoint
+RaApi --> AuditLogApiEndpoint
+RaApi --> ReportApiEndpoint
+
+KpiApiEndpoint --> KpiAssembler
+DeviationTrendApiEndpoint --> DeviationTrendAssembler
+AuditLogApiEndpoint --> AuditLogAssembler
+
+KpiApiEndpoint ..> KpiDashboardResource
+DeviationTrendApiEndpoint ..> DeviationTrendResource
+AuditLogApiEndpoint ..> AuditLogEntryResource
+
+ReportApiEndpoint ..> GenerateBatchReportRequest
+ReportApiEndpoint ..> GenerateComplianceReportRequest
+ReportApiEndpoint ..> ExportEquipmentLogRequest
+
+KpiAssembler ..> KpiDashboard
+KpiAssembler ..> KpiMetric
+KpiAssembler ..> KpiDashboardResource
+DeviationTrendAssembler ..> DeviationTrend
+DeviationTrendAssembler ..> DeviationTrendResource
+AuditLogAssembler ..> AuditLogEntry
+AuditLogAssembler ..> AuditLogEntryResource
+
+KpiDashboardComponent --> RaStore
+KpiDashboardComponent --> IamStore
+
+DeviationTrendChartComponent --> RaStore
+DeviationTrendChartComponent --> EquipmentStore
+DeviationTrendChartComponent --> IamStore
+
+ReportGeneratorComponent --> RaStore
+ReportGeneratorComponent --> IamStore
+
+AuditLogViewerComponent --> RaStore
+
+RaRoutes ..> KpiDashboardComponent
+RaRoutes ..> DeviationTrendChartComponent
+RaRoutes ..> ReportGeneratorComponent
+RaRoutes ..> AuditLogViewerComponent
+
+@enduml

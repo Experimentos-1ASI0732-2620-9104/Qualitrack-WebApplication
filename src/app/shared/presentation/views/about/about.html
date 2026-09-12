@@ -1,0 +1,105 @@
+<div class="about-page">
+  <app-toolbar />
+
+  <main class="about-content">
+    <section class="hero-section">
+      <div class="hero-copy">
+        <span class="eyebrow">{{ 'about.eyebrow' | translate }}</span>
+
+        <h1>{{ 'about.title' | translate }}</h1>
+
+        <p class="hero-description">
+          {{ 'about.content' | translate }}
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary-link" routerLink="/iam/sign-up" [queryParams]="{ role: 'qa-manager' }">
+            {{ 'about.actions.start' | translate }}
+          </a>
+
+          <a class="secondary-link" routerLink="/home">
+            {{ 'about.actions.back-home' | translate }}
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-panel" aria-label="QualiTrack platform summary">
+        <img src="/qualitrack-logo.png" alt="QualiTrack Logo" class="brand-mark">
+
+        <div class="panel-stat">
+          <strong>{{ 'about.panel.platform' | translate }}</strong>
+          <span>{{ 'about.panel.platform-description' | translate }}</span>
+        </div>
+
+        <div class="panel-grid">
+          <div>
+            <strong>IoT</strong>
+            <span>{{ 'about.panel.iot' | translate }}</span>
+          </div>
+
+          <div>
+            <strong>BPM</strong>
+            <span>{{ 'about.panel.bpm' | translate }}</span>
+          </div>
+
+          <div>
+            <strong>RA</strong>
+            <span>{{ 'about.panel.ra' | translate }}</span>
+          </div>
+
+          <div>
+            <strong>SaaS</strong>
+            <span>{{ 'about.panel.saas' | translate }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-heading">
+        <span class="eyebrow">{{ 'about.value.eyebrow' | translate }}</span>
+        <h2>{{ 'about.value.title' | translate }}</h2>
+        <p>{{ 'about.value.subtitle' | translate }}</p>
+      </div>
+
+      <div class="value-grid">
+        @for (item of valueItems; track item.title) {
+          <article class="value-card">
+            <span class="material-symbols-outlined value-icon">{{ item.icon }}</span>
+            <h3>{{ item.title | translate }}</h3>
+            <p>{{ item.description | translate }}</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="workflow-section">
+      <div class="workflow-copy">
+        <span class="eyebrow">{{ 'about.workflow.eyebrow' | translate }}</span>
+        <h2>{{ 'about.workflow.title' | translate }}</h2>
+        <p>{{ 'about.workflow.description' | translate }}</p>
+      </div>
+
+      <div class="workflow-list">
+        @for (item of workflowItems; track item; let index = $index) {
+          <div class="workflow-item">
+            <span>{{ index + 1 }}</span>
+            <p>{{ item | translate }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="trust-section">
+      <div>
+        <span class="eyebrow">{{ 'about.team.eyebrow' | translate }}</span>
+        <h2>{{ 'about.team.title' | translate }}</h2>
+        <p>{{ 'about.team.description' | translate }}</p>
+      </div>
+
+      <a class="primary-link compact" routerLink="/iam/sign-up" [queryParams]="{ role: 'qa-manager' }">
+        {{ 'about.actions.evaluate' | translate }}
+      </a>
+    </section>
+  </main>
+</div>

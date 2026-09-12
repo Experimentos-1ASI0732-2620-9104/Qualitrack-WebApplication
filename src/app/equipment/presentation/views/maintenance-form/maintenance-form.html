@@ -1,0 +1,102 @@
+<div class="form-container">
+  <mat-card class="maintenance-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'maintenance-form.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'maintenance-form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="maintenance-form">
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'maintenance-history.fields.date' | translate }}</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="maintenanceDate">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+
+            @if (form.get('maintenanceDate')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'maintenance-history.fields.type' | translate }}</mat-label>
+            <mat-select formControlName="type">
+              @for (type of maintenanceTypes; track type.value) {
+                <mat-option [value]="type.value">
+                  {{ 'maintenance-history.types.' + type.value.toLowerCase() | translate }}
+                </mat-option>
+              }
+            </mat-select>
+
+            @if (form.get('type')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'maintenance-history.fields.technician' | translate }}</mat-label>
+            <input
+              matInput
+              formControlName="technicianName"
+              [placeholder]="'maintenance-form.placeholders.technician' | translate">
+            <mat-icon matSuffix>person_outline</mat-icon>
+
+            @if (form.get('technicianName')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+
+            @if (form.get('technicianName')?.hasError('minlength')) {
+              <mat-error>{{ 'maintenance-form.errors.technician-minlength' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'maintenance-history.fields.description' | translate }}</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+              rows="4"
+              [placeholder]="'maintenance-form.placeholders.description' | translate">
+            </textarea>
+            <mat-hint align="end">{{ form.get('description')?.value?.length || 0 }} / 500</mat-hint>
+
+            @if (form.get('description')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+
+            @if (form.get('description')?.hasError('maxlength')) {
+              <mat-error>{{ 'maintenance-form.errors.description-maxlength' | translate }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (store.error()) {
+          <div class="error-msg">
+            <mat-icon>error</mat-icon>
+            <span>{{ store.error() }}</span>
+          </div>
+        }
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button
+          mat-button
+          type="button"
+          [routerLink]="['/equipments/equipment-detail', equipmentId()]">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button mat-raised-button color="accent" type="submit" [disabled]="form.invalid || store.isLoading()">
+          @if (store.isLoading()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>build</mat-icon>
+          }
+
+          {{ 'common.save' | translate }}
+        </button>
+      </mat-card-actions>
+    </form>
+  </mat-card>
+</div>

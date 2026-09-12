@@ -1,0 +1,75 @@
+.auth-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 450px;
+}
+
+.auth-hint {
+  font-size: 0.9rem;
+  color: #5f6368;
+  margin-bottom: 8px;
+}
+
+.btn-primary.auth-main-btn {
+  background-color: #51a396 !important;
+  color: white !important;
+  height: 48px;
+  border-radius: 6px !important;
+  font-size: 1rem !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  gap: 12px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.divider-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #757575;
+  letter-spacing: 0.5px;
+}
+
+.role-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-role {
+  flex: 1;
+  min-height: 48px;
+  border-color: #51a396 !important;
+  color: #1a3a5c !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  padding: 8px !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+@media (max-width: 480px) {
+  .role-buttons {
+    flex-direction: column;
+  }
+
+  .btn-role {
+    width: 100%;
+  }
+}

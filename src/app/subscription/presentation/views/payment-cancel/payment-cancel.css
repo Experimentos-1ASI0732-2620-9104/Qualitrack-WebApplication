@@ -1,0 +1,56 @@
+.payment-result-container {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.result-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.result-card mat-card-content {
+  padding: 40px 32px;
+}
+
+.icon-wrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.icon-wrapper mat-icon {
+  font-size: 44px;
+  width: 44px;
+  height: 44px;
+}
+
+h1 {
+  margin: 0;
+  color: #1a3a5c;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+p {
+  margin: 12px 0 28px;
+  color: #5f6368;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}

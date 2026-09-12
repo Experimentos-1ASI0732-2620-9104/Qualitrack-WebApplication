@@ -1,0 +1,115 @@
+<app-toolbar></app-toolbar>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="card-header">
+      <div class="registration-mode-badge">
+        {{ 'iam.sign-up.mode-label' | translate }}:
+        {{ 'iam.sign-up.roles.' + selectedRoleKey | translate }}
+      </div>
+
+      <h1>{{ 'iam.sign-up.title' | translate }}</h1>
+      <p>{{ 'iam.sign-up.subtitle' | translate }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      @if (store.error()) {
+        <div class="alert alert-error">
+          <span>{{ store.error()! | translate }}</span>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="username">{{ 'iam.sign-up.username' | translate }}</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          [placeholder]="'iam.sign-up.username-placeholder' | translate"
+          [class.error]="form.controls.username.invalid && form.controls.username.touched" />
+
+        @if (form.controls.username.invalid && form.controls.username.touched) {
+          <span class="error-message">{{ getUsernameErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">{{ 'iam.sign-up.password' | translate }}</label>
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            [placeholder]="'iam.sign-up.password-placeholder' | translate"
+            [class.error]="form.controls.password.invalid && form.controls.password.touched" />
+
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              (hidePassword ? 'iam.sign-up.show-password' : 'iam.sign-up.hide-password') | translate
+            ">
+            <mat-icon aria-hidden="true">{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="error-message">{{ getPasswordErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">{{ 'iam.sign-up.confirm-password' | translate }}</label>
+        <div class="password-input-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="hideConfirmPassword ? 'password' : 'text'"
+            formControlName="confirmPassword"
+            [placeholder]="'iam.sign-up.confirm-password-placeholder' | translate"
+            [class.error]="
+              (form.controls.confirmPassword.invalid || form.hasError('passwordMismatch')) &&
+              form.controls.confirmPassword.touched
+            " />
+
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="toggleConfirmPasswordVisibility()"
+            [attr.aria-label]="
+              (hideConfirmPassword ? 'iam.sign-up.show-password' : 'iam.sign-up.hide-password') | translate
+            ">
+            <mat-icon aria-hidden="true">{{ hideConfirmPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+
+        @if (
+          (form.controls.confirmPassword.invalid || form.hasError('passwordMismatch')) &&
+          form.controls.confirmPassword.touched
+          ) {
+          <span class="error-message">{{ getConfirmPasswordErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="store.loading()">
+        @if (!store.loading()) {
+          <span>
+            {{
+              'iam.sign-up.register-as'
+                | translate: { role: ('iam.sign-up.roles.' + selectedRoleKey | translate) }
+            }}
+          </span>
+        } @else {
+          <mat-spinner diameter="20"></mat-spinner>
+        }
+      </button>
+    </form>
+
+    <div class="footer-link">
+      <p>
+        {{ 'iam.sign-up.already-have-account' | translate }}
+        <a routerLink="/iam/sign-in">{{ 'iam.sign-in.title' | translate }}</a>
+      </p>
+    </div>
+  </div>
+</div>

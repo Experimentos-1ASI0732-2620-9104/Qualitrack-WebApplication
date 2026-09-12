@@ -1,0 +1,123 @@
+<div class="batch-form-container">
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../batch-list" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <div>
+        <h1>{{ 'batch-form.title' | translate }}</h1>
+        <p>{{ 'batch-form.subtitle' | translate }}</p>
+      </div>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="form-card mat-elevation-z3">
+    <form [formGroup]="batchForm" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-form.fields.product' | translate }}</mat-label>
+        <mat-select formControlName="productId">
+          @for (product of labStore.products(); track product.id) {
+            <mat-option [value]="product.id">
+              {{ product.name }} ({{ product.code }})
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (batchForm.get('productId')?.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'batch-form.fields.batch-number' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="batchNumber"
+            [placeholder]="'batch-form.placeholders.batch-number' | translate">
+
+          <mat-hint>{{ 'batch-form.hints.batch-number' | translate }}</mat-hint>
+
+          @if (batchForm.get('batchNumber')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+
+          @if (batchForm.get('batchNumber')?.hasError('pattern')) {
+            <mat-error>{{ 'batch-form.errors.batch-number-format' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'batch-form.fields.start-date' | translate }}</mat-label>
+          <input matInput type="date" formControlName="startDate">
+
+          @if (batchForm.get('startDate')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'batch-form.fields.quantity' | translate }}</mat-label>
+          <input matInput type="number" formControlName="quantity">
+
+          @if (batchForm.get('quantity')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+
+          @if (batchForm.get('quantity')?.hasError('min')) {
+            <mat-error>{{ 'batch-form.errors.quantity-min' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'batch-form.fields.unit' | translate }}</mat-label>
+          <mat-select formControlName="unit">
+            @for (unit of units; track unit) {
+              <mat-option [value]="unit">{{ unit }}</mat-option>
+            }
+          </mat-select>
+
+          @if (batchForm.get('unit')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-form.fields.notes' | translate }}</mat-label>
+        <textarea
+          matInput
+          formControlName="notes"
+          rows="3"
+          [placeholder]="'batch-form.placeholders.notes' | translate">
+        </textarea>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button mat-button type="button" routerLink="../batch-list">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="batchForm.invalid || store.isLoading()">
+          <mat-icon>save</mat-icon>
+          {{ 'common.register' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

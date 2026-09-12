@@ -1,0 +1,7 @@
+/* You can add global styles to this file, and also import other style files */
+html, body { height: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+img, video { max-width: 100%; }
+mat-card, mat-card-content, mat-form-field { min-width: 0; }
+mat-card-title, mat-card-subtitle, h1, h2, h3, p { overflow-wrap: anywhere; }

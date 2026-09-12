@@ -1,0 +1,78 @@
+.form-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.equipment-card {
+  width: 100%;
+  max-width: 800px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.equipment-form {
+  margin-top: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: #ffebee;
+  color: #c62828;
+  font-weight: 500;
+}
+
+.error-msg mat-icon {
+  flex-shrink: 0;
+}
+
+mat-card-actions {
+  padding: 16px 0 0;
+  gap: 12px;
+}
+
+button[mat-raised-button] {
+  min-width: 120px;
+}
+
+button[mat-raised-button] mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@media (max-width: 600px) {
+  .form-container {
+    padding: 24px 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  mat-card-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  mat-card-actions button {
+    width: 100%;
+  }
+}

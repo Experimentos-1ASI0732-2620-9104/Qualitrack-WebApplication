@@ -1,0 +1,155 @@
+<div class="trend-container">
+  <div class="section-header">
+    <div class="title-group">
+      <mat-icon class="title-icon">multiline_chart</mat-icon>
+      <h2>{{ 'deviation-trend.title' | translate }}</h2>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="!selectedEquipmentId() || store.isLoading()"
+      (click)="loadTrends()">
+      <mat-icon>refresh</mat-icon>
+      {{ 'common.refresh' | translate }}
+    </button>
+  </div>
+
+  <mat-form-field appearance="outline" class="equipment-selector">
+    <mat-label>{{ 'deviation-trend.equipment' | translate }}</mat-label>
+    <mat-select
+      [value]="selectedEquipmentId()"
+      (selectionChange)="onEquipmentSelected($event.value)">
+      @for (equipment of equipmentStore.equipmentList(); track equipment.id) {
+        <mat-option [value]="equipment.id">
+          {{ equipment.name }} - {{ equipment.serialNumber }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      {{ store.error() }}
+    </div>
+  }
+
+  @if (!store.isLoading() && store.deviationTrends().length > 0) {
+    <div class="trends-wrapper">
+      @for (trend of store.deviationTrends(); track trend.parameterName) {
+        <div class="trend-section">
+          <mat-card class="trend-summary-card mat-elevation-z1">
+            <mat-card-content class="summary-content">
+              <div class="param-info">
+                <span class="label">{{ 'deviation-trend.parameter' | translate }}</span>
+                <h3>{{ trend.parameterName }}</h3>
+              </div>
+
+              <div class="equipment-info">
+                <span class="label">{{ 'deviation-trend.equipment' | translate }}</span>
+                <span class="code-badge">{{ trend.equipmentId }}</span>
+              </div>
+
+              <div class="direction-info">
+                <span class="label">{{ 'deviation-trend.direction' | translate }}</span>
+                <div class="direction-badge" [ngClass]="'dir-' + trend.trendDirection.toLowerCase()">
+                  <mat-icon>{{ getTrendIcon(trend.trendDirection) }}</mat-icon>
+                  {{ 'trend-direction.' + trend.trendDirection | translate }}
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="table-card mat-elevation-z2">
+            <table mat-table [dataSource]="trend.dataPoints" class="full-width-table">
+              <ng-container matColumnDef="timestamp">
+                <th mat-header-cell *matHeaderCellDef>
+                  {{ 'deviation-trend.table.timestamp' | translate }}
+                </th>
+                <td mat-cell *matCellDef="let point" class="date-cell">
+                  {{ point.timestamp | date:'medium' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="recordedValue">
+                <th mat-header-cell *matHeaderCellDef>
+                  {{ 'deviation-trend.table.value' | translate }}
+                </th>
+                <td mat-cell *matCellDef="let point">
+                  <strong
+                    [class.text-danger]="isDeviated(point.recordedValue, point.lowerThreshold, point.upperThreshold)">
+                    {{ point.recordedValue }}
+                  </strong>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="lowerThreshold">
+                <th mat-header-cell *matHeaderCellDef>
+                  {{ 'deviation-trend.table.min' | translate }}
+                </th>
+                <td mat-cell *matCellDef="let point" class="threshold-cell">
+                  {{ point.lowerThreshold }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="upperThreshold">
+                <th mat-header-cell *matHeaderCellDef>
+                  {{ 'deviation-trend.table.max' | translate }}
+                </th>
+                <td mat-cell *matCellDef="let point" class="threshold-cell">
+                  {{ point.upperThreshold }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>
+                  {{ 'common.status' | translate }}
+                </th>
+                <td mat-cell *matCellDef="let point">
+                  @if (isDeviated(point.recordedValue, point.lowerThreshold, point.upperThreshold)) {
+                    <span class="status-indicator deviated">
+                      <mat-icon class="small-icon">warning</mat-icon>
+                      {{ 'deviation-trend.status.deviated' | translate }}
+                    </span>
+                  } @else {
+                    <span class="status-indicator normal">
+                      <mat-icon class="small-icon">check_circle</mat-icon>
+                      {{ 'deviation-trend.status.normal' | translate }}
+                    </span>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns;"
+                class="catalog-row"
+                [class.row-deviated]="isDeviated(row.recordedValue, row.lowerThreshold, row.upperThreshold)">
+              </tr>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!store.isLoading() && !selectedEquipmentId() && !store.error()) {
+    <div class="empty-state">
+      <mat-icon>precision_manufacturing</mat-icon>
+      <p>{{ 'deviation-trend.select-equipment' | translate }}</p>
+    </div>
+  } @else if (!store.isLoading() && selectedEquipmentId() && store.deviationTrends().length === 0 && !store.error()) {
+    <div class="empty-state">
+      <mat-icon>show_chart</mat-icon>
+      <p>{{ 'deviation-trend.empty' | translate }}</p>
+    </div>
+  }
+</div>

@@ -1,0 +1,47 @@
+@if (store.needsMaintenance().length > 0) {
+  <mat-card class="alert-card shadow-sm">
+    <mat-card-header>
+      <div mat-card-avatar class="alert-icon-container">
+        <mat-icon color="warn">priority_high</mat-icon>
+      </div>
+
+      <mat-card-title>{{ 'equipment-alert.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'equipment-alert.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-list>
+        @for (item of store.needsMaintenance(); track item.id) {
+          <mat-list-item class="alert-item">
+            <mat-icon matListItemIcon class="status-indicator">warning</mat-icon>
+
+            <div matListItemTitle class="equipment-name">{{ item.name }}</div>
+
+            <div matListItemLine class="equipment-meta">
+              <span>{{ 'equipment-list.fields.model' | translate }}: {{ item.model }}</span>
+              <span class="separator">|</span>
+              <span class="status-badge" [ngClass]="item.status.toLowerCase()">
+                {{ 'equipment-status.' + item.status.toLowerCase() | translate }}
+              </span>
+            </div>
+
+            <button
+              mat-icon-button
+              matListItemMeta
+              [routerLink]="['/equipments/maintenance-form', item.id]"
+              [matTooltip]="'equipment-alert.action-tooltip' | translate"
+              [attr.aria-label]="'equipment-alert.action-tooltip' | translate">
+              <mat-icon color="primary">build</mat-icon>
+            </button>
+          </mat-list-item>
+        }
+      </mat-list>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button color="warn" routerLink="/equipments/equipment-list">
+        {{ 'equipment-alert.view-all' | translate }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}

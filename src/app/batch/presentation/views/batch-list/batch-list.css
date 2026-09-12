@@ -1,0 +1,141 @@
+.batch-list-container {
+  padding: 24px;
+  position: relative;
+  min-height: 400px;
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-content h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.header-content p {
+  margin: 4px 0 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Table */
+.table-container {
+  background: white;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+.bold-text {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+}
+
+code {
+  background-color: #f4f7f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: Monaco, Consolas, monospace;
+  color: #e67e22;
+}
+
+/* Status chips */
+.mat-mdc-chip {
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  font-size: 11px !important;
+}
+
+.pending {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.in-progress {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+}
+
+.released {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.rejected {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.unknown {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+/* Actions */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Feedback */
+.loading-shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-container {
+  background-color: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  color: #9b1c1c;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.error-container p {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

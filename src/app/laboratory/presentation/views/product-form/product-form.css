@@ -1,0 +1,98 @@
+.form-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.product-card {
+  width: 100%;
+  max-width: 700px;
+  border-radius: 8px;
+}
+
+.header-icon {
+  background: #1a3a5c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.product-form {
+  margin-top: 24px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 180px;
+}
+
+.flex-2 {
+  flex: 2;
+  min-width: 260px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.error-box {
+  background: #fff5f5;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #fc8181;
+}
+
+.error-box span {
+  overflow-wrap: anywhere;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+button[mat-flat-button] {
+  padding: 0 24px;
+}
+
+button mat-spinner {
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .form-container {
+    padding: 24px 16px;
+  }
+
+  .flex-1,
+  .flex-2 {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions button {
+    flex: 1;
+  }
+}

@@ -1,0 +1,72 @@
+<app-toolbar />
+<div class="plans-container">
+  <header class="page-header">
+    <div>
+      <h1>{{ 'subscription.plans.title' | translate }}</h1>
+      <p>{{ 'subscription.plans.subtitle' | translate }}</p>
+    </div>
+    <button mat-button (click)="signOut()">{{ 'onboarding.sign-out' | translate }}</button>
+  </header>
+
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p role="alert">{{ 'onboarding.load-error' | translate }}</p>
+      <button mat-stroked-button (click)="store.loadPlans()">{{ 'onboarding.retry' | translate }}</button>
+    </div>
+  }
+
+  @if (!store.isLoading() && !store.error() && !store.plans().length) {
+    <div class="empty-state">
+      <mat-icon>payments</mat-icon>
+      <p>{{ 'onboarding.no-plans' | translate }}</p>
+      <button mat-stroked-button (click)="store.loadPlans()">{{ 'onboarding.retry' | translate }}</button>
+    </div>
+  }
+  @if (!store.isLoading() && !store.error()) {
+  <div class="plans-grid">
+    @for (plan of store.plans(); track plan.id) {
+      <mat-card class="plan-card mat-elevation-z2" [class.highlight]="plan.code === 'ENTERPRISE'">
+        <mat-card-header>
+          <mat-card-title>{{ plan.name }}</mat-card-title>
+          <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="price-block">
+            <span class="price">{{ formatPrice(plan) }}</span>
+            <span class="period">
+              / {{ 'subscription.billing-period.' + plan.billingPeriod.toLowerCase() | translate }}
+            </span>
+          </div>
+
+          <div class="limits-grid">
+            <div>
+              <span class="label">{{ 'subscription.plans.max-users' | translate }}</span>
+              <strong>{{ plan.maxUsers }}</strong>
+            </div>
+            <div>
+              <span class="label">{{ 'subscription.plans.max-equipment' | translate }}</span>
+              <strong>{{ plan.maxEquipment === null ? ('subscription.plans.unlimited' | translate) : plan.maxEquipment }}</strong>
+            </div>
+          </div>
+
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-raised-button color="primary" (click)="onSelectPlan(plan)"
+            [disabled]="iamStore.onboarding()?.subscriptionStatus === 'ACTIVE'">
+            {{ 'subscription.plans.select' | translate }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+  }
+</div>

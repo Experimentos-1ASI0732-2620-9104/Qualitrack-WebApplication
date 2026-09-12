@@ -1,0 +1,76 @@
+<app-toolbar></app-toolbar>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="card-header">
+      <h1>{{ 'iam.sign-in.title' | translate }}</h1>
+      <p>{{ 'iam.sign-in.subtitle' | translate }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      @if (store.error()) {
+        <div class="alert alert-error">
+          <span role="alert">{{ store.error()! | translate }}</span>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="username">{{ 'iam.sign-in.username' | translate }}</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          [placeholder]="'iam.sign-in.username-placeholder' | translate"
+          [class.error]="form.controls.username.invalid && form.controls.username.touched" />
+
+        @if (form.controls.username.invalid && form.controls.username.touched) {
+          <span class="error-message">{{ getUsernameErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">{{ 'iam.sign-in.password' | translate }}</label>
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            [placeholder]="'iam.sign-in.password-placeholder' | translate"
+            [class.error]="form.controls.password.invalid && form.controls.password.touched" />
+
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              (hidePassword ? 'iam.sign-in.show-password' : 'iam.sign-in.hide-password') | translate
+            ">
+            <mat-icon aria-hidden="true">{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="error-message">{{ getPasswordErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="store.loading()">
+        @if (!store.loading()) {
+          <span>{{ 'iam.sign-in.button' | translate }}</span>
+        } @else {
+          <mat-spinner diameter="20"></mat-spinner>
+        }
+      </button>
+    </form>
+
+    <div class="footer-link">
+      <p>
+        {{ 'iam.sign-in.no-account' | translate }}
+        <br>
+        <a (click)="performSignUp('qa-manager')">{{ 'iam.sign-up.roles.manager' | translate }}</a>
+        -
+        <a (click)="performSignUp('lab-operator')">{{ 'iam.sign-up.roles.operator' | translate }}</a>
+      </p>
+    </div>
+  </div>
+</div>

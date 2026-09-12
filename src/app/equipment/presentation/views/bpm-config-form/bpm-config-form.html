@@ -1,0 +1,91 @@
+<div class="form-container">
+  <mat-card class="config-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'bpm-config.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'bpm-config.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="config-form">
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'bpm-config.fields.parameter' | translate }}</mat-label>
+            <input
+              matInput
+              formControlName="parameterName"
+              [placeholder]="'bpm-config.placeholders.parameter' | translate">
+            <mat-icon matSuffix>label</mat-icon>
+
+            @if (form.get('parameterName')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'bpm-config.fields.min' | translate }}</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="minValue"
+              placeholder="0.0">
+
+            @if (form.get('minValue')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'bpm-config.fields.max' | translate }}</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="maxValue"
+              placeholder="100.0">
+
+            @if (form.get('maxValue')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'bpm-config.fields.unit' | translate }}</mat-label>
+            <input
+              matInput
+              formControlName="unit"
+              [placeholder]="'bpm-config.placeholders.unit' | translate">
+
+            @if (form.get('unit')?.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (store.error()) {
+          <div class="error-msg">
+            <mat-icon>error</mat-icon>
+            <span>{{ store.error() }}</span>
+          </div>
+        }
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button
+          mat-button
+          type="button"
+          [routerLink]="['/equipments/equipment-detail', equipmentId()]">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.isLoading()">
+          @if (store.isLoading()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>settings_suggest</mat-icon>
+          }
+
+          {{ 'common.save' | translate }}
+        </button>
+      </mat-card-actions>
+    </form>
+  </mat-card>
+</div>

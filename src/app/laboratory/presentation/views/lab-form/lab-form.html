@@ -1,0 +1,101 @@
+<app-toolbar />
+<main class="form-container">
+  <mat-card class="lab-form-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="header-icon">science</mat-icon>
+      <mat-card-title>{{ 'lab-form.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'lab-form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.error()) {
+        <div class="error-box" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="lab-form">
+        <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-label>{{ 'lab-form.name' | translate }}</mat-label>
+          <input matInput formControlName="name" autocomplete="organization">
+          <mat-icon matPrefix>business</mat-icon>
+
+          @if (form.get('name')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-label>{{ 'lab-form.ruc' | translate }}</mat-label>
+          <input matInput formControlName="ruc" maxlength="11" inputmode="numeric">
+          <mat-icon matPrefix>badge</mat-icon>
+
+          @if (form.get('ruc')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+
+          @if (form.get('ruc')?.hasError('pattern')) {
+            <mat-error>{{ 'lab-form.rucLength' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-label>{{ 'lab-form.address' | translate }}</mat-label>
+          <input matInput formControlName="address" autocomplete="street-address">
+          <mat-icon matPrefix>location_on</mat-icon>
+
+          @if (form.get('address')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-label>{{ 'lab-form.phone' | translate }}</mat-label>
+          <input matInput formControlName="phone" type="tel" autocomplete="tel">
+          <mat-icon matPrefix>phone</mat-icon>
+
+          @if (form.get('phone')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-label>{{ 'lab-form.regulations' | translate }}</mat-label>
+          <mat-select formControlName="applicableRegulations" multiple>
+            @for (regulation of regulations; track regulation) {
+              <mat-option [value]="regulation">{{ regulation }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>verified</mat-icon>
+
+          @if (form.get('applicableRegulations')?.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="onCancel()">
+            {{ 'onboarding.sign-out' | translate }}
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || store.isLoading()"
+          >
+            @if (store.isLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <ng-container>
+                <mat-icon>save</mat-icon>
+                {{ 'common.register' | translate }}
+              </ng-container>
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</main>

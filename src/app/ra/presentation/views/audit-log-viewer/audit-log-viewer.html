@@ -1,0 +1,138 @@
+<div class="viewer-container">
+  <div class="section-header">
+    <div class="title-group">
+      <mat-icon class="title-icon">policy</mat-icon>
+      <h2>{{ 'audit-log.title' | translate }}</h2>
+    </div>
+  </div>
+
+  <mat-card class="filter-card mat-elevation-z1">
+    <mat-card-content class="filter-content">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ 'audit-log.filters.equipment' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          min="1"
+          [(ngModel)]="filters.equipmentId"
+          placeholder="Ex. 1">
+        <mat-icon matSuffix>precision_manufacturing</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ 'audit-log.filters.batch' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          min="1"
+          [(ngModel)]="filters.batchId"
+          placeholder="Ex. 1">
+        <mat-icon matSuffix>inventory_2</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field date-field">
+        <mat-label>{{ 'common.date-range' | translate }}</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate [(ngModel)]="filters.dateFrom" placeholder="Start">
+          <input matEndDate [(ngModel)]="filters.dateTo" placeholder="End">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="store.isLoading()"
+          (click)="clearFilters()">
+          {{ 'common.clear' | translate }}
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="store.isLoading()"
+          (click)="loadLogs()">
+          <mat-icon>search</mat-icon>
+          {{ 'common.search' | translate }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      {{ store.error() }}
+    </div>
+  }
+
+  <div class="table-card mat-elevation-z2">
+    <table mat-table [dataSource]="store.auditLogs()" class="full-width-table">
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef>
+          {{ 'audit-log.table.timestamp' | translate }}
+        </th>
+        <td mat-cell *matCellDef="let log" class="date-cell">
+          <div class="date-time-container">
+            <strong>{{ log.timestamp | date:'mediumDate' }}</strong>
+            <span class="time-text">{{ log.timestamp | date:'mediumTime' }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef>
+          {{ 'audit-log.table.action' | translate }}
+        </th>
+        <td mat-cell *matCellDef="let log">
+          <span class="action-badge" [ngClass]="getActionBadgeClass(log.action)">
+            {{ log.action }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="entity">
+        <th mat-header-cell *matHeaderCellDef>
+          {{ 'audit-log.table.entity' | translate }}
+        </th>
+        <td mat-cell *matCellDef="let log">
+          <div class="entity-info">
+            <span class="entity-type">{{ log.entityType }}</span>
+            <span class="entity-id">{{ log.entityId }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="performedBy">
+        <th mat-header-cell *matHeaderCellDef>
+          {{ 'audit-log.table.performed-by' | translate }}
+        </th>
+        <td mat-cell *matCellDef="let log">
+          <div class="user-chip">
+            <mat-icon class="user-icon">account_circle</mat-icon>
+            {{ log.performedBy }}
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="catalog-row"></tr>
+    </table>
+
+    @if (!store.isLoading() && store.auditLogs().length === 0) {
+      <div class="empty-state">
+        <mat-icon>manage_search</mat-icon>
+        <p>{{ 'audit-log.empty' | translate }}</p>
+      </div>
+    }
+  </div>
+</div>

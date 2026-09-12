@@ -1,0 +1,52 @@
+<main class="material-detail">
+  <header>
+    <a mat-icon-button routerLink="/laboratories/raw-material-list"
+       [attr.aria-label]="'material-history.back' | translate" [matTooltip]="'material-history.back' | translate"><mat-icon>arrow_back</mat-icon></a>
+    <div><p class="eyebrow">{{ 'material-history.title' | translate }}</p>
+      <h1>{{ store.material()?.name ?? ('raw-material-list.title' | translate) }}</h1></div>
+    <button mat-icon-button type="button" (click)="reload()" [disabled]="store.loading()"
+      [attr.aria-label]="'material-history.refresh' | translate" [matTooltip]="'material-history.refresh' | translate"><mat-icon>refresh</mat-icon></button>
+  </header>
+  @if (store.loading()) {
+    <div class="state" role="status"><mat-spinner diameter="32" />{{ 'material-history.loading' | translate }}</div>
+  } @else if (store.error()) {
+    <div class="state" role="alert"><mat-icon>error_outline</mat-icon><p>{{ store.error()! | translate }}</p>
+      <button mat-stroked-button type="button" (click)="reload()">{{ 'material-history.retry' | translate }}</button></div>
+  } @else if (store.material(); as material) {
+    <section class="stock-summary" [attr.aria-label]="'material-history.summary' | translate">
+      <div class="stock-total"><span>{{ 'material-history.available' | translate }}</span>
+        <strong [class.low]="material.quantityInStock <= material.minimumStock">{{ material.quantityInStock | number:'1.0-3' }} <small>{{ material.unit }}</small></strong>
+        @if (material.quantityInStock <= material.minimumStock) {<span class="warning">{{ 'raw-material-list.lowStock' | translate }}</span>}
+      </div>
+      <dl>
+        <div><dt>{{ 'raw-material-list.code' | translate }}</dt><dd>{{ material.code }}</dd></div>
+        <div><dt>{{ 'raw-material-list.supplier' | translate }}</dt><dd>{{ material.supplier }}</dd></div>
+        <div><dt>{{ 'material-history.supplier-batch' | translate }}</dt><dd>{{ material.batchNumber }}</dd></div>
+        <div><dt>{{ 'raw-material-list.expiration' | translate }}</dt><dd>{{ material.expirationDate | date:'yyyy-MM-dd' }}</dd></div>
+        <div><dt>{{ 'material-history.minimum' | translate }}</dt><dd>{{ material.minimumStock | number:'1.0-3' }} {{ material.unit }}</dd></div>
+      </dl>
+    </section>
+    <section class="history" [attr.aria-label]="'material-history.movements' | translate">
+      <h2>{{ 'material-history.movements' | translate }} <span>({{ store.usages().length }})</span></h2>
+      @if (store.hasLegacy()) {<p class="legacy-note" role="note"><mat-icon>info_outline</mat-icon>{{ 'material-history.legacy-note' | translate }}</p>}
+      @if (store.usages().length === 0) {
+        <p class="state">{{ 'material-history.empty' | translate }}</p>
+      } @else {
+        <table>
+          <thead><tr><th>{{ 'material-history.date' | translate }}</th><th>{{ 'material-history.batch' | translate }}</th>
+            <th>{{ 'material-history.consumed' | translate }}</th><th>{{ 'material-history.before' | translate }}</th><th>{{ 'material-history.after' | translate }}</th></tr></thead>
+          <tbody>@for (usage of store.usages(); track usage.id) {
+            <tr>
+              <td [attr.data-label]="'material-history.date' | translate">{{ usage.usageDate | date:'yyyy-MM-dd HH:mm' }}</td>
+              <td [attr.data-label]="'material-history.batch' | translate"><a [routerLink]="['/batches/batch-detail', usage.batchId]">{{ store.batchLabel(usage.batchId) }}</a>
+                @if (usage.stockAfter === null) {<small>{{ 'material-history.legacy' | translate }}</small>}</td>
+              <td [attr.data-label]="'material-history.consumed' | translate" class="consumed">-{{ usage.quantityUsed | number:'1.0-3' }} {{ usage.unit }}</td>
+              <td [attr.data-label]="'material-history.before' | translate">{{ usage.stockBefore === null ? ('material-history.unrecorded' | translate) : (usage.stockBefore | number:'1.0-3') + ' ' + usage.unit }}</td>
+              <td [attr.data-label]="'material-history.after' | translate">{{ usage.stockAfter === null ? ('material-history.unrecorded' | translate) : (usage.stockAfter | number:'1.0-3') + ' ' + usage.unit }}</td>
+            </tr>
+          }</tbody>
+        </table>
+      }
+    </section>
+  }
+</main>

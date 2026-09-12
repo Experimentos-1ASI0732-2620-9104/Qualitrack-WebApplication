@@ -1,0 +1,71 @@
+<div class="reject-form-container">
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../../batch-list" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <div>
+        <h1 class="critical-title">{{ 'batch-reject.title' | translate }}</h1>
+        <p class="warning-text">
+          <mat-icon inline>report_problem</mat-icon>
+          {{ 'batch-reject.subtitle' | translate: { batchId: batchId } }}
+        </p>
+      </div>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="form-card mat-elevation-z3 border-top-danger">
+    <form [formGroup]="rejectForm" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-reject.fields.rejection-date' | translate }}</mat-label>
+        <input matInput type="date" formControlName="rejectionDate">
+
+        @if (rejectForm.get('rejectionDate')?.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-reject.fields.reason' | translate }}</mat-label>
+        <textarea
+          matInput
+          formControlName="reason"
+          rows="5"
+          [placeholder]="'batch-reject.placeholders.reason' | translate">
+        </textarea>
+
+        @if (rejectForm.get('reason')?.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+
+        @if (rejectForm.get('reason')?.hasError('minlength')) {
+          <mat-error>{{ 'batch-reject.errors.reason-minlength' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button mat-button type="button" routerLink="../../batch-list">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="warn"
+          type="submit"
+          [disabled]="rejectForm.invalid || store.isLoading()">
+          <mat-icon>block</mat-icon>
+          {{ 'batch-reject.actions.submit' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

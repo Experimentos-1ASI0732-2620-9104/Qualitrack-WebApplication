@@ -1,0 +1,344 @@
+@startuml equipment-frontend-diagram
+
+title QualiTrack - Equipment Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "shared" {
+  interface BaseEntity
+  class BaseApi
+  class BaseApiEndpoint
+  interface BaseAssembler
+  interface BaseResource
+  interface BaseResponse
+  interface MessageResource
+}
+
+package "iam.application" {
+  class IamStore {
+    +currentUserId()
+    +currentLaboratoryId()
+    +isSignedIn()
+  }
+}
+
+package "equipment.domain.model" {
+  class Equipment {
+    +id: number
+    +labId: number
+    +name: string
+    +type: string
+    +model: string
+    +serialNumber: string
+    +status: string
+    +sensorExternalId?: string
+    +createdAt: string
+  }
+
+  class BpmParameterConfig {
+    +id: number
+    +equipmentId: number
+    +parameterName: string
+    +minValue: number
+    +maxValue: number
+    +unit: string
+    +createdAt: string
+  }
+
+  class MaintenanceRecord {
+    +id: number
+    +equipmentId: number
+    +maintenanceDate: string
+    +technicianName: string
+    +description: string
+    +type: string
+    +createdAt: string
+  }
+
+  interface RegisterEquipmentCommand {
+    +laboratoryId: number
+    +name: string
+    +type: string
+    +model: string
+    +serialNumber: string
+  }
+
+  interface ConfigureBpmCommand {
+    +equipmentId: number
+    +parameterName: string
+    +minValue: number
+    +maxValue: number
+    +unit: string
+  }
+
+  interface RegisterMaintenanceCommand {
+    +equipmentId: number
+    +maintenanceDate: string
+    +technicianName: string
+    +description: string
+    +type: string
+  }
+
+  interface LinkSensorCommand {
+    +equipmentId: number
+    +sensorExternalId: string
+    +sensorType: string
+  }
+}
+
+package "equipment.application" {
+  class EquipmentStore {
+    -api: EquipmentApi
+    -_equipmentList
+    -_selectedEquipment
+    -_bpmConfigs
+    -_maintenanceHistory
+    -_isLoading
+    -_error
+    -_successMsg
+
+    +equipmentList
+    +selectedEquipment
+    +bpmConfigs
+    +maintenanceHistory
+    +isLoading
+    +error
+    +successMsg
+    +operationalEquipment
+    +needsMaintenance
+
+    +loadEquipment(labId: number): void
+    +loadEquipmentById(equipmentId: number): void
+    +registerEquipment(command: RegisterEquipmentCommand): void
+    +loadBpmConfig(equipmentId: number): void
+    +configureBpm(command: ConfigureBpmCommand): void
+    +loadMaintenanceHistory(equipmentId: number): void
+    +registerMaintenance(command: RegisterMaintenanceCommand): void
+    +clearMessages(): void
+  }
+}
+
+package "equipment.infrastructure" {
+  class EquipmentApi {
+    -_equipmentEndpoint: EquipmentApiEndpoint
+    -_bpmEndpoint: BpmConfigApiEndpoint
+    -_maintenanceEndpoint: MaintenanceApiEndpoint
+
+    +getEquipment(labId: number)
+    +getEquipmentById(equipmentId: number)
+    +registerEquipment(request: RegisterEquipmentRequest)
+    +getBpmConfig(equipmentId: number)
+    +configureBpm(request: ConfigureBpmRequest)
+    +getMaintenanceHistory(equipmentId: number)
+    +registerMaintenance(request: RegisterMaintenanceRequest)
+  }
+
+  class EquipmentApiEndpoint {
+    +getEquipmentByLab(labId: number)
+    +getEquipmentById(equipmentId: number)
+    +registerEquipment(request: RegisterEquipmentRequest)
+  }
+
+  class BpmConfigApiEndpoint {
+    +getConfigByEquipment(equipmentId: number)
+    +configureBpm(request: ConfigureBpmRequest)
+  }
+
+  class MaintenanceApiEndpoint {
+    +getMaintenanceHistory(equipmentId: number)
+    +registerMaintenance(request: RegisterMaintenanceRequest)
+  }
+
+  class EquipmentAssembler
+  class BpmConfigAssembler
+  class MaintenanceAssembler
+
+  interface EquipmentResource {
+    +id: number
+    +laboratoryId: number
+    +name: string
+    +type: string
+    +model: string
+    +serialNumber: string
+    +status: string
+    +sensorExternalId?: string
+    +createdAt?: string
+  }
+
+  interface EquipmentsResponse {
+    +equipments: EquipmentResource[]
+  }
+
+  interface BpmConfigResource {
+    +id: number
+    +equipmentId: number
+    +parameterName: string
+    +minValue: number
+    +maxValue: number
+    +unit: string
+    +createdAt?: string
+  }
+
+  interface BpmConfigsResponse {
+    +bpmConfigs: BpmConfigResource[]
+  }
+
+  interface MaintenanceResource {
+    +id: number
+    +equipmentId: number
+    +maintenanceDate: string
+    +technicianName: string
+    +description: string
+    +type: string
+    +createdAt?: string
+  }
+
+  interface MaintenancesResponse {
+    +maintenances: MaintenanceResource[]
+  }
+
+  interface RegisterEquipmentRequest {
+    +laboratoryId: number
+    +name: string
+    +type: string
+    +model: string
+    +serialNumber: string
+  }
+
+  interface ConfigureBpmRequest {
+    +equipmentId: number
+    +parameterName: string
+    +minValue: number
+    +maxValue: number
+    +unit: string
+  }
+
+  interface RegisterMaintenanceRequest {
+    +equipmentId: number
+    +maintenanceDate: string
+    +technicianName: string
+    +description: string
+    +type: string
+  }
+}
+
+package "equipment.presentation" {
+  class EquipmentRoutes
+
+  class EquipmentList {
+    -iamStore: IamStore
+    +displayedColumns: string[]
+    +ngOnInit(): void
+    +onRefresh(): void
+  }
+
+  class EquipmentForm {
+    -iamStore: IamStore
+    +equipmentTypes: string[]
+    +form
+    +onSave(): void
+  }
+
+  class EquipmentDetail {
+    +equipmentId
+    +ngOnInit(): void
+    +currentEquipment
+  }
+
+  class BpmConfigForm {
+    +equipmentId
+    +form
+    +ngOnInit(): void
+    +onSave(): void
+  }
+
+  class MaintenanceHistory {
+    +equipmentId
+    +displayedColumns: string[]
+    +ngOnInit(): void
+    +onBack(): void
+  }
+
+  class MaintenanceForm {
+    +equipmentId
+    +maintenanceTypes: string[]
+    +form
+    +ngOnInit(): void
+    +onSave(): void
+  }
+
+  class CalibrationAlert {
+    +store: EquipmentStore
+  }
+}
+
+Equipment ..|> BaseEntity
+BpmParameterConfig ..|> BaseEntity
+MaintenanceRecord ..|> BaseEntity
+
+EquipmentApi --|> BaseApi
+EquipmentApiEndpoint --|> BaseApiEndpoint
+BpmConfigApiEndpoint --|> BaseApiEndpoint
+MaintenanceApiEndpoint --|> BaseApiEndpoint
+
+EquipmentAssembler ..|> BaseAssembler
+BpmConfigAssembler ..|> BaseAssembler
+MaintenanceAssembler ..|> BaseAssembler
+
+EquipmentResource ..|> BaseResource
+EquipmentsResponse ..|> BaseResponse
+BpmConfigResource ..|> BaseResource
+BpmConfigsResponse ..|> BaseResponse
+MaintenanceResource ..|> BaseResource
+MaintenancesResponse ..|> BaseResponse
+
+EquipmentStore --> EquipmentApi
+
+EquipmentStore ..> Equipment
+EquipmentStore ..> BpmParameterConfig
+EquipmentStore ..> MaintenanceRecord
+EquipmentStore ..> RegisterEquipmentCommand
+EquipmentStore ..> ConfigureBpmCommand
+EquipmentStore ..> RegisterMaintenanceCommand
+
+EquipmentApi --> EquipmentApiEndpoint
+EquipmentApi --> BpmConfigApiEndpoint
+EquipmentApi --> MaintenanceApiEndpoint
+
+EquipmentApiEndpoint --> EquipmentAssembler
+BpmConfigApiEndpoint --> BpmConfigAssembler
+MaintenanceApiEndpoint --> MaintenanceAssembler
+
+EquipmentApiEndpoint ..> RegisterEquipmentRequest
+BpmConfigApiEndpoint ..> ConfigureBpmRequest
+MaintenanceApiEndpoint ..> RegisterMaintenanceRequest
+
+EquipmentAssembler ..> Equipment
+EquipmentAssembler ..> EquipmentResource
+BpmConfigAssembler ..> BpmParameterConfig
+BpmConfigAssembler ..> BpmConfigResource
+MaintenanceAssembler ..> MaintenanceRecord
+MaintenanceAssembler ..> MaintenanceResource
+
+EquipmentList --> EquipmentStore
+EquipmentList --> IamStore
+
+EquipmentForm --> EquipmentStore
+EquipmentForm --> IamStore
+
+EquipmentDetail --> EquipmentStore
+BpmConfigForm --> EquipmentStore
+MaintenanceHistory --> EquipmentStore
+MaintenanceForm --> EquipmentStore
+CalibrationAlert --> EquipmentStore
+
+EquipmentRoutes ..> EquipmentList
+EquipmentRoutes ..> EquipmentForm
+EquipmentRoutes ..> EquipmentDetail
+EquipmentRoutes ..> BpmConfigForm
+EquipmentRoutes ..> MaintenanceHistory
+EquipmentRoutes ..> MaintenanceForm
+
+@enduml

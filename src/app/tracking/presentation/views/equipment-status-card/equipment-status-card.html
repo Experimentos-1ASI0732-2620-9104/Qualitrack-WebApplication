@@ -1,0 +1,40 @@
+@if (statusRecord) {
+  <mat-card
+    class="status-card mat-elevation-z1"
+    [ngClass]="'status-bg-' + statusRecord.currentStatus.toLowerCase()"
+  >
+    <mat-card-content class="status-content">
+      <div class="status-icon-wrapper">
+        @if (statusRecord.isOnline) {
+          <mat-icon class="pulse-icon">wifi</mat-icon>
+        } @else {
+          <mat-icon>wifi_off</mat-icon>
+        }
+      </div>
+
+      <div class="status-text">
+        <span class="label">{{ equipmentName || statusRecord.equipmentId }}</span>
+        <h3>{{ 'tracking.status.' + statusRecord.currentStatus.toLowerCase() | translate }}</h3>
+
+        <span class="heartbeat">
+          <mat-icon class="tiny-icon">update</mat-icon>
+          {{ statusRecord.lastHeartbeat | date:'mediumTime' }}
+        </span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="status-card status-bg-offline mat-elevation-z1">
+    <mat-card-content class="status-content">
+      <div class="status-icon-wrapper">
+        <mat-icon>sensors_off</mat-icon>
+      </div>
+
+      <div class="status-text">
+        <span class="label">{{ equipmentName || ('tracking.status.unknown-equipment' | translate) }}</span>
+        <h3>{{ 'tracking.status.offline' | translate }}</h3>
+        <span class="heartbeat">{{ 'tracking.status.waiting-telemetry' | translate }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

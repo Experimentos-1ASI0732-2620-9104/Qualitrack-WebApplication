@@ -1,0 +1,157 @@
+<div class="detail-container">
+  @if (store.isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <header class="detail-header">
+    <button
+      mat-icon-button
+      type="button"
+      routerLink="../../equipment-list"
+      [attr.aria-label]="'common.back' | translate">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    <div class="title-group">
+      <h1>{{ currentEquipment?.name || ('common.status-loading' | translate) }}</h1>
+
+      @if (currentEquipment?.serialNumber) {
+        <span class="serial-badge">SN: {{ currentEquipment?.serialNumber }}</span>
+      }
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <mat-tab-group animationDuration="0ms">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">info</mat-icon>
+        {{ 'equipment-detail.tabs.general' | translate }}
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-content class="info-grid">
+            <div class="info-item">
+              <label>{{ 'equipment-list.fields.type' | translate }}</label>
+              <p>{{ currentEquipment?.type || '-' }}</p>
+            </div>
+
+            <div class="info-item">
+              <label>{{ 'equipment-list.fields.model' | translate }}</label>
+              <p>{{ currentEquipment?.model || '-' }}</p>
+            </div>
+
+            <div class="info-item">
+              <label>{{ 'equipment-list.fields.status' | translate }}</label>
+              <p class="status-text" [ngClass]="currentEquipment?.status?.toLowerCase()">
+                {{ 'equipment-status.' + (currentEquipment?.status?.toLowerCase() || 'unknown') | translate }}
+              </p>
+            </div>
+
+            <div class="info-item">
+              <label>{{ 'equipment-list.fields.serial' | translate }}</label>
+              <p>{{ currentEquipment?.serialNumber || '-' }}</p>
+            </div>
+
+            <div class="info-item">
+              <label>{{ 'equipment-detail.fields.sensor' | translate }}</label>
+              <p>{{ currentEquipment?.sensorExternalId || '-' }}</p>
+            </div>
+
+            <div class="info-item">
+              <label>{{ 'equipment-detail.fields.created-at' | translate }}</label>
+              <p>{{ currentEquipment?.createdAt ? (currentEquipment?.createdAt | date:'mediumDate') : '-' }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">settings_input_component</mat-icon>
+        {{ 'equipment-detail.tabs.bpm' | translate }}
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="tab-header">
+          <h3>{{ 'bpm-config.title' | translate }}</h3>
+
+          <button
+            mat-flat-button
+            color="primary"
+            [routerLink]="['../../bpm-config-form', equipmentId()]"
+            [disabled]="!equipmentId()">
+            <mat-icon>add</mat-icon>
+            {{ 'bpm-config.fields.parameter' | translate }}
+          </button>
+        </div>
+
+        @for (config of store.bpmConfigs(); track config.id) {
+          <mat-card class="config-card" appearance="outlined">
+            <mat-card-content>
+              <div class="config-content">
+                <strong>{{ config.parameterName }}</strong>
+                <span>{{ config.minValue }} - {{ config.maxValue }} {{ config.unit }}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        } @empty {
+          <p class="empty-msg">{{ 'bpm-config.empty' | translate }}</p>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">history</mat-icon>
+        {{ 'equipment-detail.tabs.maintenance' | translate }}
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="tab-header">
+          <h3>{{ 'maintenance-history.title' | translate }}</h3>
+
+          <button
+            mat-flat-button
+            color="accent"
+            [routerLink]="['../../maintenance-form', equipmentId()]"
+            [disabled]="!equipmentId()">
+            <mat-icon>build</mat-icon>
+            {{ 'maintenance-history.add-button' | translate }}
+          </button>
+        </div>
+
+        <div class="maintenance-timeline">
+          @for (record of store.maintenanceHistory(); track record.id) {
+            <div class="timeline-item">
+              <div class="date">{{ record.maintenanceDate | date:'shortDate' }}</div>
+
+              <mat-card appearance="outlined">
+                <mat-card-header>
+                  <mat-card-title>
+                    {{ 'maintenance-history.types.' + record.type.toLowerCase() | translate }}
+                  </mat-card-title>
+                  <mat-card-subtitle>
+                    {{ 'maintenance-history.fields.technician' | translate }}: {{ record.technicianName }}
+                  </mat-card-subtitle>
+                </mat-card-header>
+
+                <mat-card-content>{{ record.description }}</mat-card-content>
+              </mat-card>
+            </div>
+          } @empty {
+            <p class="empty-msg">{{ 'maintenance-history.empty' | translate }}</p>
+          }
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

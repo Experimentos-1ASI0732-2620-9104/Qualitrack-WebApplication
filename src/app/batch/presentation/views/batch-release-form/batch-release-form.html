@@ -1,0 +1,68 @@
+<div class="release-form-container">
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../../batch-list" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <div>
+        <h1>{{ 'batch-release.title' | translate }}</h1>
+        <p>{{ 'batch-release.subtitle' | translate: { batchId: batchId } }}</p>
+      </div>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="form-card mat-elevation-z3">
+    <form [formGroup]="releaseForm" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-release.fields.release-date' | translate }}</mat-label>
+        <input matInput type="date" formControlName="releaseDate">
+
+        @if (releaseForm.get('releaseDate')?.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'batch-release.fields.notes' | translate }}</mat-label>
+        <textarea
+          matInput
+          formControlName="notes"
+          rows="4"
+          [placeholder]="'batch-release.placeholders.notes' | translate">
+        </textarea>
+
+        @if (releaseForm.get('notes')?.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+
+        @if (releaseForm.get('notes')?.hasError('minlength')) {
+          <mat-error>{{ 'batch-release.errors.notes-minlength' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button mat-button type="button" routerLink="../../batch-list">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button
+          mat-raised-button
+          class="release-btn"
+          type="submit"
+          [disabled]="releaseForm.invalid || store.isLoading()">
+          <mat-icon>verified</mat-icon>
+          {{ 'batch-release.actions.submit' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
