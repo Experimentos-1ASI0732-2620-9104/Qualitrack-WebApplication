@@ -1,0 +1,126 @@
+<main class="dashboard">
+  <header class="page-header">
+    <div><p class="eyebrow">{{ 'nav.dashboard' | translate }}</p>
+      <h1>{{ store.laboratory().data?.name || ('dashboard.fallback-title' | translate) }}</h1></div>
+    <button mat-icon-button type="button" (click)="store.reload()" [disabled]="store.isLoading()"
+      [matTooltip]="'dashboard.overview.refresh' | translate" [attr.aria-label]="'dashboard.overview.refresh' | translate">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+  <div class="summary-grid">
+    @for (card of summaryCards(); track card.key) {
+      <a class="summary-item" [class]="card.color + ' summary-item'" [routerLink]="card.route">
+        <mat-icon>{{ card.icon }}</mat-icon>
+        <span class="summary-label">{{ 'dashboard.overview.' + card.key | translate }}</span>
+        <strong>{{ card.state === 'ready' ? card.value : '—' }}</strong>
+        @if (card.state === 'error') { <small>{{ 'dashboard.overview.unavailable' | translate }}</small> }
+        @if (card.state === 'loading') { <small>{{ 'dashboard.overview.loading' | translate }}</small> }
+      </a>
+    }
+  </div>
+  <div class="overview-grid">
+    <section class="telemetry-section" aria-labelledby="telemetry-title" data-testid="telemetry">
+      <header class="section-header"><h2 id="telemetry-title"><mat-icon>sensors</mat-icon>{{ 'dashboard.overview.telemetry' | translate }}</h2>
+        <a mat-icon-button routerLink="/tracking/dashboard" [matTooltip]="'nav.tracking' | translate" [attr.aria-label]="'nav.tracking' | translate"><mat-icon>arrow_forward</mat-icon></a>
+      </header>
+      @if (store.equipment().status === 'loading') { <ng-container *ngTemplateOutlet="loading" /> }
+      @else if (store.equipment().status === 'error') {
+        <ng-container *ngTemplateOutlet="error; context: { retry: reloadAll }" />
+      } @else if (!store.equipment().data?.length) { <p class="empty">{{ 'dashboard.overview.no-equipment' | translate }}</p> }
+      @else {
+        <div class="telemetry-filters">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'dashboard.overview.equipment' | translate }}</mat-label>
+            <mat-select [value]="store.selectedEquipmentId()" (selectionChange)="store.selectEquipment($event.value)">
+              @for (equipment of store.equipment().data; track equipment.id) { <mat-option [value]="equipment.id">{{ equipment.name }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'dashboard.overview.parameter' | translate }}</mat-label>
+            <mat-select [value]="store.activeSeries()?.key" [disabled]="!store.series().length"
+              (selectionChange)="store.selectedSeriesKey.set($event.value)">
+              @for (series of store.series(); track series.key) { <mat-option [value]="series.key">{{ series.parameter }} ({{ series.unit }})</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        @if (store.measurements().status === 'loading') { <ng-container *ngTemplateOutlet="loading" /> }
+        @else if (store.measurements().status === 'error') { <ng-container *ngTemplateOutlet="error; context: { retry: retryTelemetry }" /> }
+        @else if (store.latestReading(); as latest) {
+          <div class="latest-reading"><div><span>{{ 'dashboard.overview.latest' | translate }}</span>
+            <strong>{{ latest.value | number:'1.0-2' }} <small>{{ latest.unit }}</small></strong></div>
+            <time [attr.datetime]="latest.timestamp">{{ formatDate(latest.timestamp) }}</time></div>
+          <div class="chart-wrapper"><canvas baseChart type="line" [data]="chartData()" [options]="chartOptions()"
+            role="img" [attr.aria-label]="('dashboard.overview.telemetry' | translate) + ': ' + store.activeSeries()?.parameter"
+            aria-describedby="telemetry-summary"></canvas></div>
+          <p id="telemetry-summary" class="chart-summary">
+            {{ 'dashboard.overview.reading-summary' | translate:{ count: store.readings().length, min: (store.readingRange()?.min | number:'1.0-2'), max: (store.readingRange()?.max | number:'1.0-2'), unit: latest.unit } }}
+          </p>
+        } @else { <p class="empty">{{ 'dashboard.overview.no-readings' | translate }}</p> }
+      }
+    </section>
+    <section class="subscription-section" aria-labelledby="subscription-title" data-testid="subscription">
+      <header class="section-header"><h2 id="subscription-title"><mat-icon>credit_card</mat-icon>{{ 'dashboard.subscription.title' | translate }}</h2></header>
+      @if (store.subscription().status === 'loading') { <ng-container *ngTemplateOutlet="loading" /> }
+      @else if (store.subscription().status === 'error') { <ng-container *ngTemplateOutlet="error; context: { retry: retrySubscription }" /> }
+      @else if (store.subscription().data; as subscription) {
+        <div class="plan-heading"><h3>{{ store.currentPlan()?.name || subscription.planCode }}</h3>
+          <span class="status ACTIVE">{{ 'dashboard.overview.status.' + subscription.status | translate }}</span></div>
+        <dl class="subscription-details">
+          <div><dt>{{ 'dashboard.overview.cycle' | translate }}</dt><dd>{{ 'subscription.billing-period.' + subscription.billingCycle.toLowerCase() | translate }}</dd></div>
+          @if (subscription.currentPeriodEnd) {
+            <div><dt>{{ 'dashboard.overview.period-end' | translate }}</dt><dd>{{ formatDate(subscription.currentPeriodEnd) }}</dd></div>
+          }
+          @if (store.currentPlan(); as plan) {
+            <div><dt>{{ 'dashboard.overview.catalog-price' | translate }}</dt><dd>{{ plan.priceAmount | currency:plan.currency:'code' }}</dd></div>
+            <div><dt>{{ 'dashboard.overview.equipment-limit' | translate }}</dt><dd>{{ plan.maxEquipment ?? ('subscription.plans.unlimited' | translate) }}</dd></div>
+          }
+        </dl>
+        @if (store.plans().status === 'error') { <p class="muted">{{ 'dashboard.overview.plan-unavailable' | translate }}</p> }
+      } @else { <p class="empty">{{ 'dashboard.cards.no-subscription' | translate }}</p> }
+      <a mat-stroked-button routerLink="/subscriptions/billing-summary"><mat-icon>receipt_long</mat-icon>{{ 'dashboard.overview.manage-billing' | translate }}</a>
+    </section>
+    <section class="alerts-section" aria-labelledby="alerts-title" data-testid="alerts">
+      <header class="section-header"><h2 id="alerts-title"><mat-icon>warning_amber</mat-icon>{{ 'dashboard.overview.attention' | translate }}</h2>
+        <a mat-icon-button routerLink="/alerts/alert-dashboard" [matTooltip]="'nav.alerts' | translate" [attr.aria-label]="'nav.alerts' | translate"><mat-icon>arrow_forward</mat-icon></a></header>
+      @if (store.alerts().status === 'loading') { <ng-container *ngTemplateOutlet="loading" /> }
+      @else if (store.alerts().status === 'error') { <ng-container *ngTemplateOutlet="error; context: { retry: retryAlerts }" /> }
+      @else {
+        @for (alert of store.openAlerts().slice(0, 4); track alert.id) {
+          <a class="record-row" [routerLink]="['/alerts/deviation-detail', alert.id]">
+            <span class="severity-mark" [class.critical]="alert.severity === 'CRITICAL'"></span>
+            <div class="record-main"><strong>{{ store.equipmentName(alert.equipmentId) }}</strong>
+              <span>{{ alert.parameterName }}: {{ alert.recordedValue }} {{ alert.unit }}</span>
+              <small>{{ formatDate(alert.timestamp) }}</small></div>
+            <div class="record-status"><span class="status" [class]="alert.severity + ' status'">{{ 'dashboard.overview.status.' + alert.severity | translate }}</span>
+              <small>{{ 'dashboard.overview.status.' + alert.status | translate }}</small></div>
+          </a>
+        } @empty { <p class="empty">{{ 'dashboard.overview.no-alerts' | translate }}</p> }
+      }
+    </section>
+    <section class="batches-section" aria-labelledby="batches-title">
+      <header class="section-header"><h2 id="batches-title"><mat-icon>inventory_2</mat-icon>{{ 'dashboard.overview.production' | translate }}</h2>
+        <a mat-icon-button routerLink="/batches/batch-list" [matTooltip]="'dashboard.cards.batches' | translate" [attr.aria-label]="'dashboard.cards.batches' | translate"><mat-icon>arrow_forward</mat-icon></a></header>
+      @if (store.batches().status === 'loading') { <ng-container *ngTemplateOutlet="loading" /> }
+      @else if (store.batches().status === 'error') { <ng-container *ngTemplateOutlet="error; context: { retry: reloadAll }" /> }
+      @else if (!store.batches().data?.length) { <p class="empty">{{ 'dashboard.overview.no-batches' | translate }}</p> }
+      @else {
+        <div class="batch-distribution">
+          @for (item of batchDistribution(); track item.status) {
+            <div class="distribution-row"><span>{{ 'dashboard.overview.status.' + item.status | translate }}</span>
+              <meter [class]="item.status" min="0" [max]="store.batches().data?.length || 1" [value]="item.count"
+                [attr.aria-label]="'dashboard.overview.status.' + item.status | translate"></meter><strong>{{ item.count }}</strong></div>
+          }
+        </div>
+        @for (batch of recentBatches(); track batch.id) {
+          <a class="record-row batch-row" [routerLink]="['/batches/batch-detail', batch.id]">
+            <div class="record-main"><strong>{{ batch.batchNumber }}</strong><span>{{ batch.productName }}</span></div>
+            <mat-icon>chevron_right</mat-icon></a>
+        }
+      }
+    </section>
+  </div>
+</main>
+<ng-template #loading><div class="state" role="status"><mat-spinner diameter="24" />{{ 'dashboard.overview.loading' | translate }}</div></ng-template>
+<ng-template #error let-retry="retry"><div class="state error" role="status"><mat-icon>cloud_off</mat-icon>
+  <span>{{ 'dashboard.overview.load-error' | translate }}</span>
+  <button mat-icon-button (click)="retry()" [matTooltip]="'dashboard.overview.refresh' | translate" [attr.aria-label]="'dashboard.overview.refresh' | translate"><mat-icon>refresh</mat-icon></button></div></ng-template>
