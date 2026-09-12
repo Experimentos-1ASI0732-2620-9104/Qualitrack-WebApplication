@@ -1,0 +1,285 @@
+{
+  "laboratories": [
+    {
+      "id": "LAB-001",
+      "name": "QualiTrack Central Lab",
+      "address": "Av. Principal 123, Lima",
+      "phone": "+51 1 555-0100",
+      "regulations": "ISO 17025, BPM"
+    }
+  ],
+  "staff": [
+    {
+      "id": "S-001",
+      "labId": "LAB-001",
+      "fullName": "Billy Ruiz",
+      "role": "QA Manager",
+      "email": "billy@qualitrack.com",
+      "active": true
+    },
+    {
+      "id": "S-002",
+      "labId": "LAB-001",
+      "fullName": "Ana Silva",
+      "role": "Lab Operator",
+      "email": "asilva@qualitrack.com",
+      "active": true
+    }
+  ],
+  "products": [
+    {
+      "id": "P-001",
+      "labId": "LAB-001",
+      "code": "PRD-IBU-400",
+      "name": "Ibuprofen 400mg",
+      "description": "Pain reliever and anti-inflammatory",
+      "specifications": "Ph 6.8 - 7.2, Dissolution > 80%"
+    },
+    {
+      "id": "P-002",
+      "labId": "LAB-001",
+      "code": "PRD-AMO-500",
+      "name": "Amoxicillin 500mg",
+      "description": "Broad-spectrum antibiotic",
+      "specifications": "Humidity < 5%, Purity > 98%"
+    }
+  ],
+  "rawMaterials": [
+    {
+      "id": "RM-001",
+      "labId": "LAB-001",
+      "name": "Active Pharmaceutical Ingredient - IBU",
+      "code": "API-IBU",
+      "supplier": "PharmaCorp Global",
+      "stock": 500,
+      "minStock": 100,
+      "unit": "kg",
+      "expiration": "2027-12-31T00:00:00Z"
+    },
+    {
+      "id": "RM-002",
+      "labId": "LAB-001",
+      "name": "Microcrystalline Cellulose",
+      "code": "EXC-MCC",
+      "supplier": "BioChem Supplies",
+      "stock": 45,
+      "minStock": 50,
+      "unit": "kg",
+      "expiration": "2028-06-15T00:00:00Z"
+    }
+  ],
+  "equipment": [
+    {
+      "id": "EQ-1001",
+      "labId": "LAB-001",
+      "name": "Bioreactor A",
+      "type": "Bioreactor",
+      "model": "BioMax 3000",
+      "serial": "SN-BM3-001",
+      "status": "OPERATIONAL"
+    },
+    {
+      "id": "EQ-1002",
+      "labId": "LAB-001",
+      "name": "Standard Autoclave",
+      "type": "Sterilization",
+      "model": "RX-200",
+      "serial": "SN-987654321",
+      "status": "MAINTENANCE"
+    },
+    {
+      "id": "EQ-1005",
+      "labId": "LAB-001",
+      "name": "Cold Chamber",
+      "type": "Storage",
+      "model": "Frost X",
+      "serial": "SN-FX-005",
+      "status": "OPERATIONAL"
+    }
+  ],
+  "bpmConfigs": [
+    {
+      "id": "BPM-001",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "min": 35.0,
+      "max": 37.5,
+      "unit": "°C"
+    },
+    {
+      "id": "BPM-002",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Agitation Speed",
+      "min": 150.0,
+      "max": 200.0,
+      "unit": "RPM"
+    }
+  ],
+  "maintenance": [
+    {
+      "id": "MNT-001",
+      "equipmentId": "EQ-1001",
+      "type": "CALIBRATION",
+      "date": "2026-04-15T10:00:00Z",
+      "technician": "Billy Ruiz",
+      "description": "Monthly temperature sensor calibration"
+    }
+  ],
+  "batches": [
+    {
+      "id": "B-2026-001",
+      "labId": "LAB-001",
+      "productId": "P-001",
+      "productName": "Ibuprofen 400mg",
+      "batchNumber": "L-2026-05-A",
+      "quantity": 10000,
+      "unit": "units",
+      "status": "IN_PROGRESS",
+      "startDate": "2026-05-08T08:00:00Z",
+      "notes": "Standard production cycle.",
+      "createdAt": "2026-05-08T08:00:00Z"
+    },
+    {
+      "id": "B-2026-002",
+      "labId": "LAB-001",
+      "productId": "P-002",
+      "productName": "Amoxicillin 500mg",
+      "batchNumber": "L-2026-04-Z",
+      "quantity": 5000,
+      "unit": "units",
+      "status": "RELEASED",
+      "startDate": "2026-04-20T09:00:00Z",
+      "endDate": "2026-04-25T17:00:00Z",
+      "notes": "Quality checks passed. Ready for distribution.",
+      "createdAt": "2026-04-20T09:00:00Z"
+    }
+  ],
+  "rawMaterialUsages": [
+    {
+      "id": "RMU-001",
+      "batchId": "B-2026-001",
+      "rawMaterialId": "RM-001",
+      "rawMaterialName": "Active Pharmaceutical Ingredient - IBU",
+      "quantityUsed": 50.5,
+      "unit": "kg",
+      "usageDate": "2026-05-08T10:30:00Z",
+      "createdAt": "2026-05-08T10:30:00Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "ALT-001",
+      "equipmentId": "EQ-1001",
+      "batchId": "B-2026-001",
+      "parameterName": "Temperature",
+      "severity": "CRITICAL",
+      "status": "UNRESOLVED",
+      "recordedValue": 38.2,
+      "threshold": 37.5,
+      "timestamp": "2026-05-10T09:45:00Z"
+    }
+  ],
+  "status": [
+    {
+      "id": "STS-1001",
+      "equipmentId": "EQ-1001",
+      "isOnline": true,
+      "currentStatus": "WARNING",
+      "lastHeartbeat": "2026-05-10T11:00:00Z",
+      "createdAt": "2026-05-10T11:00:00Z"
+    },
+    {
+      "id": "STS-1005",
+      "equipmentId": "EQ-1005",
+      "isOnline": true,
+      "currentStatus": "OPERATIONAL",
+      "lastHeartbeat": "2026-05-10T11:00:00Z",
+      "createdAt": "2026-05-10T11:00:00Z"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "TM-001",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Chamber Temperature",
+      "value": 37.8,
+      "unit": "°C",
+      "timestamp": "2026-05-10T11:00:00Z",
+      "createdAt": "2026-05-10T11:00:00Z"
+    },
+    {
+      "id": "TM-002",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Agitation",
+      "value": 180,
+      "unit": "RPM",
+      "timestamp": "2026-05-10T11:00:00Z",
+      "createdAt": "2026-05-10T11:00:00Z"
+    }
+  ],
+  "history": [
+    {
+      "id": "H-1",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 36.5,
+      "timestamp": "2026-05-10T08:00:00Z",
+      "isAnomaly": false,
+      "createdAt": "2026-05-10T08:00:00Z"
+    },
+    {
+      "id": "H-2",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 36.8,
+      "timestamp": "2026-05-10T08:30:00Z",
+      "isAnomaly": false,
+      "createdAt": "2026-05-10T08:30:00Z"
+    },
+    {
+      "id": "H-3",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 37.2,
+      "timestamp": "2026-05-10T09:00:00Z",
+      "isAnomaly": false,
+      "createdAt": "2026-05-10T09:00:00Z"
+    },
+    {
+      "id": "H-4",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 38.2,
+      "timestamp": "2026-05-10T09:30:00Z",
+      "isAnomaly": true,
+      "createdAt": "2026-05-10T09:30:00Z"
+    },
+    {
+      "id": "H-5",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 38.5,
+      "timestamp": "2026-05-10T10:00:00Z",
+      "isAnomaly": true,
+      "createdAt": "2026-05-10T10:00:00Z"
+    },
+    {
+      "id": "H-6",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 37.8,
+      "timestamp": "2026-05-10T10:30:00Z",
+      "isAnomaly": true,
+      "createdAt": "2026-05-10T10:30:00Z"
+    },
+    {
+      "id": "H-7",
+      "equipmentId": "EQ-1001",
+      "parameterName": "Temperature",
+      "recordedValue": 37.4,
+      "timestamp": "2026-05-10T11:00:00Z",
+      "isAnomaly": false,
+      "createdAt": "2026-05-10T11:00:00Z"
+    }
+  ]
+}
