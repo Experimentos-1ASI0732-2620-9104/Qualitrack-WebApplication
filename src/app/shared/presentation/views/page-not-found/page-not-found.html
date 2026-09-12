@@ -1,0 +1,65 @@
+<div class="not-found-page">
+  <app-toolbar />
+
+  <main class="not-found-content">
+    <section class="not-found-card">
+      <div class="status-mark">
+        <span>404</span>
+      </div>
+
+      <div class="message-area">
+        <span class="eyebrow">{{ 'page-not-found.eyebrow' | translate }}</span>
+
+        <h1>{{ 'page-not-found.title' | translate }}</h1>
+
+        <p>
+          {{ 'page-not-found.content' | translate }}
+        </p>
+
+        <div class="path-box">
+          <mat-icon aria-hidden="true">link_off</mat-icon>
+          <span>{{ invalidPath }}</span>
+        </div>
+
+        <div class="actions">
+          @if (iamStore.isSignedIn()) {
+            <a mat-flat-button class="primary-action" routerLink="/dashboard">
+              <mat-icon>dashboard</mat-icon>
+              {{ 'page-not-found.go-dashboard' | translate }}
+            </a>
+          } @else {
+            <a mat-flat-button class="primary-action" routerLink="/home">
+              <mat-icon>home</mat-icon>
+              {{ 'page-not-found.go-home' | translate }}
+            </a>
+          }
+
+          <button mat-stroked-button type="button" class="secondary-action" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon>
+            {{ 'page-not-found.go-back' | translate }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="help-grid">
+      <article>
+        <mat-icon aria-hidden="true">science</mat-icon>
+        <h2>{{ 'page-not-found.help.laboratory.title' | translate }}</h2>
+        <p>{{ 'page-not-found.help.laboratory.description' | translate }}</p>
+      </article>
+
+      <article>
+        <mat-icon aria-hidden="true">sensors</mat-icon>
+        <h2>{{ 'page-not-found.help.tracking.title' | translate }}</h2>
+        <p>{{ 'page-not-found.help.tracking.description' | translate }}</p>
+      </article>
+
+      <article>
+        <mat-icon aria-hidden="true">receipt_long</mat-icon>
+        <h2>{{ 'page-not-found.help.reports.title' | translate }}</h2>
+        <p>{{ 'page-not-found.help.reports.description' | translate }}</p>
+      </article>
+    </section>
+  </main>
+</div>

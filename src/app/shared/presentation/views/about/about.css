@@ -1,0 +1,337 @@
+.about-page {
+  min-height: 100vh;
+  background: #f4f6f9;
+  color: #1a3a5c;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 64px;
+}
+
+.hero-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 32px;
+  align-items: stretch;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 440px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 12px;
+  color: #00796f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.hero-copy h1,
+.section-heading h2,
+.workflow-copy h2,
+.trust-section h2 {
+  margin: 0;
+  color: #12385c;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.hero-copy h1 {
+  max-width: 760px;
+  font-size: clamp(2.4rem, 5vw, 4.7rem);
+  line-height: 1.04;
+}
+
+.hero-description {
+  max-width: 720px;
+  margin: 22px 0 0;
+  color: #3f5064;
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.primary-link,
+.secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.primary-link {
+  background: #00796f;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 121, 111, 0.22);
+}
+
+.secondary-link {
+  border: 1px solid #9badb8;
+  color: #12385c;
+  background: #ffffff;
+}
+
+.primary-link:hover,
+.secondary-link:hover {
+  transform: translateY(-1px);
+}
+
+.primary-link.compact {
+  flex: 0 0 auto;
+}
+
+.hero-panel,
+.value-card,
+.workflow-section,
+.trust-section {
+  border: 1px solid #dce5ea;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(26, 58, 92, 0.08);
+}
+
+.hero-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px;
+}
+
+.brand-mark {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-stat strong {
+  color: #12385c;
+  font-size: 1.45rem;
+}
+
+.panel-stat span,
+.panel-grid span,
+.value-card p,
+.section-heading p,
+.workflow-copy p,
+.workflow-item p,
+.trust-section p {
+  color: #526273;
+  line-height: 1.6;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.panel-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 92px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f4f8f9;
+}
+
+.panel-grid strong {
+  color: #00796f;
+  font-size: 1.05rem;
+}
+
+.section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-heading {
+  max-width: 760px;
+}
+
+.section-heading h2,
+.workflow-copy h2,
+.trust-section h2 {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.12;
+}
+
+.section-heading p {
+  margin: 14px 0 0;
+  font-size: 1rem;
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.value-card {
+  padding: 24px;
+}
+
+.value-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: #e9f5f3;
+  color: #00796f;
+  font-size: 28px;
+}
+
+.value-card h3 {
+  margin: 0 0 10px;
+  color: #12385c;
+  font-size: 1.08rem;
+}
+
+.value-card p {
+  margin: 0;
+}
+
+.workflow-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 28px;
+  padding: 32px;
+}
+
+.workflow-copy p {
+  margin: 16px 0 0;
+}
+
+.workflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workflow-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f6f9fb;
+}
+
+.workflow-item span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #12385c;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.workflow-item p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.trust-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 32px;
+}
+
+.trust-section p {
+  max-width: 760px;
+  margin: 14px 0 0;
+}
+
+@media (max-width: 920px) {
+  .hero-section,
+  .workflow-section {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy {
+    min-height: auto;
+  }
+
+  .value-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-section {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .about-content {
+    width: min(100% - 24px, 1120px);
+    gap: 36px;
+    padding: 24px 0 48px;
+  }
+
+  .hero-copy h1 {
+    font-size: 2.35rem;
+  }
+
+  .hero-panel,
+  .workflow-section,
+  .trust-section,
+  .value-card {
+    padding: 22px;
+  }
+
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .primary-link,
+  .secondary-link {
+    width: 100%;
+  }
+}
