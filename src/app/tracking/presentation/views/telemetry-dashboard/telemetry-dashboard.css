@@ -1,0 +1,293 @@
+.dashboard-container {
+  padding: 24px;
+  position: relative;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-icon {
+  color: #1a3a5c;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.title-group h2 {
+  margin: 0;
+  font-weight: 700;
+  color: #1a3a5c;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.equipment-select {
+  width: 250px;
+  margin-bottom: -1.25em;
+}
+
+.loading-shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.72);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 100px;
+  border-radius: 8px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.status-card {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.status-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  color: #5f6368;
+}
+
+.status-icon-wrapper mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.status-text {
+  min-width: 0;
+}
+
+.status-text .label {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #5f6368;
+  margin-bottom: 4px;
+}
+
+.status-text h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.status-bg-operational {
+  background-color: #e6f4ea;
+  color: #1e7e34;
+}
+
+.status-bg-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.status-bg-critical {
+  background-color: #fce8e6;
+  color: #d32f2f;
+}
+
+.status-bg-offline {
+  background-color: #f1f3f4;
+  color: #5f6368;
+}
+
+.alert-border {
+  border: 2px solid #d32f2f;
+}
+
+.text-danger {
+  color: #d32f2f;
+  background: #fce8e6 !important;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 32px;
+  border: 1px solid #e0e0e0;
+}
+
+.canvas-wrapper {
+  position: relative;
+  height: 400px;
+  width: 100%;
+}
+
+.measurements-header h3 {
+  color: #1a3a5c;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.measurements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metric-name {
+  display: block;
+  color: #5f6368;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.metric-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.metric-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a3a5c;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.metric-unit {
+  font-size: 1rem;
+  color: #5f6368;
+  font-weight: 600;
+}
+
+.metric-time {
+  display: block;
+  font-size: 0.75rem;
+  color: #7f8c8d;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  color: #5f6368;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pulse-icon {
+  animation: pulse 2s infinite;
+  color: #1e7e34;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .section-header {
+    align-items: stretch;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .equipment-select {
+    width: 100%;
+  }
+
+  .canvas-wrapper {
+    height: 320px;
+  }
+
+  .metric-value {
+    font-size: 1.9rem;
+  }
+}

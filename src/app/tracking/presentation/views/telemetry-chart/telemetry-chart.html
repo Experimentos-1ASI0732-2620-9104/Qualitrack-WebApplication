@@ -1,0 +1,113 @@
+<div class="chart-view-container">
+
+  @if (store.isLoading() || equipmentStore.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  <div class="section-header">
+    <div class="title-group">
+      <mat-icon class="title-icon">analytics</mat-icon>
+      <h2>{{ 'tracking.analysis.title' | translate }}</h2>
+    </div>
+  </div>
+
+  <mat-card class="filter-card mat-elevation-z1">
+    <mat-card-content class="filter-content">
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ 'tracking.dashboard.select-equipment' | translate }}</mat-label>
+        <mat-select [(ngModel)]="filters.equipmentId">
+          @for (eq of equipmentStore.equipmentList(); track eq.id) {
+            <mat-option [value]="eq.id">{{ eq.name }} ({{ eq.id }})</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>precision_manufacturing</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field date-field">
+        <mat-label>{{ 'common.date-range' | translate }}</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate [(ngModel)]="filters.dateFrom" placeholder="Start">
+          <input matEndDate [(ngModel)]="filters.dateTo" placeholder="End">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="clearFilters()"
+          [disabled]="store.isLoading() || !filters.equipmentId"
+        >
+          {{ 'common.clear' | translate }}
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="loadChartData()"
+          [disabled]="store.isLoading() || !filters.equipmentId"
+        >
+          <mat-icon>search</mat-icon>
+          {{ 'tracking.analysis.analyze-btn' | translate }}
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+  @if (store.error()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      {{ store.error() | translate }}
+    </div>
+  }
+
+  <mat-card class="main-chart-card mat-elevation-z2">
+    <mat-card-header>
+      <mat-card-title>{{ 'tracking.analysis.chart-title' | translate }}</mat-card-title>
+      <mat-card-subtitle>
+        {{ 'tracking.analysis.displaying' | translate }}
+        {{ store.selectedHistory().length }}
+        {{ 'tracking.analysis.points-for' | translate }}
+        {{ filters.equipmentId }}
+        @if (filters.dateFrom && filters.dateTo) {
+          ({{ filters.dateFrom | date:'shortDate' }} - {{ filters.dateTo | date:'shortDate' }})
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.telemetryHistory().length > 0) {
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>{{ 'tracking.history.parameter' | translate }}</mat-label>
+          <mat-select [ngModel]="store.activeHistoryParameter()" (ngModelChange)="store.historyParameter.set($event)">
+            @for (parameter of store.historyParameters(); track parameter) {
+              <mat-option [value]="parameter">{{ parameter }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <div class="large-canvas-wrapper">
+          <canvas
+            baseChart
+            [data]="chartData()"
+            [options]="chartOptions"
+            [type]="'line'"
+          >
+          </canvas>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>insights</mat-icon>
+          <p>{{ 'tracking.dashboard.empty-chart' | translate }}</p>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+</div>

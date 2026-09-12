@@ -1,0 +1,134 @@
+<div class="history-container">
+
+  @if (store.isLoading() || equipmentStore.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  <div class="section-header">
+    <div class="title-group">
+      <mat-icon class="title-icon">format_list_numbered</mat-icon>
+      <h2>{{ 'tracking.history.title' | translate }}</h2>
+    </div>
+  </div>
+
+  <mat-card class="filter-card mat-elevation-z1">
+    <mat-card-content class="filter-content">
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ 'tracking.dashboard.select-equipment' | translate }}</mat-label>
+        <mat-select [(ngModel)]="filters.equipmentId">
+          @for (eq of equipmentStore.equipmentList(); track eq.id) {
+            <mat-option [value]="eq.id">{{ eq.name }} ({{ eq.id }})</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>precision_manufacturing</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field date-field">
+        <mat-label>{{ 'common.date-range' | translate }}</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate [(ngModel)]="filters.dateFrom" placeholder="Start">
+          <input matEndDate [(ngModel)]="filters.dateTo" placeholder="End">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="clearFilters()"
+          [disabled]="store.isLoading() || !filters.equipmentId"
+        >
+          {{ 'common.clear' | translate }}
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="loadHistoryData()"
+          [disabled]="store.isLoading() || !filters.equipmentId"
+        >
+          <mat-icon>search</mat-icon>
+          {{ 'common.search' | translate }}
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+  @if (store.error()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      {{ store.error() | translate }}
+    </div>
+  }
+
+  <div class="table-card mat-elevation-z2">
+    <table mat-table [dataSource]="store.telemetryHistory()" class="full-width-table">
+
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef>{{ 'tracking.history.timestamp' | translate }}</th>
+        <td mat-cell *matCellDef="let point" class="date-cell">
+          <div class="date-time-wrapper">
+            <strong>{{ point.timestamp | date:'shortDate' }}</strong>
+            <span>{{ point.timestamp | date:'mediumTime' }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="parameterName">
+        <th mat-header-cell *matHeaderCellDef>{{ 'tracking.history.parameter' | translate }}</th>
+        <td mat-cell *matCellDef="let point" class="param-cell">
+          {{ point.parameterName }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="recordedValue">
+        <th mat-header-cell *matHeaderCellDef>{{ 'tracking.history.value' | translate }}</th>
+        <td mat-cell *matCellDef="let point">
+          <span class="value-text" [class.text-danger]="point.isAnomaly">
+            {{ point.recordedValue }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'common.status' | translate }}</th>
+        <td mat-cell *matCellDef="let point">
+          @if (point.isAnomaly) {
+            <span class="status-indicator deviated">
+              <mat-icon class="small-icon">warning</mat-icon>
+              {{ 'tracking.history.status.deviated' | translate }}
+            </span>
+          } @else {
+            <span class="status-indicator normal">
+              <mat-icon class="small-icon">check_circle</mat-icon>
+              {{ 'tracking.history.status.normal' | translate }}
+            </span>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns;"
+        class="catalog-row"
+        [class.row-deviated]="row.isAnomaly"
+      ></tr>
+    </table>
+
+    @if (!store.isLoading() && store.telemetryHistory().length === 0) {
+      <div class="empty-state">
+        <mat-icon>dataset</mat-icon>
+        <p>{{ 'tracking.history.empty' | translate }}</p>
+      </div>
+    }
+  </div>
+
+</div>

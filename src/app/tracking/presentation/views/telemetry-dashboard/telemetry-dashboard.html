@@ -1,0 +1,153 @@
+<div class="dashboard-container">
+
+  @if (store.isLoading() || equipmentStore.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  <div class="section-header">
+    <div class="title-group">
+      <mat-icon class="title-icon">cast_connected</mat-icon>
+      <h2>{{ 'tracking.dashboard.title' | translate }}</h2>
+    </div>
+
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="equipment-select">
+        <mat-label>{{ 'tracking.dashboard.select-equipment' | translate }}</mat-label>
+        <mat-select
+          [ngModel]="selectedEquipmentId()"
+          (ngModelChange)="selectedEquipmentId.set($event); onEquipmentChange()"
+        >
+          @for (eq of equipmentStore.equipmentList(); track eq.id) {
+            <mat-option [value]="eq.id">{{ eq.name }} ({{ eq.id }})</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>precision_manufacturing</mat-icon>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="onEquipmentChange()"
+        [disabled]="store.isLoading() || !selectedEquipmentId()"
+      >
+        <mat-icon>refresh</mat-icon>
+        {{ 'common.refresh' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      {{ store.error() | translate }}
+    </div>
+  }
+
+  @if (!store.isLoading() && !store.error() && selectedEquipmentId()) {
+  <div class="status-grid">
+    @if (store.currentEquipmentStatus()) {
+    <mat-card
+      class="status-card"
+      [ngClass]="'status-bg-' + store.equipmentTelemetryStatus().toLowerCase()"
+    >
+      <mat-card-content class="status-content">
+        <div class="status-icon-wrapper">
+          @if (store.isEquipmentOnline()) {
+            <mat-icon class="pulse-icon">wifi</mat-icon>
+          } @else {
+            <mat-icon>wifi_off</mat-icon>
+          }
+        </div>
+
+        <div class="status-text">
+          <span class="label">{{ 'tracking.dashboard.connection-status' | translate }}</span>
+          <h3>{{ 'tracking.status.' + store.equipmentTelemetryStatus().toLowerCase() | translate }}</h3>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    } @else {
+      <p>{{ 'onboarding.no-status' | translate }}</p>
+    }
+    <mat-card class="status-card" [class.alert-border]="store.anomaliesHistory().length > 0">
+      <mat-card-content class="status-content">
+        <div class="status-icon-wrapper" [class.text-danger]="store.anomaliesHistory().length > 0">
+          <mat-icon>warning_amber</mat-icon>
+        </div>
+
+        <div class="status-text">
+          <span class="label">{{ 'tracking.dashboard.anomalies' | translate }}</span>
+          <h3>{{ store.anomaliesHistory().length }} {{ 'tracking.dashboard.events' | translate }}</h3>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  }
+
+  <mat-card class="chart-card mat-elevation-z2">
+    <mat-card-header>
+      <mat-card-title>{{ 'tracking.dashboard.live-stream' | translate }}</mat-card-title>
+      <mat-card-subtitle>
+        {{ 'tracking.dashboard.stream-desc' | translate }} {{ selectedEquipmentId() }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.telemetryHistory().length > 0) {
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>{{ 'tracking.history.parameter' | translate }}</mat-label>
+          <mat-select [ngModel]="store.activeHistoryParameter()" (ngModelChange)="store.historyParameter.set($event)">
+            @for (parameter of store.historyParameters(); track parameter) {
+              <mat-option [value]="parameter">{{ parameter }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <div class="canvas-wrapper">
+          <canvas
+            baseChart
+            [data]="chartData()"
+            [options]="chartOptions"
+            [type]="'line'"
+          >
+          </canvas>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>show_chart</mat-icon>
+          <p>{{ 'tracking.dashboard.empty-chart' | translate }}</p>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <div class="measurements-header">
+    <h3>{{ 'tracking.dashboard.current-readings' | translate }}</h3>
+  </div>
+
+  <div class="measurements-grid">
+    @for (measure of store.measurements(); track measure.id) {
+      <mat-card class="metric-card mat-elevation-z1">
+        <mat-card-content>
+          <span class="metric-name">{{ measure.parameterName }}</span>
+
+          <div class="metric-value-container">
+            <span class="metric-value">{{ measure.value }}</span>
+            <span class="metric-unit">{{ measure.unit }}</span>
+          </div>
+
+          <span class="metric-time">
+            {{ 'tracking.dashboard.updated' | translate }}:
+            {{ measure.timestamp | date:'mediumTime' }}
+          </span>
+        </mat-card-content>
+      </mat-card>
+    } @empty {
+      <div class="empty-state">
+        <mat-icon>sensors_off</mat-icon>
+        <p>{{ 'tracking.dashboard.empty-sensors' | translate }}</p>
+      </div>
+    }
+  </div>
+
+</div>
