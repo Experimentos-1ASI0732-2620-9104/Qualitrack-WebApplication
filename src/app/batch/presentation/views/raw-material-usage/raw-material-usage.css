@@ -1,0 +1,95 @@
+.usage-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Form card */
+.add-material-card {
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.usage-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+.form-inputs {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-inputs mat-form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+:host ::ng-deep .form-inputs .mat-mdc-form-field-subscript-wrapper { min-height: 44px; }
+a { color: #066d91; text-underline-offset: 3px; }
+mat-card-title { font-size: 20px; line-height: 1.4; }
+mat-error { color: #b3261e; line-height: 1.35; }
+
+/* Feedback */
+.error-container {
+  background-color: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  color: #9b1c1c;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-container p {
+  margin: 0;
+}
+
+/* Table */
+.table-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+.table-wrapper {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+}
+
+.mat-column-material {
+  font-weight: 500;
+}
+
+.mat-column-quantity {
+  color: #34495e;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 1rem;
+  color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+  .form-inputs {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .usage-form button {
+    width: 100%;
+  }
+}

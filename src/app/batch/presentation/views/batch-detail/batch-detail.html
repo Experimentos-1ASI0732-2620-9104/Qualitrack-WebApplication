@@ -1,0 +1,74 @@
+<div class="batch-detail-container">
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  <header class="page-header">
+    <div class="header-content">
+      <button mat-icon-button routerLink="../batch-list" color="primary">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <h1>
+        {{ 'batch-detail.title' | translate }}:
+        {{ currentBatch?.batchNumber || ('common.status-loading' | translate) }}
+      </h1>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error()! | translate }}</p>
+    </div>
+  }
+
+  <mat-tab-group dynamicHeight>
+    <mat-tab [label]="'batch-detail.tabs.general' | translate">
+      <div class="tab-content">
+        <mat-card class="info-card mat-elevation-z2">
+          <mat-card-header>
+            <mat-card-title>{{ 'batches.fields.product' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ currentBatch?.productName }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">{{ 'common.status' | translate }}</span>
+                <span class="value status-text" [ngClass]="getStatusClass(currentBatch?.status)">
+                  {{ 'batches.status.' + getStatusKey(currentBatch?.status) | translate }}
+                </span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">{{ 'batches.fields.quantity' | translate }}</span>
+                <span class="value">{{ currentBatch?.quantity }} {{ currentBatch?.unit }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">{{ 'batches.fields.date' | translate }}</span>
+                <span class="value">{{ currentBatch?.startDate | date:'mediumDate' }}</span>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="notes-section">
+              <h3>{{ 'batch-detail.notes' | translate }}</h3>
+              <p>{{ currentBatch?.notes || ('batch-detail.no-notes' | translate) }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab [label]="'batch-detail.tabs.materials' | translate">
+      <div class="tab-content">
+        <app-raw-material-usage [batchId]="batchId"></app-raw-material-usage>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
