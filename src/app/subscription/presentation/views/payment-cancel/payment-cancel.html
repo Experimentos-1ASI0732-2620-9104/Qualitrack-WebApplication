@@ -1,0 +1,23 @@
+<div class="payment-result-container">
+  <mat-card class="result-card cancel mat-elevation-z2">
+    <mat-card-content>
+      <div class="icon-wrapper">
+        <mat-icon>cancel</mat-icon>
+      </div>
+
+      <h1>{{ 'subscription.payment-cancel.title' | translate }}</h1>
+      <p>{{ 'subscription.payment-cancel.subtitle' | translate }}</p>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" routerLink="/subscriptions/plans">
+          <mat-icon>workspace_premium</mat-icon>
+          {{ 'subscription.payment-cancel.choose-plan' | translate }}
+        </button>
+
+        <button mat-button routerLink="/dashboard">
+          {{ 'subscription.payment-cancel.go-dashboard' | translate }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

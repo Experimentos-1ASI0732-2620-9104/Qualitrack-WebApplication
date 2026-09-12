@@ -1,0 +1,84 @@
+<div class="checkout-container">
+  <header class="page-header">
+    <button mat-icon-button routerLink="../plans" color="primary">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    <div>
+      <h1>{{ 'subscription.checkout.title' | translate }}</h1>
+      <p>{{ 'subscription.checkout.subtitle' | translate }}</p>
+    </div>
+  </header>
+
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <mat-card class="checkout-card mat-elevation-z2">
+    <mat-card-header>
+      <mat-card-title>
+        {{ store.selectedPlan()?.name || ('subscription.checkout.no-plan' | translate) }}
+      </mat-card-title>
+      <mat-card-subtitle>
+        {{ store.selectedPlan()?.description }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.selectedPlan()) {
+        <div class="summary-row">
+          <span>{{ 'subscription.checkout.plan' | translate }}</span>
+          <strong>{{ store.selectedPlan()?.name }}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>{{ 'subscription.checkout.billing' | translate }}</span>
+          <strong>
+            {{ 'subscription.billing-period.' + store.selectedPlan()?.billingPeriod?.toLowerCase() | translate }}
+          </strong>
+        </div>
+
+        <div class="summary-row total">
+          <span>{{ 'subscription.checkout.total' | translate }}</span>
+          <strong>
+            {{ store.selectedPlan()?.currency }} {{ store.selectedPlan()?.priceAmount }}
+          </strong>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>inventory_2</mat-icon>
+          <p>{{ 'subscription.checkout.no-plan-message' | translate }}</p>
+        </div>
+      }
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button routerLink="../plans">
+        {{ 'common.cancel' | translate }}
+      </button>
+
+      <button
+        mat-raised-button
+        color="primary"
+        [disabled]="
+    !store.selectedPlan() ||
+    !store.selectedBillingCycle() ||
+    store.isLoading() ||
+    !iamStore.currentUserId()
+  "
+        (click)="onCheckout()">
+        <mat-icon>payment</mat-icon>
+        {{ 'subscription.checkout.pay' | translate }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

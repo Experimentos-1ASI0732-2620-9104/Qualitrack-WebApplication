@@ -1,0 +1,21 @@
+<main class="payment-result-container">
+  <section class="result-card" aria-live="polite">
+    @if (status() === 'loading') {
+      <mat-spinner diameter="40" [attr.aria-label]="'onboarding.verifying-payment' | translate" />
+    } @else if (status() === 'confirmed') {
+      <mat-icon class="status-icon">check_circle</mat-icon>
+    } @else {
+      <mat-icon class="status-icon">hourglass_top</mat-icon>
+    }
+    <h1>{{ (status() === 'confirmed' ? 'onboarding.payment-confirmed' : 'onboarding.verifying-payment') | translate }}</h1>
+    <p [attr.role]="status() === 'error' ? 'alert' : null">
+      {{ (status() === 'error' ? 'onboarding.connection-error' : 'onboarding.payment-pending') | translate }}
+    </p>
+    <div class="actions">
+      <button mat-flat-button (click)="verify()" [disabled]="status() === 'loading'">
+        <mat-icon>refresh</mat-icon>{{ 'onboarding.retry' | translate }}
+      </button>
+      <a mat-button routerLink="/subscriptions/plans">{{ 'subscription.plans.title' | translate }}</a>
+    </div>
+  </section>
+</main>
