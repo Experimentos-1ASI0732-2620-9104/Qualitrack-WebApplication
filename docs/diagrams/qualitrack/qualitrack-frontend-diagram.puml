@@ -1,0 +1,427 @@
+@startuml qualitrack-frontend-diagram
+title QualiTrack - Frontend Complete Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "qualitrack-frontend" {
+
+  class AppConfig <<ApplicationConfig>> {
+    +provideRouter(routes)
+    +provideHttpClient(authenticationInterceptor)
+    +provideTranslateService()
+    +provideCharts()
+  }
+
+  class AppRoutes <<Routes>> {
+    +home
+    +about
+    +dashboard
+    +iam
+    +laboratories
+    +equipments
+    +batches
+    +alerts
+    +reports
+    +tracking
+    +subscriptions
+    +pageNotFound
+  }
+
+  package "shared" {
+    package "domain" {
+      interface BaseEntity
+    }
+
+    package "infrastructure" {
+      interface BaseResource
+      interface BaseResponse
+      interface BaseAssembler
+      interface MessageResource
+      abstract class BaseApi
+      abstract class BaseApiEndpoint
+      abstract class ErrorHandlingEnabledBaseType
+    }
+
+    package "presentation.components" {
+      class Layout
+      class Toolbar
+      class LanguageSwitcher
+    }
+
+    package "presentation.views" {
+      class Home
+      class About
+      class Dashboard
+      class PageNotFound
+    }
+  }
+
+  package "iam" {
+    package "domain" {
+      class User
+      interface SignInCommand
+      interface SignUpCommand
+      interface RecoverPasswordCommand
+    }
+
+    package "application" {
+      class IamStore
+    }
+
+    package "infrastructure" {
+      class IamApi
+      class SignInApiEndpoint
+      class SignUpApiEndpoint
+      class RecoverPasswordApiEndpoint
+      class SignInAssembler
+      class SignUpAssembler
+      class RecoverPasswordAssembler
+      class authenticationInterceptor <<HttpInterceptorFn>>
+    }
+
+    package "presentation" {
+      class IamRoutes <<Routes>>
+      class SignInForm
+      class SignUpForm
+      class AuthenticationSection
+    }
+  }
+
+  package "laboratory" {
+    package "domain" {
+      class Laboratory
+      class StaffMember
+      class PharmaceuticalProduct
+      class RawMaterial
+    }
+
+    package "application" {
+      class LaboratoryStore
+    }
+
+    package "infrastructure" {
+      class LaboratoryApi
+      class LaboratoryApiEndpoint
+      class StaffApiEndpoint
+      class ProductApiEndpoint
+      class RawMaterialApiEndpoint
+      class LaboratoryAssembler
+      class StaffAssembler
+      class ProductAssembler
+      class RawMaterialAssembler
+    }
+
+    package "presentation" {
+      class LaboratoryRoutes <<Routes>>
+      class LabProfile
+      class LaboratoryForm
+      class StaffList
+      class StaffForm
+      class ProductCatalog
+      class ProductForm
+      class RawMaterialList
+      class RawMaterialForm
+    }
+  }
+
+  package "equipment" {
+    package "domain" {
+      class Equipment
+      class BpmParameterConfig
+      class MaintenanceRecord
+    }
+
+    package "application" {
+      class EquipmentStore
+    }
+
+    package "infrastructure" {
+      class EquipmentApi
+      class EquipmentApiEndpoint
+      class BpmConfigApiEndpoint
+      class MaintenanceApiEndpoint
+      class EquipmentAssembler
+      class BpmConfigAssembler
+      class MaintenanceAssembler
+    }
+
+    package "presentation" {
+      class EquipmentRoutes <<Routes>>
+      class EquipmentList
+      class RegisterEquipment
+      class EquipmentDetail
+      class BpmConfigForm
+      class MaintenanceHistory
+    }
+  }
+
+  package "batch" {
+    package "domain" {
+      class Batch
+      class RawMaterialUsage
+      interface CreateBatchCommand
+      interface ReleaseBatchCommand
+      interface RejectBatchCommand
+      interface LinkRawMaterialCommand
+    }
+
+    package "application" {
+      class BatchStore
+    }
+
+    package "infrastructure" {
+      class BatchApi
+      class BatchApiEndpoint
+      class RawMaterialUsageApiEndpoint
+      class BatchAssembler
+      class RawMaterialUsageAssembler
+    }
+
+    package "presentation" {
+      class BatchRoutes <<Routes>>
+      class BatchList
+      class BatchForm
+      class BatchDetail
+      class BatchReleaseForm
+      class BatchRejectForm
+      class RawMaterialUsageComponent
+    }
+  }
+
+  package "ca" {
+    package "domain" {
+      class DeviationAlert
+      class ComplianceEvent
+      class NotificationPreference
+    }
+
+    package "application" {
+      class CaStore
+    }
+
+    package "infrastructure" {
+      class CaApi
+      class AlertApiEndpoint
+      class ComplianceEventApiEndpoint
+      class NotificationPreferenceApiEndpoint
+      class AlertAssembler
+      class ComplianceEventAssembler
+      class NotificationPreferenceAssembler
+    }
+
+    package "presentation" {
+      class CaRoutes <<Routes>>
+      class AlertDashboard
+      class AlertHistory
+      class NotificationSettings
+    }
+  }
+
+  package "ra" {
+    package "domain" {
+      class KpiDashboard
+      class KpiMetric
+      class DeviationTrend
+      class AuditLogEntry
+      class AuditReport
+    }
+
+    package "application" {
+      class RaStore
+    }
+
+    package "infrastructure" {
+      class RaApi
+      class KpiApiEndpoint
+      class DeviationTrendApiEndpoint
+      class ReportApiEndpoint
+      class AuditLogApiEndpoint
+      class KpiDashboardAssembler
+      class DeviationTrendAssembler
+      class AuditLogAssembler
+    }
+
+    package "presentation" {
+      class RaRoutes <<Routes>>
+      class KpiDashboardComponent
+      class DeviationTrendChartComponent
+      class ReportGenerator
+      class AuditLog
+    }
+  }
+
+  package "tracking" {
+    package "domain" {
+      class Measurement
+      class EquipmentStatus
+      class TelemetryHistoryPoint
+    }
+
+    package "application" {
+      class TrackingStore
+    }
+
+    package "infrastructure" {
+      class TrackingApi
+      class MeasurementApiEndpoint
+      class EquipmentStatusApiEndpoint
+      class TelemetryHistoryApiEndpoint
+      class MeasurementAssembler
+      class EquipmentStatusAssembler
+      class TelemetryHistoryAssembler
+    }
+
+    package "presentation" {
+      class TrackingRoutes <<Routes>>
+      class TelemetryDashboardComponent
+      class TelemetryChartComponent
+      class TelemetryHistoryComponent
+      class EquipmentStatusCardComponent
+    }
+  }
+
+  package "subscription" {
+    package "domain" {
+      class SubscriptionPlan
+      class Subscription
+      class Payment
+      interface SelectPlanCommand
+      interface CreateCheckoutSessionCommand
+    }
+
+    package "application" {
+      class SubscriptionStore
+    }
+
+    package "infrastructure" {
+      class SubscriptionApi
+      class SubscriptionApiEndpoint
+      class SubscriptionPlanAssembler
+      class SubscriptionAssembler
+      class PaymentAssembler
+      class CheckoutSessionAssembler
+    }
+
+    package "presentation" {
+      class SubscriptionRoutes <<Routes>>
+      class PlanList
+      class Checkout
+      class BillingSummary
+      class PaymentSuccess
+      class PaymentCancel
+    }
+  }
+}
+
+AppConfig --> AppRoutes
+AppConfig --> authenticationInterceptor
+
+AppRoutes --> Home
+AppRoutes --> About
+AppRoutes --> Layout
+AppRoutes --> Dashboard
+AppRoutes --> IamRoutes
+AppRoutes --> LaboratoryRoutes
+AppRoutes --> EquipmentRoutes
+AppRoutes --> BatchRoutes
+AppRoutes --> CaRoutes
+AppRoutes --> RaRoutes
+AppRoutes --> TrackingRoutes
+AppRoutes --> SubscriptionRoutes
+AppRoutes --> PageNotFound
+
+Layout --> LanguageSwitcher
+Toolbar --> LanguageSwitcher
+Home --> Toolbar
+Home --> AuthenticationSection
+
+Dashboard --> IamStore
+Dashboard --> LaboratoryStore
+Dashboard --> EquipmentStore
+Dashboard --> BatchStore
+Dashboard --> CaStore
+Dashboard --> RaStore
+Dashboard --> TrackingStore
+Dashboard --> SubscriptionStore
+
+authenticationInterceptor --> IamStore
+
+IamStore --> IamApi
+IamApi --|> BaseApi
+IamApi --> SignInApiEndpoint
+IamApi --> SignUpApiEndpoint
+IamApi --> RecoverPasswordApiEndpoint
+SignInApiEndpoint --|> ErrorHandlingEnabledBaseType
+SignUpApiEndpoint --|> ErrorHandlingEnabledBaseType
+RecoverPasswordApiEndpoint --|> ErrorHandlingEnabledBaseType
+SignInForm --> IamStore
+SignUpForm --> IamStore
+AuthenticationSection ..> IamRoutes
+
+LaboratoryStore --> LaboratoryApi
+LaboratoryApi --|> BaseApi
+LaboratoryApi --> LaboratoryApiEndpoint
+LaboratoryApi --> StaffApiEndpoint
+LaboratoryApi --> ProductApiEndpoint
+LaboratoryApi --> RawMaterialApiEndpoint
+LaboratoryApiEndpoint --|> BaseApiEndpoint
+StaffApiEndpoint --|> BaseApiEndpoint
+ProductApiEndpoint --|> BaseApiEndpoint
+RawMaterialApiEndpoint --|> BaseApiEndpoint
+
+EquipmentStore --> EquipmentApi
+EquipmentApi --|> BaseApi
+EquipmentApi --> EquipmentApiEndpoint
+EquipmentApi --> BpmConfigApiEndpoint
+EquipmentApi --> MaintenanceApiEndpoint
+EquipmentApiEndpoint --|> BaseApiEndpoint
+BpmConfigApiEndpoint --|> BaseApiEndpoint
+MaintenanceApiEndpoint --|> BaseApiEndpoint
+
+BatchStore --> BatchApi
+BatchApi --|> BaseApi
+BatchApi --> BatchApiEndpoint
+BatchApi --> RawMaterialUsageApiEndpoint
+BatchApiEndpoint --|> BaseApiEndpoint
+RawMaterialUsageApiEndpoint --|> BaseApiEndpoint
+
+CaStore --> CaApi
+CaApi --|> BaseApi
+CaApi --> AlertApiEndpoint
+CaApi --> ComplianceEventApiEndpoint
+CaApi --> NotificationPreferenceApiEndpoint
+AlertApiEndpoint --|> BaseApiEndpoint
+ComplianceEventApiEndpoint --|> BaseApiEndpoint
+NotificationPreferenceApiEndpoint --|> BaseApiEndpoint
+
+RaStore --> RaApi
+RaApi --|> BaseApi
+RaApi --> KpiApiEndpoint
+RaApi --> DeviationTrendApiEndpoint
+RaApi --> ReportApiEndpoint
+RaApi --> AuditLogApiEndpoint
+KpiApiEndpoint --|> BaseApiEndpoint
+DeviationTrendApiEndpoint --|> BaseApiEndpoint
+AuditLogApiEndpoint --|> BaseApiEndpoint
+
+TrackingStore --> TrackingApi
+TrackingApi --> MeasurementApiEndpoint
+TrackingApi --> EquipmentStatusApiEndpoint
+TrackingApi --> TelemetryHistoryApiEndpoint
+MeasurementApiEndpoint --|> BaseApiEndpoint
+EquipmentStatusApiEndpoint --|> BaseApiEndpoint
+TelemetryHistoryApiEndpoint --|> BaseApiEndpoint
+
+SubscriptionStore --> SubscriptionApi
+SubscriptionApi --|> BaseApi
+SubscriptionApi --> SubscriptionApiEndpoint
+SubscriptionApiEndpoint --|> ErrorHandlingEnabledBaseType
+
+BaseApiEndpoint --|> ErrorHandlingEnabledBaseType
+BaseApiEndpoint ..> BaseAssembler
+BaseApiEndpoint ..> BaseEntity
+BaseApiEndpoint ..> BaseResource
+BaseApiEndpoint ..> BaseResponse
+
+@enduml

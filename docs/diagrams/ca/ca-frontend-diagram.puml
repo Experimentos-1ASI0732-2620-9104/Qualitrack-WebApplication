@@ -1,0 +1,295 @@
+@startuml ca-frontend-diagram
+
+title QualiTrack - Compliance and Alerts Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "shared" {
+  interface BaseEntity
+  class BaseApi
+  class BaseApiEndpoint
+  interface BaseAssembler
+  interface BaseResource
+  interface BaseResponse
+}
+
+package "iam.application" {
+  class IamStore {
+    +currentUserId()
+    +currentLaboratoryId()
+    +isSignedIn()
+  }
+}
+
+package "ca.domain.model" {
+  class DeviationAlert {
+    +id: number
+    +equipmentId: number
+    +batchId?: number
+    +parameterName: string
+    +recordedValue: number
+    +thresholdValue: number
+    +unit: string
+    +timestamp: string
+    +severity: "LOW | WARNING | CRITICAL"
+    +status: "UNRESOLVED | ACKNOWLEDGED | RESOLVED"
+    +createdAt?: string
+  }
+
+  class ComplianceEvent {
+    +id: number
+    +relatedEntityId: number
+    +eventType: string
+    +description: string
+    +timestamp: string
+    +resolvedBy?: number
+    +createdAt?: string
+  }
+
+  class NotificationPreference {
+    +id: number
+    +userId: number
+    +emailEnabled: boolean
+    +smsEnabled: boolean
+    +inAppEnabled: boolean
+    +minimumSeverity: "LOW | WARNING | CRITICAL"
+    +createdAt?: string
+  }
+
+  interface UpdateNotificationPreferenceCommand {
+    +emailEnabled: boolean
+    +smsEnabled: boolean
+    +inAppEnabled: boolean
+    +minimumSeverity: "LOW | WARNING | CRITICAL"
+  }
+}
+
+package "ca.application" {
+  class CaStore {
+    -_alertsSignal
+    -_selectedAlertSignal
+    -_eventsSignal
+    -_preferenceSignal
+    -_loadingSignal
+    -_errorSignal
+    -destroyRef
+    -caApi: CaApi
+
+    +alerts
+    +selectedAlert
+    +complianceEvents
+    +preference
+    +loading
+    +error
+    +alertsCount
+    +unresolvedAlertsCount
+    +criticalAlertsCount
+
+    +getAlertById(id: number)
+    +loadAlerts(filters?): void
+    +loadAlertById(alertId: number): void
+    +acknowledgeAlert(alertId: number, request: AcknowledgeAlertRequest): void
+    +resolveAlert(alertId: number, request: ResolveAlertRequest): void
+    +loadComplianceEvents(entityId: number): void
+    +loadNotificationPreferences(userId: number): void
+    +updateNotificationPreferences(userId: number, request: UpdateNotificationPreferenceRequest): void
+  }
+}
+
+package "ca.infrastructure" {
+  class CaApi {
+    -_alertEndpoint: AlertApiEndpoint
+    -_complianceEventEndpoint: ComplianceEventApiEndpoint
+    -_preferenceEndpoint: NotificationPreferenceApiEndpoint
+
+    +getAlerts(filters?)
+    +getAlertById(alertId: number)
+    +acknowledgeAlert(alertId: number, request: AcknowledgeAlertRequest)
+    +resolveAlert(alertId: number, request: ResolveAlertRequest)
+    +getEventsByEntity(entityId: number)
+    +getPreferences(userId: number)
+    +updatePreferences(userId: number, request: UpdateNotificationPreferenceRequest)
+  }
+
+  class AlertApiEndpoint {
+    +getAlerts(filters?)
+    +getAlertById(alertId: number)
+    +acknowledgeAlert(alertId: number, request: AcknowledgeAlertRequest)
+    +resolveAlert(alertId: number, request: ResolveAlertRequest)
+  }
+
+  class ComplianceEventApiEndpoint {
+    +getEventsByEntity(entityId: number)
+  }
+
+  class NotificationPreferenceApiEndpoint {
+    +getPreferences(userId: number)
+    +updatePreferences(userId: number, request: UpdateNotificationPreferenceRequest)
+  }
+
+  class AlertAssembler
+  class ComplianceEventAssembler
+  class NotificationPreferenceAssembler
+
+  interface AlertResource {
+    +id: number
+    +equipmentId: number
+    +batchId?: number
+    +parameterName: string
+    +recordedValue: number
+    +thresholdValue: number
+    +unit: string
+    +timestamp: string
+    +severity: "LOW | WARNING | CRITICAL"
+    +status: "UNRESOLVED | ACKNOWLEDGED | RESOLVED"
+    +createdAt?: string
+  }
+
+  interface AlertsResponse {
+    +alerts: AlertResource[]
+  }
+
+  interface ComplianceEventResource {
+    +id: number
+    +relatedEntityId: number
+    +eventType: string
+    +description: string
+    +timestamp: string
+    +resolvedBy?: number
+    +createdAt?: string
+  }
+
+  interface ComplianceEventsResponse {
+    +complianceEvents: ComplianceEventResource[]
+  }
+
+  interface NotificationPreferenceResource {
+    +id: number
+    +userId: number
+    +emailEnabled: boolean
+    +smsEnabled: boolean
+    +inAppEnabled: boolean
+    +minimumSeverity: "LOW | WARNING | CRITICAL"
+    +createdAt?: string
+  }
+
+  interface NotificationPreferencesResponse {
+    +preferences: NotificationPreferenceResource[]
+  }
+
+  interface AcknowledgeAlertRequest {
+    +acknowledgedBy: number
+  }
+
+  interface ResolveAlertRequest {
+    +resolvedBy: number
+    +resolutionNotes: string
+  }
+
+  interface UpdateNotificationPreferenceRequest {
+    +emailEnabled: boolean
+    +smsEnabled: boolean
+    +inAppEnabled: boolean
+    +minimumSeverity: "LOW | WARNING | CRITICAL"
+  }
+}
+
+package "ca.presentation" {
+  class CaRoutes
+
+  class AlertDashboard {
+    +displayedColumns: string[]
+    +ngOnInit(): void
+    +onRefresh(): void
+  }
+
+  class AlertHistory {
+    +displayedColumns: string[]
+    +ngOnInit(): void
+    +applyFilters(): void
+    +clearFilters(): void
+  }
+
+  class DeviationDetail {
+    +alert
+    +resolutionForm
+    +ngOnInit(): void
+    +resolveAlert(): void
+  }
+
+  class NotificationSettings {
+    +settingsForm
+    +ngOnInit(): void
+    +onSubmit(): void
+  }
+}
+
+DeviationAlert ..|> BaseEntity
+ComplianceEvent ..|> BaseEntity
+NotificationPreference ..|> BaseEntity
+
+CaApi --|> BaseApi
+AlertApiEndpoint --|> BaseApiEndpoint
+ComplianceEventApiEndpoint --|> BaseApiEndpoint
+NotificationPreferenceApiEndpoint --|> BaseApiEndpoint
+
+AlertAssembler ..|> BaseAssembler
+ComplianceEventAssembler ..|> BaseAssembler
+NotificationPreferenceAssembler ..|> BaseAssembler
+
+AlertResource ..|> BaseResource
+AlertsResponse ..|> BaseResponse
+ComplianceEventResource ..|> BaseResource
+ComplianceEventsResponse ..|> BaseResponse
+NotificationPreferenceResource ..|> BaseResource
+NotificationPreferencesResponse ..|> BaseResponse
+
+CaStore --> CaApi
+
+CaStore ..> DeviationAlert
+CaStore ..> ComplianceEvent
+CaStore ..> NotificationPreference
+CaStore ..> AcknowledgeAlertRequest
+CaStore ..> ResolveAlertRequest
+CaStore ..> UpdateNotificationPreferenceRequest
+
+CaApi --> AlertApiEndpoint
+CaApi --> ComplianceEventApiEndpoint
+CaApi --> NotificationPreferenceApiEndpoint
+
+AlertApiEndpoint --> AlertAssembler
+ComplianceEventApiEndpoint --> ComplianceEventAssembler
+NotificationPreferenceApiEndpoint --> NotificationPreferenceAssembler
+
+AlertApiEndpoint ..> AlertResource
+AlertApiEndpoint ..> AcknowledgeAlertRequest
+AlertApiEndpoint ..> ResolveAlertRequest
+
+ComplianceEventApiEndpoint ..> ComplianceEventResource
+NotificationPreferenceApiEndpoint ..> NotificationPreferenceResource
+NotificationPreferenceApiEndpoint ..> UpdateNotificationPreferenceRequest
+
+AlertAssembler ..> DeviationAlert
+AlertAssembler ..> AlertResource
+ComplianceEventAssembler ..> ComplianceEvent
+ComplianceEventAssembler ..> ComplianceEventResource
+NotificationPreferenceAssembler ..> NotificationPreference
+NotificationPreferenceAssembler ..> NotificationPreferenceResource
+
+AlertDashboard --> CaStore
+AlertHistory --> CaStore
+
+DeviationDetail --> CaStore
+DeviationDetail --> IamStore
+
+NotificationSettings --> CaStore
+NotificationSettings --> IamStore
+
+CaRoutes ..> AlertDashboard
+CaRoutes ..> AlertHistory
+CaRoutes ..> DeviationDetail
+CaRoutes ..> NotificationSettings
+
+@enduml

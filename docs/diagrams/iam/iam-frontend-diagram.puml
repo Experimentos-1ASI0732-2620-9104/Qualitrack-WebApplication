@@ -1,0 +1,302 @@
+@startuml iam-frontend-diagram
+
+title QualiTrack - IAM Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+package "shared" <<External>> {
+  interface BaseEntity
+  interface BaseResource
+  abstract class BaseApi
+  abstract class ErrorHandlingEnabledBaseType
+  class Toolbar
+}
+
+package "angular" <<External>> {
+  class Router
+  class ActivatedRoute
+  class HttpClient
+  class FormGroup
+  class FormControl
+  class Validators
+  interface HttpInterceptorFn
+  interface Routes
+}
+
+package "iam.domain.model" {
+  class User {
+    + id: number
+    + username: string
+    + roles: string[]
+    + constructor(params)
+  }
+
+  interface SignInCommand {
+    + username: string
+    + password: string
+  }
+
+  interface SignUpCommand {
+    + username: string
+    + password: string
+    + roles: string[]
+    + laboratoryId: number | null
+  }
+
+  interface RecoverPasswordCommand {
+    + username: string
+  }
+
+  interface AssignRoleCommand {
+    + userId: number
+    + role: string
+  }
+}
+
+User ..|> BaseEntity
+
+package "iam.application" {
+  class IamStore {
+    - _loadingSignal
+    - _errorSignal
+    - isSignedInSignal
+    - currentUsernameSignal
+    - currentUserIdSignal
+    - currentLaboratoryIdSignal
+    - usersSignal
+    - loadingUsers
+    + isSignedIn
+    + currentUsername
+    + currentUserId
+    + currentLaboratoryId
+    + currentToken
+    + users
+    + loading
+    + error
+    + isLoadingUsers
+    + recoverPassword(command: RecoverPasswordCommand, router: Router): void
+    + signIn(command: SignInCommand, router: Router): void
+    + signUp(command: SignUpCommand, router: Router): void
+    + signOut(router: Router): void
+    + clearError(): void
+    - restoreSession(): void
+    - clearSession(): void
+    - startRequest(): void
+    - finishRequest(): void
+    - failRequest(message: string): void
+  }
+}
+
+IamStore --> IamApi
+IamStore ..> SignInCommand
+IamStore ..> SignUpCommand
+IamStore ..> RecoverPasswordCommand
+IamStore ..> SignInRequest
+IamStore ..> SignUpRequest
+IamStore ..> RecoverPasswordRequest
+IamStore --> Router
+IamStore o-- User
+
+package "iam.infrastructure" {
+  class IamApi {
+    - signInEndpoint: SignInApiEndpoint
+    - signUpEndpoint: SignUpApiEndpoint
+    - recoverPasswordEndpoint: RecoverPasswordApiEndpoint
+    + signIn(request: SignInRequest): Observable<SignInResource>
+    + signUp(request: SignUpRequest): Observable<SignUpResource>
+    + recoverPassword(request: RecoverPasswordRequest): Observable<RecoverPasswordResource>
+  }
+
+  class SignInApiEndpoint {
+    - http: HttpClient
+    - assembler: SignInAssembler
+    + signIn(request: SignInRequest): Observable<SignInResource>
+  }
+
+  class SignUpApiEndpoint {
+    - http: HttpClient
+    - assembler: SignUpAssembler
+    + signUp(request: SignUpRequest): Observable<SignUpResource>
+  }
+
+  class RecoverPasswordApiEndpoint {
+    - http: HttpClient
+    - assembler: RecoverPasswordAssembler
+    + recoverPassword(request: RecoverPasswordRequest): Observable<RecoverPasswordResource>
+  }
+
+  class SignInAssembler {
+    + toResourceFromResponse(response: SignInResponse): SignInResource
+  }
+
+  class SignUpAssembler {
+    + toResourceFromResponse(response: SignUpResponse): SignUpResource
+  }
+
+  class RecoverPasswordAssembler {
+    + toResourceFromResponse(response: RecoverPasswordResponse): RecoverPasswordResource
+  }
+
+  interface SignInRequest {
+    + username: string
+    + password: string
+  }
+
+  interface SignUpRequest {
+    + username: string
+    + password: string
+    + roles: string[]
+    + laboratoryId: number | null
+  }
+
+  interface RecoverPasswordRequest {
+    + username: string
+  }
+
+  interface SignInResource {
+    + id: number
+    + username: string
+    + roles: string[]
+    + laboratoryId: number | null
+    + token: string
+  }
+
+  interface SignInResponse
+
+  interface SignUpResource {
+    + id: number
+    + username: string
+  }
+
+  interface SignUpResponse
+
+  interface RecoverPasswordResource {
+    + message: string
+  }
+
+  interface RecoverPasswordResponse
+
+  class authenticationInterceptor <<HttpInterceptorFn>>
+}
+
+IamApi --|> BaseApi
+SignInApiEndpoint --|> ErrorHandlingEnabledBaseType
+SignUpApiEndpoint --|> ErrorHandlingEnabledBaseType
+RecoverPasswordApiEndpoint --|> ErrorHandlingEnabledBaseType
+
+IamApi *-- SignInApiEndpoint
+IamApi *-- SignUpApiEndpoint
+IamApi *-- RecoverPasswordApiEndpoint
+
+SignInApiEndpoint --> HttpClient
+SignInApiEndpoint --> SignInAssembler
+SignInApiEndpoint ..> SignInRequest
+SignInApiEndpoint ..> SignInResponse
+SignInApiEndpoint ..> SignInResource
+
+SignUpApiEndpoint --> HttpClient
+SignUpApiEndpoint --> SignUpAssembler
+SignUpApiEndpoint ..> SignUpRequest
+SignUpApiEndpoint ..> SignUpResponse
+SignUpApiEndpoint ..> SignUpResource
+
+RecoverPasswordApiEndpoint --> HttpClient
+RecoverPasswordApiEndpoint --> RecoverPasswordAssembler
+RecoverPasswordApiEndpoint ..> RecoverPasswordRequest
+RecoverPasswordApiEndpoint ..> RecoverPasswordResponse
+RecoverPasswordApiEndpoint ..> RecoverPasswordResource
+
+SignInAssembler ..> SignInResponse
+SignInAssembler ..> SignInResource
+
+SignUpAssembler ..> SignUpResponse
+SignUpAssembler ..> SignUpResource
+
+RecoverPasswordAssembler ..> RecoverPasswordResponse
+RecoverPasswordAssembler ..> RecoverPasswordResource
+
+SignInResource ..|> BaseResource
+SignInResponse --|> SignInResource
+SignUpResource ..|> BaseResource
+SignUpResponse --|> SignUpResource
+RecoverPasswordResource ..|> BaseResource
+RecoverPasswordResponse --|> RecoverPasswordResource
+
+authenticationInterceptor ..|> HttpInterceptorFn
+authenticationInterceptor --> IamStore
+
+package "iam.presentation.routes" {
+  class iamRoutes <<Routes>>
+}
+
+iamRoutes ..|> Routes
+iamRoutes ..> SignInForm
+iamRoutes ..> SignUpForm
+
+package "iam.presentation.components.authentication-section" {
+  class AuthenticationSection {
+  }
+}
+
+AuthenticationSection ..> Router
+
+package "iam.presentation.views.sign-in-form" {
+  class SignInForm {
+    - router: Router
+    # store: IamStore
+    # form: FormGroup
+    # hidePassword: boolean
+    # onSubmit(): void
+    # togglePasswordVisibility(): void
+    # performSignUp(role: string): void
+    # getUsernameErrorKey(): string
+    # getPasswordErrorKey(): string
+    - markFormGroupTouched(formGroup: FormGroup): void
+  }
+}
+
+SignInForm --> IamStore
+SignInForm --> Router
+SignInForm --> FormGroup
+SignInForm --> FormControl
+SignInForm ..> Validators
+SignInForm ..> SignInCommand
+SignInForm ..> Toolbar
+
+package "iam.presentation.views.sign-up-form" {
+  class SignUpForm {
+    - router: Router
+    - route: ActivatedRoute
+    # store: IamStore
+    # role: string
+    # selectedRole: string
+    # selectedRoleKey: 'manager' | 'operator'
+    - defaultLaboratoryId: number
+    # form: FormGroup
+    # hidePassword: boolean
+    # hideConfirmPassword: boolean
+    # onSubmit(): void
+    # togglePasswordVisibility(): void
+    # toggleConfirmPasswordVisibility(): void
+    # getUsernameErrorKey(): string
+    # getPasswordErrorKey(): string
+    # getConfirmPasswordErrorKey(): string
+    - passwordStrengthValidator(control): ValidationErrors | null
+    - passwordMatchValidator(group): ValidationErrors | null
+    - markFormGroupTouched(formGroup: FormGroup): void
+  }
+}
+
+SignUpForm --> IamStore
+SignUpForm --> Router
+SignUpForm --> ActivatedRoute
+SignUpForm --> FormGroup
+SignUpForm --> FormControl
+SignUpForm ..> Validators
+SignUpForm ..> SignUpCommand
+SignUpForm ..> Toolbar
+
+@enduml

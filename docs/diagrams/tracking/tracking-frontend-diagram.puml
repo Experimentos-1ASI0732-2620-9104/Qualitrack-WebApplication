@@ -1,0 +1,299 @@
+@startuml tracking-frontend-diagram
+title QualiTrack - Tracking Frontend
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "shared" <<External>> {
+  interface BaseEntity
+  interface BaseResource
+  interface BaseResponse
+  interface BaseAssembler
+  abstract class BaseApiEndpoint
+}
+
+package "iam" <<External>> {
+  class IamStore {
+    +currentLaboratoryId(): number
+  }
+}
+
+package "equipment" <<External>> {
+  class EquipmentStore {
+    +equipmentList(): Equipment[]
+    +loadEquipment(laboratoryId: number): void
+  }
+}
+
+package "tracking" {
+
+  package "domain.model" {
+    enum TelemetryStatus {
+      OPERATIONAL
+      WARNING
+      CRITICAL
+      OFFLINE
+    }
+
+    class Measurement {
+      +id: number
+      +equipmentId: number
+      +parameterName: string
+      +value: number
+      +unit: string
+      +timestamp: string
+      +createdAt: string
+    }
+
+    class EquipmentStatus {
+      +id: number
+      +equipmentId: number
+      +isOnline: boolean
+      +currentStatus: TelemetryStatus
+      +lastHeartbeat: string
+      +createdAt: string
+    }
+
+    class TelemetryHistoryPoint {
+      +id: number
+      +equipmentId: number
+      +parameterName: string
+      +recordedValue: number
+      +timestamp: string
+      +isAnomaly: boolean
+      +createdAt: string
+    }
+  }
+
+  package "application" {
+    class TrackingStore {
+      -api: TrackingApi
+      -_measurements: Signal<Measurement[]>
+      -_currentEquipmentStatus: Signal<EquipmentStatus | null>
+      -_telemetryHistory: Signal<TelemetryHistoryPoint[]>
+      -_isLoading: Signal<boolean>
+      -_error: Signal<string | null>
+      -_successMsg: Signal<string | null>
+      +measurements: Signal<Measurement[]>
+      +currentEquipmentStatus: Signal<EquipmentStatus | null>
+      +telemetryHistory: Signal<TelemetryHistoryPoint[]>
+      +isLoading: Signal<boolean>
+      +error: Signal<string | null>
+      +successMsg: Signal<string | null>
+      +isEquipmentOnline: Signal<boolean>
+      +equipmentTelemetryStatus: Signal<string>
+      +anomaliesHistory: Signal<TelemetryHistoryPoint[]>
+      +loadLatestMeasurements(equipmentId?: number): void
+      +loadEquipmentStatus(equipmentId: number): void
+      +loadTelemetryHistory(filters?: TelemetryHistoryFilters): void
+      +clearMessages(): void
+      -formatError(error: unknown, fallback: string): string
+    }
+
+    class TelemetryHistoryFilters <<type>> {
+      +equipmentId?: number
+      +from?: string
+      +to?: string
+    }
+  }
+
+  package "infrastructure" {
+    interface MeasurementResource {
+      +id: number
+      +equipmentId: number
+      +parameterName: string
+      +value: number
+      +unit: string
+      +timestamp: string
+      +createdAt: string
+    }
+
+    interface MeasurementsResponse {
+      +measurements: MeasurementResource[]
+    }
+
+    interface EquipmentStatusResource {
+      +id: number
+      +equipmentId: number
+      +isOnline: boolean
+      +currentStatus: TelemetryStatus
+      +lastHeartbeat: string
+      +createdAt: string
+    }
+
+    interface EquipmentStatusesResponse {
+      +statuses: EquipmentStatusResource[]
+    }
+
+    interface TelemetryHistoryPointResource {
+      +id: number
+      +equipmentId: number
+      +parameterName: string
+      +recordedValue: number
+      +timestamp: string
+      +isAnomaly: boolean
+      +createdAt: string
+    }
+
+    interface TelemetryHistoryResponse {
+      +historyPoints: TelemetryHistoryPointResource[]
+    }
+
+    class MeasurementAssembler {
+      +toEntityFromResource(resource: MeasurementResource): Measurement
+      +toResourceFromEntity(entity: Measurement): MeasurementResource
+    }
+
+    class EquipmentStatusAssembler {
+      +toEntityFromResource(resource: EquipmentStatusResource): EquipmentStatus
+      +toResourceFromEntity(entity: EquipmentStatus): EquipmentStatusResource
+    }
+
+    class TelemetryHistoryAssembler {
+      +toEntityFromResource(resource: TelemetryHistoryPointResource): TelemetryHistoryPoint
+      +toResourceFromEntity(entity: TelemetryHistoryPoint): TelemetryHistoryPointResource
+    }
+
+    class MeasurementApiEndpoint {
+      -assembler: MeasurementAssembler
+      +getLatestMeasurements(equipmentId?: number): Observable<Measurement[]>
+    }
+
+    class EquipmentStatusApiEndpoint {
+      -assembler: EquipmentStatusAssembler
+      +getStatusByEquipment(equipmentId: number): Observable<EquipmentStatus>
+    }
+
+    class TelemetryHistoryApiEndpoint {
+      -assembler: TelemetryHistoryAssembler
+      +getTelemetryHistory(filters?: TelemetryHistoryFilters): Observable<TelemetryHistoryPoint[]>
+    }
+
+    class TrackingApi {
+      -measurementEndpoint: MeasurementApiEndpoint
+      -equipmentStatusEndpoint: EquipmentStatusApiEndpoint
+      -telemetryHistoryEndpoint: TelemetryHistoryApiEndpoint
+      +getLatestMeasurements(equipmentId?: number): Observable<Measurement[]>
+      +getEquipmentStatus(equipmentId: number): Observable<EquipmentStatus>
+      +getTelemetryHistory(filters?: TelemetryHistoryFilters): Observable<TelemetryHistoryPoint[]>
+    }
+  }
+
+  package "presentation" {
+    class TrackingRoutes <<Routes>> {
+      +dashboard: TelemetryDashboardComponent
+      +analysis: TelemetryChartComponent
+      +history: TelemetryHistoryComponent
+    }
+
+    class TelemetryDashboardComponent {
+      -store: TrackingStore
+      -equipmentStore: EquipmentStore
+      -iamStore: IamStore
+      -selectedEquipmentId: Signal<number>
+      -equipmentPollingId: interval
+      +chartOptions: ChartOptions
+      +chartData: Signal<LineChartData>
+      +ngOnInit(): void
+      +ngOnDestroy(): void
+      +onEquipmentChange(): void
+      -waitForEquipmentAndLoadDashboard(): void
+      -loadDashboardData(): void
+    }
+
+    class TelemetryChartComponent {
+      -store: TrackingStore
+      -equipmentStore: EquipmentStore
+      -iamStore: IamStore
+      -filters: TelemetryHistoryFilters
+      -equipmentPollingId: interval
+      +chartOptions: ChartOptions
+      +chartData: Signal<LineChartData>
+      +ngOnInit(): void
+      +ngOnDestroy(): void
+      +loadChartData(): void
+      +clearFilters(): void
+      -waitForEquipmentAndLoadChart(): void
+    }
+
+    class TelemetryHistoryComponent {
+      -store: TrackingStore
+      -equipmentStore: EquipmentStore
+      -iamStore: IamStore
+      -displayedColumns: string[]
+      -filters: TelemetryHistoryFilters
+      -equipmentPollingId: interval
+      +ngOnInit(): void
+      +ngOnDestroy(): void
+      +loadHistoryData(): void
+      +clearFilters(): void
+      -waitForEquipmentAndLoadHistory(): void
+    }
+
+    class EquipmentStatusCardComponent {
+      +statusRecord: EquipmentStatus | null
+      +equipmentName: string
+    }
+  }
+}
+
+Measurement --|> BaseEntity
+EquipmentStatus --|> BaseEntity
+TelemetryHistoryPoint --|> BaseEntity
+
+MeasurementResource --|> BaseResource
+EquipmentStatusResource --|> BaseResource
+TelemetryHistoryPointResource --|> BaseResource
+MeasurementsResponse --|> BaseResponse
+EquipmentStatusesResponse --|> BaseResponse
+TelemetryHistoryResponse --|> BaseResponse
+
+MeasurementAssembler ..|> BaseAssembler
+EquipmentStatusAssembler ..|> BaseAssembler
+TelemetryHistoryAssembler ..|> BaseAssembler
+
+MeasurementApiEndpoint --|> BaseApiEndpoint
+EquipmentStatusApiEndpoint --|> BaseApiEndpoint
+TelemetryHistoryApiEndpoint --|> BaseApiEndpoint
+
+MeasurementApiEndpoint --> MeasurementAssembler
+EquipmentStatusApiEndpoint --> EquipmentStatusAssembler
+TelemetryHistoryApiEndpoint --> TelemetryHistoryAssembler
+
+MeasurementAssembler ..> Measurement
+MeasurementAssembler ..> MeasurementResource
+EquipmentStatusAssembler ..> EquipmentStatus
+EquipmentStatusAssembler ..> EquipmentStatusResource
+TelemetryHistoryAssembler ..> TelemetryHistoryPoint
+TelemetryHistoryAssembler ..> TelemetryHistoryPointResource
+
+TrackingApi *-- MeasurementApiEndpoint
+TrackingApi *-- EquipmentStatusApiEndpoint
+TrackingApi *-- TelemetryHistoryApiEndpoint
+
+TrackingStore --> TrackingApi
+TrackingStore ..> Measurement
+TrackingStore ..> EquipmentStatus
+TrackingStore ..> TelemetryHistoryPoint
+TrackingStore ..> TelemetryHistoryFilters
+
+TelemetryDashboardComponent --> TrackingStore
+TelemetryDashboardComponent --> EquipmentStore
+TelemetryDashboardComponent --> IamStore
+TelemetryDashboardComponent --> EquipmentStatusCardComponent
+
+TelemetryChartComponent --> TrackingStore
+TelemetryChartComponent --> EquipmentStore
+TelemetryChartComponent --> IamStore
+
+TelemetryHistoryComponent --> TrackingStore
+TelemetryHistoryComponent --> EquipmentStore
+TelemetryHistoryComponent --> IamStore
+
+EquipmentStatusCardComponent ..> EquipmentStatus
+
+TrackingRoutes ..> TelemetryDashboardComponent
+TrackingRoutes ..> TelemetryChartComponent
+TrackingRoutes ..> TelemetryHistoryComponent
+
+@enduml

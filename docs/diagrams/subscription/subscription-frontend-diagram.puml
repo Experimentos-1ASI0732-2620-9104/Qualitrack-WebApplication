@@ -1,0 +1,357 @@
+@startuml subscription-frontend-diagram
+title QualiTrack - Subscription Frontend
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "shared" <<External>> {
+  interface BaseEntity
+  interface BaseResource
+  interface BaseResponse
+  interface BaseAssembler
+  abstract class BaseApi
+  abstract class ErrorHandlingEnabledBaseType
+}
+
+package "iam" <<External>> {
+  class IamStore {
+    +isSignedIn(): boolean
+    +currentUserId(): number
+    +currentLaboratoryId(): number
+  }
+}
+
+package "subscription" {
+
+  package "domain.model" {
+    enum BillingCycle {
+      MONTHLY
+      YEARLY
+    }
+
+    enum SubscriptionStatus {
+      PENDING
+      ACTIVE
+      PAST_DUE
+      CANCELED
+      EXPIRED
+    }
+
+    enum PaymentStatus {
+      PENDING
+      PAID
+      FAILED
+      CANCELED
+    }
+
+    class SubscriptionPlan {
+      +id: number
+      +code: string
+      +name: string
+      +description: string
+      +priceAmount: number
+      +currency: string
+      +billingPeriod: BillingCycle
+      +maxUsers: number
+      +maxEquipment: number
+      +features: string[]
+      +active: boolean
+    }
+
+    class Subscription {
+      +id: number
+      +userId: number
+      +laboratoryId: number
+      +planCode: string
+      +billingCycle: BillingCycle
+      +status: SubscriptionStatus
+      +stripeCustomerId?: string
+      +stripeSubscriptionId?: string
+      +stripeCheckoutSessionId?: string
+      +currentPeriodStart?: string
+      +currentPeriodEnd?: string
+      +cancelledAt?: string
+      +cancelledBy?: number
+    }
+
+    class Payment {
+      +id: number
+      +subscriptionId: number
+      +provider: string
+      +providerPaymentId?: string
+      +stripeCheckoutSessionId?: string
+      +amount: number
+      +currency: string
+      +status: PaymentStatus
+      +paidAt?: string
+    }
+
+    interface SelectPlanCommand {
+      +planCode: string
+      +billingCycle: BillingCycle
+    }
+
+    interface CreateCheckoutSessionCommand {
+      +planCode: string
+      +billingCycle: BillingCycle
+      +userId: number
+      +laboratoryId: number
+      +successUrl: string
+      +cancelUrl: string
+    }
+  }
+
+  package "application" {
+    class SubscriptionStore {
+      -api: SubscriptionApi
+      -_plans: Signal<SubscriptionPlan[]>
+      -_currentSubscription: Signal<Subscription | null>
+      -_payments: Signal<Payment[]>
+      -_selectedPlanCode: Signal<string | null>
+      -_selectedBillingCycle: Signal<BillingCycle | null>
+      -_checkoutSession: Signal<CheckoutSessionResource | null>
+      -_isLoading: Signal<boolean>
+      -_error: Signal<string | null>
+      -_successMsg: Signal<string | null>
+      +plans: Signal<SubscriptionPlan[]>
+      +currentSubscription: Signal<Subscription | null>
+      +payments: Signal<Payment[]>
+      +selectedPlanCode: Signal<string | null>
+      +selectedBillingCycle: Signal<BillingCycle | null>
+      +checkoutSession: Signal<CheckoutSessionResource | null>
+      +isLoading: Signal<boolean>
+      +error: Signal<string | null>
+      +successMsg: Signal<string | null>
+      +selectedPlan: Signal<SubscriptionPlan | null>
+      +hasActiveSubscription: Signal<boolean>
+      +loadPlans(): void
+      +loadCurrentSubscription(laboratoryId: number): void
+      +loadPayments(subscriptionId: number): void
+      +selectPlan(command: SelectPlanCommand): void
+      +clearSelectedPlan(): void
+      +createCheckoutSession(command: CreateCheckoutSessionCommand): void
+      +clearMessages(): void
+      -toCreateCheckoutSessionRequest(command): CreateCheckoutSessionRequest
+      -startRequest(): void
+      -finishRequest(): void
+      -failRequest(error: unknown, fallback: string): void
+      -isNotFoundError(error: unknown): boolean
+      -formatError(error: unknown, fallback: string): string
+    }
+  }
+
+  package "infrastructure" {
+    interface SubscriptionPlanResource {
+      +id: number
+      +code: string
+      +name: string
+      +description: string
+      +amount: number
+      +currency: string
+      +billingCycle: BillingCycle
+      +stripePriceId: string
+      +maxUsers: number
+      +maxEquipment: number
+      +active: boolean
+    }
+
+    interface SubscriptionPlansResponse {
+      +plans: SubscriptionPlanResource[]
+    }
+
+    interface SubscriptionResource {
+      +id: number
+      +userId: number
+      +laboratoryId: number
+      +planCode: string
+      +billingCycle: BillingCycle
+      +status: SubscriptionStatus
+      +stripeCustomerId?: string
+      +stripeSubscriptionId?: string
+      +stripeCheckoutSessionId?: string
+      +currentPeriodStart?: string
+      +currentPeriodEnd?: string
+      +cancelledAt?: string
+      +cancelledBy?: number
+    }
+
+    interface SubscriptionsResponse {
+      +subscriptions: SubscriptionResource[]
+    }
+
+    interface PaymentResource {
+      +id: number
+      +subscriptionId: number
+      +provider: string
+      +providerPaymentId?: string
+      +stripeCheckoutSessionId?: string
+      +amount: number
+      +currency: string
+      +status: PaymentStatus
+      +paidAt?: string
+    }
+
+    interface PaymentsResponse {
+      +payments: PaymentResource[]
+    }
+
+    interface CreateCheckoutSessionRequest {
+      +userId: number
+      +laboratoryId: number
+      +planCode: string
+      +billingCycle: BillingCycle
+      +successUrl: string
+      +cancelUrl: string
+    }
+
+    interface CheckoutSessionResponse {
+      +checkoutUrl: string
+      +checkoutSessionId?: string
+    }
+
+    interface CheckoutSessionResource {
+      +checkoutUrl: string
+      +checkoutSessionId?: string
+    }
+
+    class SubscriptionPlanAssembler {
+      +toEntityFromResource(resource: SubscriptionPlanResource): SubscriptionPlan
+      +toResourceFromEntity(entity: SubscriptionPlan): SubscriptionPlanResource
+      +toEntitiesFromResources(resources: SubscriptionPlanResource[]): SubscriptionPlan[]
+    }
+
+    class SubscriptionAssembler {
+      +toEntityFromResource(resource: SubscriptionResource): Subscription
+      +toResourceFromEntity(entity: Subscription): SubscriptionResource
+      +toEntitiesFromResources(resources: SubscriptionResource[]): Subscription[]
+    }
+
+    class PaymentAssembler {
+      +toEntityFromResource(resource: PaymentResource): Payment
+      +toResourceFromEntity(entity: Payment): PaymentResource
+      +toEntitiesFromResources(resources: PaymentResource[]): Payment[]
+    }
+
+    class CheckoutSessionAssembler {
+      +toResourceFromResponse(response: CheckoutSessionResponse): CheckoutSessionResource
+    }
+
+    class SubscriptionApiEndpoint {
+      -planAssembler: SubscriptionPlanAssembler
+      -subscriptionAssembler: SubscriptionAssembler
+      -paymentAssembler: PaymentAssembler
+      -checkoutAssembler: CheckoutSessionAssembler
+      +getPlans(): Observable<SubscriptionPlan[]>
+      +getCurrentSubscription(laboratoryId: number): Observable<Subscription>
+      +getPaymentsBySubscription(subscriptionId: number): Observable<Payment[]>
+      +createCheckoutSession(request: CreateCheckoutSessionRequest): Observable<CheckoutSessionResource>
+    }
+
+    class SubscriptionApi {
+      -endpoint: SubscriptionApiEndpoint
+      +getPlans(): Observable<SubscriptionPlan[]>
+      +getCurrentSubscription(laboratoryId: number): Observable<Subscription>
+      +getPaymentsBySubscription(subscriptionId: number): Observable<Payment[]>
+      +createCheckoutSession(request: CreateCheckoutSessionRequest): Observable<CheckoutSessionResource>
+    }
+  }
+
+  package "presentation" {
+    class SubscriptionRoutes <<Routes>> {
+      +plans: PlanList
+      +checkout: Checkout
+      +success: PaymentSuccess
+      +cancel: PaymentCancel
+      +billing-summary: BillingSummary
+    }
+
+    class PlanList {
+      -store: SubscriptionStore
+      -iamStore: IamStore
+      -router: Router
+      +ngOnInit(): void
+      +onSelectPlan(plan: SubscriptionPlan): void
+      +formatPrice(plan: SubscriptionPlan): string
+    }
+
+    class Checkout {
+      -route: ActivatedRoute
+      -store: SubscriptionStore
+      -iamStore: IamStore
+      +planCode: string | null
+      +billingCycle: BillingCycle | null
+      +ngOnInit(): void
+      +onCheckout(): void
+      -toBillingCycle(value: string | null): BillingCycle | null
+    }
+
+    class BillingSummary {
+      -store: SubscriptionStore
+      -iamStore: IamStore
+      -displayedColumns: string[]
+      +ngOnInit(): void
+      +getStatusClass(status?: string): string
+    }
+
+    class PaymentSuccess
+    class PaymentCancel
+  }
+}
+
+SubscriptionPlan --|> BaseEntity
+Subscription --|> BaseEntity
+Payment --|> BaseEntity
+
+SubscriptionPlanResource --|> BaseResource
+SubscriptionResource --|> BaseResource
+PaymentResource --|> BaseResource
+SubscriptionPlansResponse --|> BaseResponse
+SubscriptionsResponse --|> BaseResponse
+PaymentsResponse --|> BaseResponse
+
+SubscriptionPlanAssembler ..|> BaseAssembler
+SubscriptionAssembler ..|> BaseAssembler
+PaymentAssembler ..|> BaseAssembler
+
+SubscriptionApi --|> BaseApi
+SubscriptionApiEndpoint --|> ErrorHandlingEnabledBaseType
+
+SubscriptionApi *-- SubscriptionApiEndpoint
+SubscriptionApiEndpoint *-- SubscriptionPlanAssembler
+SubscriptionApiEndpoint *-- SubscriptionAssembler
+SubscriptionApiEndpoint *-- PaymentAssembler
+SubscriptionApiEndpoint *-- CheckoutSessionAssembler
+
+SubscriptionPlanAssembler ..> SubscriptionPlan
+SubscriptionPlanAssembler ..> SubscriptionPlanResource
+SubscriptionAssembler ..> Subscription
+SubscriptionAssembler ..> SubscriptionResource
+PaymentAssembler ..> Payment
+PaymentAssembler ..> PaymentResource
+CheckoutSessionAssembler ..> CheckoutSessionResponse
+CheckoutSessionAssembler ..> CheckoutSessionResource
+
+SubscriptionStore --> SubscriptionApi
+SubscriptionStore ..> SubscriptionPlan
+SubscriptionStore ..> Subscription
+SubscriptionStore ..> Payment
+SubscriptionStore ..> SelectPlanCommand
+SubscriptionStore ..> CreateCheckoutSessionCommand
+SubscriptionStore ..> CreateCheckoutSessionRequest
+SubscriptionStore ..> CheckoutSessionResource
+
+PlanList --> SubscriptionStore
+PlanList --> IamStore
+PlanList ..> SubscriptionPlan
+Checkout --> SubscriptionStore
+Checkout --> IamStore
+BillingSummary --> SubscriptionStore
+BillingSummary --> IamStore
+
+SubscriptionRoutes ..> PlanList
+SubscriptionRoutes ..> Checkout
+SubscriptionRoutes ..> BillingSummary
+SubscriptionRoutes ..> PaymentSuccess
+SubscriptionRoutes ..> PaymentCancel
+
+@enduml
