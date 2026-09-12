@@ -1,0 +1,82 @@
+<div class="history-container">
+  <header class="history-header">
+    <div class="header-main">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="onBack()"
+        [attr.aria-label]="'common.back' | translate">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <div>
+        <h1>{{ 'maintenance-history.title' | translate }}</h1>
+        <p>{{ 'maintenance-history.subtitle' | translate }}</p>
+      </div>
+    </div>
+
+    <button
+      mat-raised-button
+      color="accent"
+      [routerLink]="['/equipments/maintenance-form', equipmentId()]"
+      [disabled]="!equipmentId()">
+      <mat-icon>add</mat-icon>
+      {{ 'maintenance-history.add-button' | translate }}
+    </button>
+  </header>
+
+  @if (store.isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="table-card mat-elevation-z2">
+    <table mat-table [dataSource]="store.maintenanceHistory()">
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>{{ 'maintenance-history.fields.date' | translate }}</th>
+        <td mat-cell *matCellDef="let element">{{ element.maintenanceDate | date:'mediumDate' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>{{ 'maintenance-history.fields.type' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <span class="type-badge" [ngClass]="element.type.toLowerCase()">
+            {{ 'maintenance-history.types.' + element.type.toLowerCase() | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="technician">
+        <th mat-header-cell *matHeaderCellDef>{{ 'maintenance-history.fields.technician' | translate }}</th>
+        <td mat-cell *matCellDef="let element">{{ element.technicianName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef>{{ 'maintenance-history.fields.description' | translate }}</th>
+        <td mat-cell *matCellDef="let element" class="description-cell">
+          {{ element.description }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="4">
+          <div class="empty-table-message">
+            {{ 'maintenance-history.empty' | translate }}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

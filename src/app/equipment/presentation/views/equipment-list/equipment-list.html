@@ -1,0 +1,101 @@
+<div class="equipment-list-container">
+  <app-calibration-alert></app-calibration-alert>
+
+  <header class="page-header">
+    <div class="header-content">
+      <h1>{{ 'equipment-list.title' | translate }}</h1>
+      <p>{{ 'equipment-list.subtitle' | translate }}</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="onRefresh()"
+        [disabled]="store.isLoading()"
+        [attr.aria-label]="'common.refresh' | translate">
+        <mat-icon>refresh</mat-icon>
+      </button>
+
+      <button mat-raised-button color="primary" routerLink="../register-equipment">
+        <mat-icon>add</mat-icon>
+        {{ 'equipment-list.add-button' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (store.isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+  }
+
+  @if (store.error()) {
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.error() }}</p>
+    </div>
+  }
+
+  <div class="table-container mat-elevation-z2">
+    <table mat-table [dataSource]="store.equipmentList()">
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.name' | translate }}</th>
+        <td mat-cell *matCellDef="let element" class="bold-text">{{ element.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.type' | translate }}</th>
+        <td mat-cell *matCellDef="let element">{{ element.type }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="model">
+        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.model' | translate }}</th>
+        <td mat-cell *matCellDef="let element">{{ element.model }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="serialNumber">
+        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.serial' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <code>{{ element.serialNumber }}</code>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.status' | translate }}</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-chip-set>
+            <mat-chip [class]="element.status.toLowerCase()">
+              {{ 'equipment-status.' + element.status.toLowerCase() | translate }}
+            </mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'common.actions.label' | translate }}</th>        <td mat-cell *matCellDef="let element">
+          <button
+            mat-icon-button
+            color="primary"
+            [routerLink]="['../equipment-detail', element.id]"
+            [matTooltip]="'equipment-list.actions.view-detail' | translate"
+            [attr.aria-label]="'equipment-list.actions.view-detail' | translate">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="6">
+          <div class="empty-table-message">
+            {{ 'equipment-list.empty' | translate }}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
