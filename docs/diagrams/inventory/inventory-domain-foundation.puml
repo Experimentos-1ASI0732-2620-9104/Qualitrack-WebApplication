@@ -1,0 +1,53 @@
+@startuml inventory-domain-foundation
+title QualiTrack Inventory - Client contracts (not connected to routes yet)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+interface RawMaterial {
+  id: number
+  laboratoryId: number
+  code: string
+  name: string
+  unit: InventoryUnit
+  minimumStock: number
+}
+interface RawMaterialBatch {
+  id: number
+  rawMaterialId: number
+  laboratoryId: number
+  supplier: string
+  batchNumber: string
+  initialAmount: number
+  availableAmount: number
+  receivedOn: string
+  expiresOn: string
+  status: RawMaterialBatchStatus
+}
+interface AvailableReceipt
+interface ConsumeRawMaterialBatchCommand {
+  laboratoryId: number
+  rawMaterialBatchId: number
+  productBatchId: number
+  amountUsed: number
+  unit: InventoryUnit
+  operationId: string
+}
+interface RawMaterialBatchConsumption {
+  stockBefore: number
+  stockAfter: number
+  operationId: string
+}
+RawMaterial "1" <-- "0..*" RawMaterialBatch : catalog reference
+RawMaterialBatch ..> AvailableReceipt : server eligibility projection
+ConsumeRawMaterialBatchCommand ..> RawMaterialBatchConsumption : future API
+note bottom of RawMaterialBatch
+  Status: QUARANTINED / RELEASED / OBSERVED / REJECTED.
+  New receipts require review before release.
+  ISO date strings; backend owns business date and expiry rules.
+  Quantity arithmetic, stock validation and tenant authorization run in backend.
+end note
+note bottom of ConsumeRawMaterialBatchCommand
+  No HTTP endpoint, route, mock store or browser-side stock deduction is added yet.
+  Next increment: real API adapters and explicit migration of legacy material usage.
+  Existing Laboratory and Batch screens remain unchanged.
+end note
+@enduml
