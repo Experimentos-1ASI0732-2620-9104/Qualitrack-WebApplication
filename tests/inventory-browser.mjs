@@ -63,7 +63,31 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin + '/inventory');
   await page.waitForURL('**/inventory/inventory-catalogue');
+  const openMenu = async () => {
+   if (width < 1024) await page.getByRole('button', { name: 'Main navigation', exact: true }).click();
+  };
+  await openMenu();
+  const inventoryMenu = page.locator('mat-expansion-panel').filter({
+   has: page.locator('.nav-label', { hasText: /^Inventory$/ }),
+  });
+  const inventoryHeader = inventoryMenu.locator('mat-expansion-panel-header');
+  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'true');
+  await inventoryHeader.click();
+  await inventoryMenu.locator('mat-expansion-panel-header[aria-expanded="false"]').waitFor();
+  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'false');
+  await inventoryHeader.focus();
+  await inventoryHeader.press('Enter');
+  await inventoryMenu.locator('mat-expansion-panel-header[aria-expanded="true"]').waitFor();
+  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'true');
+  assert.ok((await inventoryMenu.getByRole('button', { name: 'Material catalogue', exact: true }).getAttribute('class')).includes('sub-active'));
+  await page.screenshot({ path: join(output, `navigation-${width}.png`), fullPage: true, animations: 'disabled' });
+  await inventoryMenu.getByRole('button', { name: 'Register material', exact: true }).click();
+  await page.waitForURL('**/inventory/register-material');
+  await page.getByLabel('Code', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.waitForURL('**/inventory/inventory-catalogue');
   await page.getByRole('button', { name: 'New material', exact: true }).click();
+  await page.waitForURL('**/inventory/register-material');
   await page.getByLabel('Code', { exact: true }).fill('RM-001');
   await page.getByLabel('Material', { exact: true }).fill('Sodium chloride');
   await page.getByLabel('Minimum stock', { exact: true }).fill('20');

@@ -1,5 +1,7 @@
 {
   "inventory": {
+    "catalogue": "Material catalogue",
+    "registerMaterial": "Register material",
     "title": "Inventory",
     "refresh": "Refresh",
     "legacy": "Previous balances",

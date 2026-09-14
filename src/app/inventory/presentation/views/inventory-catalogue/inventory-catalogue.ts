@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -34,6 +34,8 @@ import { stockQuantityValidator } from '../../../../shared/presentation/stock-qu
 export class InventoryCatalogue implements OnInit {
   readonly store = inject(InventoryStore);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly search = signal('');
   readonly lowOnly = signal(false);
   readonly creating = signal(false);
@@ -62,7 +64,14 @@ export class InventoryCatalogue implements OnInit {
     minimumStock: [0, [Validators.required, Validators.min(0)]],
   });
   ngOnInit() {
+    this.creating.set(this.route.snapshot.data['createMaterial'] === true);
     void this.store.load();
+  }
+  cancelCreate() {
+    this.creating.set(false);
+    if (this.route.snapshot.data['createMaterial']) {
+      void this.router.navigate(['/inventory/inventory-catalogue']);
+    }
   }
   async save() {
     this.form.controls.minimumStock.setValidators([
@@ -74,7 +83,7 @@ export class InventoryCatalogue implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     if (await this.store.saveMaterial(this.form.getRawValue())) {
-      this.creating.set(false);
+      this.cancelCreate();
       this.form.reset();
     }
   }

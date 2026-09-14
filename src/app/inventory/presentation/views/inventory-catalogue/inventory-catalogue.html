@@ -14,7 +14,7 @@
           <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.legacy' | translate }}
         </button>
       }
-      <button mat-flat-button (click)="creating.set(!creating())">
+      <button mat-flat-button routerLink="/inventory/register-material">
         <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
       </button>
     </div>
@@ -67,7 +67,7 @@
           ><button
             mat-button
             type="button"
-            (click)="creating.set(false)"
+            (click)="cancelCreate()"
             [disabled]="store.saving()"
           >
             {{ 'inventory.cancel' | translate }}

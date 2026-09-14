@@ -13,6 +13,11 @@ const inventoryRoutes: Routes = [
     component: Layout,
     children: [
       { path: 'inventory-catalogue', loadComponent: inventoryCatalogue },
+      {
+        path: 'register-material',
+        loadComponent: inventoryCatalogue,
+        data: { createMaterial: true },
+      },
       { path: 'inventory-detail/:id', loadComponent: inventoryDetail },
       // Preserve links created before the route naming was aligned.
       { path: 'materials/:id', redirectTo: 'inventory-detail/:id', pathMatch: 'full' },

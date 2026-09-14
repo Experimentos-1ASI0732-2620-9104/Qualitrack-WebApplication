@@ -1,5 +1,7 @@
 {
   "inventory": {
+    "catalogue": "Catálogo de materias primas",
+    "registerMaterial": "Registrar materia prima",
     "title": "Inventario",
     "refresh": "Actualizar",
     "legacy": "Saldos anteriores",
