@@ -1,6 +1,6 @@
 import { InventoryUnit } from './raw-material.entity';
 
-/** Authoritative stock change returned after the server commits the transaction. */
+/** Command result without an independent entity identity; stock is authoritative from the server. */
 export interface RawMaterialBatchConsumption {
   readonly rawMaterialBatchId: number;
   readonly productBatchId: number;

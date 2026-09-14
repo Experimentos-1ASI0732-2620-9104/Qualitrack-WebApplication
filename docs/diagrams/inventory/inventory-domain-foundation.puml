@@ -1,53 +1,73 @@
 @startuml inventory-domain-foundation
-title QualiTrack Inventory - Client contracts (not connected to routes yet)
-skinparam classAttributeIconSize 0
+title QualiTrack Inventory - Frontend layers
 skinparam shadowing false
-interface RawMaterial {
-  id: number
-  laboratoryId: number
-  code: string
-  name: string
-  unit: InventoryUnit
-  minimumStock: number
+package "inventory.presentation" {
+  component "inventory-routes" as Routes
+  component "views/inventory-catalogue" as Catalogue
+  component "views/inventory-detail" as Detail
 }
-interface RawMaterialBatch {
-  id: number
-  rawMaterialId: number
-  laboratoryId: number
-  supplier: string
-  batchNumber: string
-  initialAmount: number
-  availableAmount: number
-  receivedOn: string
-  expiresOn: string
-  status: RawMaterialBatchStatus
+package "inventory.application" {
+  component InventoryStore
+  component ReceiptConsumptionStore
 }
-interface AvailableReceipt
-interface ConsumeRawMaterialBatchCommand {
-  laboratoryId: number
-  rawMaterialBatchId: number
-  productBatchId: number
-  amountUsed: number
-  unit: InventoryUnit
-  operationId: string
+package "inventory.domain.model" {
+  class RawMaterial
+  class RawMaterialBatch
+  class InventoryMovement
+  interface AvailableReceipt
+  component "Typed commands and consumption result" as Commands
 }
-interface RawMaterialBatchConsumption {
-  stockBefore: number
-  stockAfter: number
-  operationId: string
+package "inventory.infrastructure" {
+  component InventoryApi
+  component "Material / Receipt / Movement API endpoints" as Endpoints
+  component "LegacyInventoryApiEndpoint (read/import)" as Legacy
+  component "Resources / responses / requests" as Resources
+  component "Assemblers" as Assemblers
 }
-RawMaterial "1" <-- "0..*" RawMaterialBatch : catalog reference
-RawMaterialBatch ..> AvailableReceipt : server eligibility projection
-ConsumeRawMaterialBatchCommand ..> RawMaterialBatchConsumption : future API
-note bottom of RawMaterialBatch
-  Status: QUARANTINED / RELEASED / OBSERVED / REJECTED.
-  New receipts require review before release.
-  ISO date strings; backend owns business date and expiry rules.
-  Quantity arithmetic, stock validation and tenant authorization run in backend.
+package "shared" {
+  interface BaseEntity
+  class BaseApi
+  class BaseApiEndpoint
+  interface BaseAssembler
+  interface BaseResource
+  interface BaseResponse
+  component "Layout / quantity validator" as SharedUI
+}
+Routes --> Catalogue
+Routes --> Detail
+Catalogue --> InventoryStore
+Detail --> InventoryStore
+Catalogue --> SharedUI
+Detail --> SharedUI
+component "Batch raw-material-usage view" as Batch
+Batch --> ReceiptConsumptionStore
+InventoryStore --> InventoryApi
+ReceiptConsumptionStore --> InventoryApi
+ReceiptConsumptionStore --> Commands
+InventoryApi --|> BaseApi
+InventoryApi --> Endpoints
+InventoryApi --> Legacy
+Endpoints --|> BaseApiEndpoint
+Endpoints --> Assemblers
+Endpoints --> Resources
+Assemblers ..|> BaseAssembler
+Resources --> BaseResource
+Resources --> BaseResponse
+RawMaterial ..|> BaseEntity
+RawMaterialBatch ..|> BaseEntity
+InventoryMovement ..|> BaseEntity
+AvailableReceipt ..|> BaseEntity
+Assemblers --> RawMaterial
+Assemblers --> RawMaterialBatch
+Assemblers --> InventoryMovement
+note bottom of ReceiptConsumptionStore
+  Select a released receipt, not an independent material balance.
+  Keep operationId for retries; refresh authoritative stock after writes.
+  No client-side stock deductions or fabricated data.
 end note
-note bottom of ConsumeRawMaterialBatchCommand
-  No HTTP endpoint, route, mock store or browser-side stock deduction is added yet.
-  Next increment: real API adapters and explicit migration of legacy material usage.
-  Existing Laboratory and Batch screens remain unchanged.
+note bottom of InventoryStore
+  Catalogue, receipt review, movements and legacy history.
+  HTTP and request coordination remain outside presentation.
+  Backend enforces tenant, stock, unit, date and review rules.
 end note
 @enduml

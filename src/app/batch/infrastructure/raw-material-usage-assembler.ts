@@ -61,6 +61,7 @@ export class RawMaterialUsageAssembler implements BaseAssembler<
     return new RawMaterialUsage({
       id: resource.id,
       stockBefore: resource.stockBefore,
+      inventoryReceiptId: resource.inventoryReceiptId,
       stockAfter: resource.stockAfter,
       batchId: resource.batchId,
       rawMaterialId: resource.rawMaterialId,
@@ -86,6 +87,7 @@ export class RawMaterialUsageAssembler implements BaseAssembler<
     return {
       id: entity.id,
       stockBefore: entity.stockBefore,
+      inventoryReceiptId: entity.inventoryReceiptId,
       stockAfter: entity.stockAfter,
       batchId: entity.batchId,
       rawMaterialId: entity.rawMaterialId,

@@ -31,7 +31,7 @@ export class Dashboard {
     { key: 'open-alerts', value: this.store.openAlerts().length, state: this.store.alerts().status,
       icon: 'warning_amber', route: '/alerts/alert-dashboard', color: 'red' },
     { key: 'low-stock', value: this.store.lowStock().length, state: this.store.materials().status,
-      icon: 'science', route: '/laboratories/raw-material-list', color: 'amber' },
+      icon: 'inventory_2', route: '/inventory', color: 'amber' },
   ]);
   protected readonly batchStatuses = ['PENDING', 'IN_PROGRESS', 'RELEASED', 'REJECTED'] as const;
   protected readonly batchDistribution = computed(() => this.batchStatuses.map(status => ({ status,

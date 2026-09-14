@@ -32,6 +32,7 @@ export class RawMaterialUsage implements BaseEntity {
    * The unique numeric identifier for this material usage record.
    */
   id: number;
+  inventoryReceiptId: number | null;
   stockBefore: number | null;
   stockAfter: number | null;
 
@@ -89,6 +90,7 @@ export class RawMaterialUsage implements BaseEntity {
    */
   constructor(params: {
     id: number;
+    inventoryReceiptId?: number | null;
     stockBefore?: number | null;
     stockAfter?: number | null;
     batchId: number;
@@ -100,6 +102,7 @@ export class RawMaterialUsage implements BaseEntity {
     createdAt: string;
   }) {
     this.id = params.id;
+    this.inventoryReceiptId = params.inventoryReceiptId ?? null;
     this.stockBefore = params.stockBefore ?? null;
     this.stockAfter = params.stockAfter ?? null;
     this.batchId = params.batchId;

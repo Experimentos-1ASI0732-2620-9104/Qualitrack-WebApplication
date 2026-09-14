@@ -126,9 +126,12 @@ export class Layout {
         { label: 'staff-form.title', link: '/laboratories/staff-form' },
         { label: 'product-catalog.title', link: '/laboratories/product-catalog' },
         { label: 'product-form.title', link: '/laboratories/product-form' },
-        { label: 'raw-material-list.title', link: '/laboratories/raw-material-list' },
-        { label: 'raw-material-form.title', link: '/laboratories/raw-material-form' },
       ],
+    },
+    {
+      label: 'inventory.title',
+      icon: 'inventory_2',
+      link: '/inventory',
     },
     {
       label: 'nav.tracking',

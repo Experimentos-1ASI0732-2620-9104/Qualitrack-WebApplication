@@ -44,6 +44,7 @@ export const routes: Routes = [
     children: [{ path: '', loadComponent: dashboard, title: `Dashboard - ${baseTitle}` }],
   },
   { path: 'iam', loadChildren: iamRoutes },
+  { path: 'inventory', loadChildren: () => import('./inventory/presentation/inventory-routes').then(m => m.inventoryRoutes), canActivate: [onboardingGuard], canActivateChild: [onboardingGuard] },
   { path: 'laboratories', loadChildren: laboratoryRoutes, canActivate: [iamGuard] },
   { path: 'equipments', loadChildren: equipmentRoutes, canActivate: [onboardingGuard], canActivateChild: [onboardingGuard] },
   { path: 'batches', loadChildren: batchRoutes, canActivate: [onboardingGuard], canActivateChild: [onboardingGuard] },
