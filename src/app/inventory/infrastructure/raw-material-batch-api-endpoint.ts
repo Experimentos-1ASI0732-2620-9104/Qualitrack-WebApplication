@@ -18,7 +18,9 @@ import {
   ReceiptConsumptionResponse,
 } from './receipt-consumption-response';
 import { AvailableReceipt } from '../domain/model/available-receipt.entity';
-import { RawMaterialBatchConsumption } from '../domain/model/raw-material-batch-consumption.result';
+import type { RawMaterialBatchConsumption } from '../application/raw-material-batch-consumption.result';
+
+const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
 
 export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   RawMaterialBatch,
@@ -27,18 +29,16 @@ export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   RawMaterialBatchAssembler
 > {
   constructor(http: HttpClient) {
-    super(
-      http,
-      environment.serverBasePath + environment.laboratoryLabsEndpointPath,
-      new RawMaterialBatchAssembler(),
-    );
+    super(http, laboratoriesEndpointUrl, new RawMaterialBatchAssembler());
   }
   private root(lab: number) {
     return `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}`;
   }
   getByMaterial(lab: number, material: number) {
     return this.http
-      .get<RawMaterialBatchResource[]>(`${this.root(lab)}/materials/${material}/receipts`)
+      .get<RawMaterialBatchResource[]>(
+        `${this.root(lab)}${environment.inventoryMaterialsEndpointPath}/${material}${environment.inventoryReceiptsEndpointPath}`,
+      )
       .pipe(
         map((resources) =>
           resources.map((resource) => this.assembler.toEntityFromResource(resource)),
@@ -48,7 +48,9 @@ export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   }
   getUsable(lab: number, material: number) {
     return this.http
-      .get<AvailableReceiptResource[]>(`${this.root(lab)}/materials/${material}/usable-receipts`)
+      .get<AvailableReceiptResource[]>(
+        `${this.root(lab)}${environment.inventoryMaterialsEndpointPath}/${material}${environment.inventoryUsableReceiptsEndpointPath}`,
+      )
       .pipe(
         map((resources) =>
           resources.map((resource): AvailableReceipt => ({
@@ -65,7 +67,10 @@ export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   }
   receive(lab: number, material: number, request: ReceiveRawMaterialBatchRequest) {
     return this.http
-      .post<RawMaterialBatchResource>(`${this.root(lab)}/materials/${material}/receipts`, request)
+      .post<RawMaterialBatchResource>(
+        `${this.root(lab)}${environment.inventoryMaterialsEndpointPath}/${material}${environment.inventoryReceiptsEndpointPath}`,
+        request,
+      )
       .pipe(
         map((resource) => this.assembler.toEntityFromResource(resource)),
         catchError(this.handleError('Failed to register receipt')),
@@ -73,7 +78,10 @@ export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   }
   review(lab: number, receipt: number, request: ReviewRawMaterialBatchRequest) {
     return this.http
-      .post<RawMaterialBatchResource>(`${this.root(lab)}/receipts/${receipt}/reviews`, request)
+      .post<RawMaterialBatchResource>(
+        `${this.root(lab)}${environment.inventoryReceiptsEndpointPath}/${receipt}${environment.inventoryReceiptReviewsEndpointPath}`,
+        request,
+      )
       .pipe(
         map((resource) => this.assembler.toEntityFromResource(resource)),
         catchError(this.handleError('Failed to review receipt')),
@@ -81,7 +89,10 @@ export class RawMaterialBatchApiEndpoint extends BaseApiEndpoint<
   }
   consume(lab: number, request: ConsumeRawMaterialBatchRequest) {
     return this.http
-      .post<ReceiptConsumptionResponse>(`${this.root(lab)}/consumptions`, request)
+      .post<ReceiptConsumptionResponse>(
+        `${this.root(lab)}${environment.inventoryConsumptionsEndpointPath}`,
+        request,
+      )
       .pipe(
         map((resource): RawMaterialBatchConsumption => ({
           rawMaterialBatchId: resource.rawMaterialBatchId,

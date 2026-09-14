@@ -9,6 +9,8 @@ import {
 } from './inventory-movement-response';
 import { InventoryMovementAssembler } from './inventory-movement-assembler';
 
+const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
+
 export class InventoryMovementApiEndpoint extends BaseApiEndpoint<
   InventoryMovement,
   InventoryMovementResource,
@@ -16,16 +18,12 @@ export class InventoryMovementApiEndpoint extends BaseApiEndpoint<
   InventoryMovementAssembler
 > {
   constructor(http: HttpClient) {
-    super(
-      http,
-      environment.serverBasePath + environment.laboratoryLabsEndpointPath,
-      new InventoryMovementAssembler(),
-    );
+    super(http, laboratoriesEndpointUrl, new InventoryMovementAssembler());
   }
   getByMaterial(lab: number, material: number) {
     return this.http
       .get<InventoryMovementResource[]>(
-        `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}/materials/${material}/movements`,
+        `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}${environment.inventoryMaterialsEndpointPath}/${material}${environment.inventoryMovementsEndpointPath}`,
       )
       .pipe(
         map((resources) =>

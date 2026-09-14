@@ -3,11 +3,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiError } from '../../shared/infrastructure/api-error';
 import { firstValueFrom, forkJoin, Observable } from 'rxjs';
 import { InventoryApi } from '../infrastructure/inventory-api';
-import {
-  InventoryMaterial,
-  InventoryMovement,
-  LegacyMaterial,
-} from '../domain/model/inventory-catalogue';
+import { RawMaterial } from '../domain/model/raw-material.entity';
+import { InventoryMovement } from '../domain/model/inventory-movement.entity';
+import { LegacyMaterial } from '../domain/model/legacy-material.entity';
 import { RawMaterialBatch } from '../domain/model/raw-material-batch.entity';
 import { BatchApi } from '../../batch/infrastructure/batch-api';
 import { RawMaterialUsage } from '../../batch/domain/model/raw-material-usage.entity';
@@ -35,7 +33,7 @@ export class InventoryStore {
   private readonly api = inject(InventoryApi);
   private readonly iam = inject(IamStore);
   private readonly batchApi = inject(BatchApi);
-  readonly materials = signal<InventoryMaterial[]>([]);
+  readonly materials = signal<RawMaterial[]>([]);
   readonly receipts = signal<RawMaterialBatch[]>([]);
   readonly movements = signal<InventoryMovement[]>([]);
   readonly legacy = signal<LegacyMaterial[]>([]);

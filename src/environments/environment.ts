@@ -1,6 +1,5 @@
 export const environment = {
   production: true,
-  inventoryEndpointPath: '/inventory',
 
   // Base API URL
   serverBasePath: 'http://localhost:8080/api/v1',
@@ -19,6 +18,17 @@ export const environment = {
   laboratoryStaffEndpointPath: '/staff',
   laboratoryProductsEndpointPath: '/products',
   laboratoryRawMaterialsEndpointPath: '/raw-materials',
+
+  // Inventory
+  inventoryEndpointPath: '/inventory',
+  inventoryMaterialsEndpointPath: '/materials',
+  inventoryReceiptsEndpointPath: '/receipts',
+  inventoryUsableReceiptsEndpointPath: '/usable-receipts',
+  inventoryReceiptReviewsEndpointPath: '/reviews',
+  inventoryConsumptionsEndpointPath: '/consumptions',
+  inventoryMovementsEndpointPath: '/movements',
+  inventoryLegacyMaterialsEndpointPath: '/legacy-materials',
+  inventoryLegacyImportEndpointPath: '/import',
 
   // Equipment
   equipmentEndpointPath: '/equipments',

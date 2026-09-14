@@ -2,8 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map } from 'rxjs';
 import { ErrorHandlingEnabledBaseType } from '../../shared/infrastructure/error-handling-enabled-base-type';
 import { environment } from '../../../environments/environment';
-import { LegacyMaterial } from '../domain/model/inventory-catalogue';
+import { LegacyMaterial } from '../domain/model/legacy-material.entity';
 import { LegacyMaterialResource, LegacyImportResponse } from './legacy-inventory-response';
+
+const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
 
 /** Read-only legacy snapshot and one-time transfer, not a second writable catalogue. */
 export class LegacyInventoryApiEndpoint extends ErrorHandlingEnabledBaseType {
@@ -11,7 +13,7 @@ export class LegacyInventoryApiEndpoint extends ErrorHandlingEnabledBaseType {
     super();
   }
   private root(lab: number) {
-    return `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}/${lab}${environment.inventoryEndpointPath}/legacy-materials`;
+    return `${laboratoriesEndpointUrl}/${lab}${environment.inventoryEndpointPath}${environment.inventoryLegacyMaterialsEndpointPath}`;
   }
   pending(lab: number) {
     return this.http.get<LegacyMaterialResource[]>(this.root(lab)).pipe(
@@ -32,7 +34,10 @@ export class LegacyInventoryApiEndpoint extends ErrorHandlingEnabledBaseType {
   }
   importMaterial(lab: number, id: number) {
     return this.http
-      .post<LegacyImportResponse>(`${this.root(lab)}/${id}/import`, {})
+      .post<LegacyImportResponse>(
+        `${this.root(lab)}/${id}${environment.inventoryLegacyImportEndpointPath}`,
+        {},
+      )
       .pipe(catchError(this.handleError('Failed to import previous balance')));
   }
 }

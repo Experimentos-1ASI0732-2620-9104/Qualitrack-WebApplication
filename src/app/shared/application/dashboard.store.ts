@@ -9,7 +9,7 @@ import { CaApi } from '../../ca/infrastructure/ca-api';
 import { TrackingApi } from '../../tracking/infrastructure/tracking-api';
 import { SubscriptionApi } from '../../subscription/infrastructure/subscription-api';
 import { Laboratory } from '../../laboratory/domain/model/laboratory.entity';
-import { InventoryMaterial } from '../../inventory/domain/model/inventory-catalogue';
+import { RawMaterial } from '../../inventory/domain/model/raw-material.entity';
 import { InventoryApi } from '../../inventory/infrastructure/inventory-api';
 import { Equipment } from '../../equipment/domain/model/equipment.entity';
 import { Batch } from '../../batch/domain/model/batch.entity';
@@ -37,7 +37,7 @@ export class DashboardStore {
   readonly laboratory = resource<Laboratory>();
   readonly equipment = resource<Equipment[]>();
   readonly batches = resource<Batch[]>();
-  readonly materials = resource<InventoryMaterial[]>();
+  readonly materials = resource<RawMaterial[]>();
   readonly alerts = resource<DeviationAlert[]>();
   readonly measurements = resource<Measurement[]>();
   readonly subscription = resource<Subscription | null>();

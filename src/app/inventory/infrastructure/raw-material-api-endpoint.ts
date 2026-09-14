@@ -7,6 +7,8 @@ import { RawMaterialResource, RawMaterialsResponse } from './raw-material-respon
 import { RawMaterialAssembler } from './raw-material-assembler';
 import { SaveRawMaterialRequest } from './raw-material.request';
 
+const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
+
 export class RawMaterialApiEndpoint extends BaseApiEndpoint<
   RawMaterial,
   RawMaterialResource,
@@ -14,16 +16,12 @@ export class RawMaterialApiEndpoint extends BaseApiEndpoint<
   RawMaterialAssembler
 > {
   constructor(http: HttpClient) {
-    super(
-      http,
-      environment.serverBasePath + environment.laboratoryLabsEndpointPath,
-      new RawMaterialAssembler(),
-    );
+    super(http, laboratoriesEndpointUrl, new RawMaterialAssembler());
   }
   getByLaboratory(lab: number) {
     return this.http
       .get<RawMaterialResource[]>(
-        `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}/materials`,
+        `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}${environment.inventoryMaterialsEndpointPath}`,
       )
       .pipe(
         map((resources) =>
@@ -33,7 +31,7 @@ export class RawMaterialApiEndpoint extends BaseApiEndpoint<
       );
   }
   saveMaterial(lab: number, request: SaveRawMaterialRequest, id?: number) {
-    const url = `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}/materials`;
+    const url = `${this.endpointUrl}/${lab}${environment.inventoryEndpointPath}${environment.inventoryMaterialsEndpointPath}`;
     const response = id
       ? this.http.put<RawMaterialResource>(`${url}/${id}`, request)
       : this.http.post<RawMaterialResource>(url, request);

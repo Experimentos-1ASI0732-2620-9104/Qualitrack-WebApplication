@@ -134,7 +134,7 @@
         @for (material of filtered(); track material.id) {
           <tr>
             <td>
-              <a [routerLink]="['/inventory/materials', material.id]">{{ material.name }}</a
+              <a [routerLink]="['/inventory/inventory-detail', material.id]">{{ material.name }}</a
               ><small>{{ material.code }}</small>
             </td>
             <td

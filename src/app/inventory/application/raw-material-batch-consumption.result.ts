@@ -1,4 +1,4 @@
-import { InventoryUnit } from './raw-material.entity';
+import { InventoryUnit } from '../domain/model/raw-material.entity';
 
 /** Command result without an independent entity identity; stock is authoritative from the server. */
 export interface RawMaterialBatchConsumption {

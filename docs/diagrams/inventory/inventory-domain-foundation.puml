@@ -9,13 +9,14 @@ package "inventory.presentation" {
 package "inventory.application" {
   component InventoryStore
   component ReceiptConsumptionStore
+  component RawMaterialBatchConsumption
 }
 package "inventory.domain.model" {
   class RawMaterial
   class RawMaterialBatch
   class InventoryMovement
   interface AvailableReceipt
-  component "Typed commands and consumption result" as Commands
+  component "Typed commands" as Commands
 }
 package "inventory.infrastructure" {
   component InventoryApi
@@ -50,6 +51,7 @@ InventoryApi --> Legacy
 Endpoints --|> BaseApiEndpoint
 Endpoints --> Assemblers
 Endpoints --> Resources
+Endpoints ..> RawMaterialBatchConsumption : mapped command result
 Assemblers ..|> BaseAssembler
 Resources --> BaseResource
 Resources --> BaseResponse

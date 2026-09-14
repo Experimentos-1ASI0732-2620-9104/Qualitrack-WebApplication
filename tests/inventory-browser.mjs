@@ -62,12 +62,16 @@ try {
   const page = await context.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin + '/inventory');
+  await page.waitForURL('**/inventory/inventory-catalogue');
   await page.getByRole('button', { name: 'New material', exact: true }).click();
   await page.getByLabel('Code', { exact: true }).fill('RM-001');
   await page.getByLabel('Material', { exact: true }).fill('Sodium chloride');
   await page.getByLabel('Minimum stock', { exact: true }).fill('20');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('link', { name: 'Sodium chloride', exact: true }).click();
+  await page.waitForURL('**/inventory/inventory-detail/2');
+  await page.goto(origin + '/inventory/materials/2');
+  await page.waitForURL('**/inventory/inventory-detail/2');
   await page.getByRole('button', { name: 'New receipt', exact: true }).click();
   await page.getByLabel('Supplier', { exact: true }).fill('IoTech test supplier');
   await page.getByLabel('Supplier lot', { exact: true }).fill('SUP-001');
@@ -101,6 +105,7 @@ try {
   await quantity.fill('25'); await add.click(); await usage.getByText('Changes saved.', { exact: true }).waitFor();
   assert.equal(receipt.availableAmount, 15);
   await usage.getByRole('link', { name: 'Sodium chloride', exact: true }).first().click();
+  await page.waitForURL('**/inventory/inventory-detail/2');
   await page.getByRole('tab', { name: 'Movements', exact: true }).click();
   await page.getByText('Consumption', { exact: true }).first().waitFor();
   await page.screenshot({ path: join(output, `movements-${width}.png`), fullPage: true, animations: 'disabled' });

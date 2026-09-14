@@ -99,7 +99,9 @@
         <td mat-cell *matCellDef="let usage">
           <a
             [routerLink]="[
-              usage.inventoryReceiptId ? '/inventory/materials' : '/laboratories/raw-materials',
+              usage.inventoryReceiptId
+                ? '/inventory/inventory-detail'
+                : '/laboratories/raw-materials',
               usage.rawMaterialId,
             ]"
             >{{ usage.rawMaterialName }}</a
