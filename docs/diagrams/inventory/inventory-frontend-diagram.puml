@@ -1,0 +1,341 @@
+@startuml inventory-frontend-diagram
+title QualiTrack - Inventory Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+package "shared" <<External>> {
+  interface BaseEntity
+  abstract class BaseApi
+  abstract class BaseApiEndpoint
+  abstract class ErrorHandlingEnabledBaseType
+  interface BaseAssembler
+  interface BaseResource
+  interface BaseResponse
+  class Layout
+  class stockQuantityValidator <<function>>
+}
+package "iam.application" <<External>> {
+  class IamStore
+}
+package "batch" <<External>> {
+  class BatchApi
+  class RawMaterialUsage
+  class RawMaterialUsageComponent
+}
+package "environments" <<Configuration>> {
+  class environment {
+    +serverBasePath
+    +laboratoryLabsEndpointPath
+    +inventoryEndpointPath
+    +inventoryMaterialsEndpointPath
+    +inventoryReceiptsEndpointPath
+    +inventoryUsableReceiptsEndpointPath
+    +inventoryReceiptReviewsEndpointPath
+    +inventoryConsumptionsEndpointPath
+    +inventoryMovementsEndpointPath
+    +inventoryLegacyMaterialsEndpointPath
+    +inventoryLegacyImportEndpointPath
+  }
+}
+
+package "inventory.domain.model" {
+  interface AvailableReceipt {
+    +id: number
+    +rawMaterialId: number
+    +batchNumber: string
+    +unit: InventoryUnit
+    +availableAmount: number
+    +expiresOn: string
+  }
+  interface ConsumeRawMaterialBatchCommand {
+    +laboratoryId: number
+    +rawMaterialBatchId: number
+    +productBatchId: number
+    +amountUsed: number
+    +unit: InventoryUnit
+    +operationId: string
+  }
+  class InventoryMovement {
+    +id: number
+    +materialId: number
+    +receiptId: number
+    +productBatchId: number | null
+    +type: InventoryMovementType
+    +amount: number
+    +unit: InventoryUnit
+    +stockBefore: number
+    +stockAfter: number
+    +statusBefore: string | null
+    +statusAfter: string
+    +reason: string
+    +actorId: number
+    +occurredAt: string
+  }
+  interface LegacyMaterial {
+    +id: number
+    +code: string
+    +name: string
+    +unit: string
+    +balance: number
+    +supplier: string
+    +batchNumber: string
+    +expiresOn: string
+  }
+  class RawMaterialBatch {
+    +id: number
+    +laboratoryId: number
+    +rawMaterialId: number
+    +supplier: string
+    +batchNumber: string
+    +unit: InventoryUnit
+    +initialAmount: number
+    +availableAmount: number
+    +receivedOn: string
+    +expiresOn: string
+    +status: RawMaterialBatchStatus
+    +usable?: boolean
+    +availability?: string
+  }
+  class RawMaterial {
+    +id: number
+    +laboratoryId: number
+    +code: string
+    +name: string
+    +unit: InventoryUnit
+    +minimumStock: number
+    +usableStock: number
+    +physicalStock: number
+    +legacyId: number | null
+  }
+  interface ReceiveRawMaterialBatchCommand {
+    +supplier: string
+    +batchNumber: string
+    +unit: InventoryUnit
+    +amount: number
+    +receivedOn: string
+    +expiresOn: string
+  }
+  interface ReviewRawMaterialBatchCommand {
+    +status: RawMaterialBatchStatus
+    +reason: string
+  }
+  interface SaveRawMaterialCommand {
+    +code: string
+    +name: string
+    +unit: InventoryUnit
+    +minimumStock: number
+  }
+  enum InventoryUnit <<union type>> {
+    kg
+    g
+    L
+    mL
+    units
+  }
+  enum RawMaterialBatchStatus <<union type>> {
+    QUARANTINED
+    RELEASED
+    OBSERVED
+    REJECTED
+  }
+  enum InventoryMovementType <<union type>> {
+    RECEIPT
+    REVIEW
+    CONSUMPTION
+    OPENING_BALANCE
+  }
+}
+
+package "inventory.application" {
+  class InventoryStore {
+    +materials: Signal<RawMaterial[]>
+    +receipts: Signal<RawMaterialBatch[]>
+    +movements: Signal<InventoryMovement[]>
+    +selected
+    +canReview
+    +loading
+    +saving
+    +error
+    +load(id?): Promise<void>
+    +saveMaterial(command, id?)
+    +receive(material, command)
+    +review(receipt, command)
+    +loadLegacy(): Promise<void>
+    +importMaterial(id)
+  }
+  interface RawMaterialBatchConsumption {
+    +rawMaterialBatchId: number
+    +productBatchId: number
+    +amountUsed: number
+    +unit: InventoryUnit
+    +stockBefore: number
+    +stockAfter: number
+    +operationId: string
+  }
+  class ReceiptConsumptionStore {
+    +materials: Signal<RawMaterial[]>
+    +receipts: Signal<AvailableReceipt[]>
+    +selectedReceipt
+    +loading
+    +saving
+    +error
+    +loadMaterials()
+    +selectMaterial(material)
+    +consume(batchId, amount): Promise<boolean>
+  }
+}
+
+package "inventory.infrastructure" {
+  class InventoryApi {
+    +materials(lab)
+    +save(lab, request, id?)
+    +receipts(lab, material)
+    +usable(lab, material)
+    +receive(lab, material, request)
+    +review(lab, receipt, status, reason)
+    +movements(lab, material)
+    +consume(lab, receiptId, productBatchId, amount, unit, operationId)
+    +legacy(lab)
+    +import(lab, id)
+  }
+  class InventoryMovementApiEndpoint
+  class InventoryMovementAssembler
+  interface InventoryMovementResource
+  interface InventoryMovementsResponse
+  class LegacyInventoryApiEndpoint
+  interface LegacyMaterialResource
+  interface LegacyImportResponse
+  class RawMaterialApiEndpoint
+  class RawMaterialAssembler
+  class RawMaterialBatchApiEndpoint
+  class RawMaterialBatchAssembler
+  interface RawMaterialBatchResource
+  interface RawMaterialBatchesResponse
+  interface ReceiveRawMaterialBatchRequest
+  interface ReviewRawMaterialBatchRequest
+  interface ConsumeRawMaterialBatchRequest
+  interface RawMaterialResource
+  interface RawMaterialsResponse
+  interface SaveRawMaterialRequest
+  interface AvailableReceiptResource
+  interface ReceiptConsumptionResponse
+}
+
+package "inventory.presentation" {
+  class InventoryCatalogue {
+    +search
+    +lowOnly
+    +filtered
+    +lowCount
+    +ngOnInit()
+    +showImports()
+    +import(id)
+  }
+  class InventoryDetail
+  class RegisterMaterial {
+    +form
+    +units: InventoryUnit[]
+    +save(): Promise<void>
+  }
+  class inventoryRoutes <<Routes>>
+}
+
+InventoryStore --> InventoryApi
+InventoryStore --> IamStore
+InventoryStore --> BatchApi : legacy history
+InventoryStore ..> RawMaterialUsage
+ReceiptConsumptionStore --> InventoryApi
+ReceiptConsumptionStore --> IamStore
+ReceiptConsumptionStore ..> ConsumeRawMaterialBatchCommand
+ReceiptConsumptionStore ..> AvailableReceipt
+RawMaterialUsageComponent --> ReceiptConsumptionStore
+InventoryStore ..> SaveRawMaterialCommand
+InventoryStore ..> ReceiveRawMaterialBatchCommand
+InventoryStore ..> ReviewRawMaterialBatchCommand
+InventoryStore ..> RawMaterial
+InventoryStore ..> RawMaterialBatch
+InventoryStore ..> InventoryMovement
+RawMaterial "1" <-- "0..*" RawMaterialBatch : rawMaterialId
+RawMaterialBatch "1" <-- "0..*" InventoryMovement : receiptId
+RawMaterial ..> InventoryUnit
+RawMaterialBatch ..> RawMaterialBatchStatus
+InventoryMovement ..> InventoryMovementType
+InventoryApi --|> BaseApi
+LegacyInventoryApiEndpoint --|> ErrorHandlingEnabledBaseType
+RawMaterialBatchApiEndpoint ..> AvailableReceiptResource
+RawMaterialBatchApiEndpoint ..> AvailableReceipt
+RawMaterialBatchApiEndpoint ..> ReceiptConsumptionResponse
+RawMaterialBatchApiEndpoint ..> RawMaterialBatchConsumption
+LegacyInventoryApiEndpoint ..> LegacyMaterialResource
+LegacyInventoryApiEndpoint ..> LegacyMaterial
+LegacyInventoryApiEndpoint ..> LegacyImportResponse
+RawMaterialApiEndpoint ..> SaveRawMaterialRequest
+RawMaterialBatchApiEndpoint ..> ReceiveRawMaterialBatchRequest
+RawMaterialBatchApiEndpoint ..> ReviewRawMaterialBatchRequest
+RawMaterialBatchApiEndpoint ..> ConsumeRawMaterialBatchRequest
+inventoryRoutes ..> Layout
+inventoryRoutes ..> InventoryCatalogue
+inventoryRoutes ..> RegisterMaterial
+inventoryRoutes ..> InventoryDetail
+InventoryCatalogue --> InventoryStore
+RegisterMaterial --> InventoryStore
+InventoryDetail --> InventoryStore
+RegisterMaterial ..> stockQuantityValidator
+InventoryDetail ..> stockQuantityValidator
+AvailableReceipt --|> BaseEntity
+InventoryMovement ..|> BaseEntity
+LegacyMaterial --|> BaseEntity
+RawMaterialBatch ..|> BaseEntity
+RawMaterial ..|> BaseEntity
+InventoryMovementApiEndpoint --|> BaseApiEndpoint
+InventoryMovementAssembler ..|> BaseAssembler
+InventoryMovementResource --|> BaseResource
+InventoryMovementsResponse --|> BaseResponse
+LegacyMaterialResource --|> BaseResource
+LegacyImportResponse --|> BaseResponse
+RawMaterialApiEndpoint --|> BaseApiEndpoint
+RawMaterialAssembler ..|> BaseAssembler
+RawMaterialBatchApiEndpoint --|> BaseApiEndpoint
+RawMaterialBatchAssembler ..|> BaseAssembler
+RawMaterialBatchResource --|> BaseResource
+RawMaterialBatchesResponse --|> BaseResponse
+RawMaterialResource --|> BaseResource
+RawMaterialsResponse --|> BaseResponse
+AvailableReceiptResource --|> BaseResource
+ReceiptConsumptionResponse --|> BaseResponse
+InventoryCatalogue ..|> OnInit
+InventoryDetail ..|> OnInit
+InventoryApi --> RawMaterialApiEndpoint
+RawMaterialApiEndpoint --> RawMaterialAssembler
+RawMaterialApiEndpoint ..> environment
+RawMaterialAssembler ..> RawMaterial
+RawMaterialAssembler ..> RawMaterialResource
+InventoryApi --> RawMaterialBatchApiEndpoint
+RawMaterialBatchApiEndpoint --> RawMaterialBatchAssembler
+RawMaterialBatchApiEndpoint ..> environment
+RawMaterialBatchAssembler ..> RawMaterialBatch
+RawMaterialBatchAssembler ..> RawMaterialBatchResource
+InventoryApi --> InventoryMovementApiEndpoint
+InventoryMovementApiEndpoint --> InventoryMovementAssembler
+InventoryMovementApiEndpoint ..> environment
+InventoryMovementAssembler ..> InventoryMovement
+InventoryMovementAssembler ..> InventoryMovementResource
+InventoryApi --> LegacyInventoryApiEndpoint
+LegacyInventoryApiEndpoint ..> environment
+note bottom of RawMaterial
+  Stock is a server-derived projection, not a second local counter.
+  Laboratory legacy material and Inventory material have separate IDs.
+end note
+note bottom of RegisterMaterial
+  Dedicated registration view: no catalogue table.
+  Save and Cancel return to inventory-catalogue.
+end note
+note bottom of ReceiptConsumptionStore
+  Reuses operationId for retries of the same consumption.
+  The backend decides receipt eligibility and stock availability.
+end note
+
+@enduml

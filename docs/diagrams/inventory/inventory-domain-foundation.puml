@@ -1,5 +1,6 @@
 @startuml inventory-domain-foundation
 title QualiTrack Inventory - Frontend layers
+allowmixing
 skinparam shadowing false
 package "inventory.presentation" {
   component "inventory-routes" as Routes

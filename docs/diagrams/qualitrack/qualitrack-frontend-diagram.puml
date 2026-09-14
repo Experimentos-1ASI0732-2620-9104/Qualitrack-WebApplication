@@ -24,6 +24,7 @@ package "qualitrack-frontend" {
     +alerts
     +reports
     +tracking
+    +inventory
     +subscriptions
     +pageNotFound
   }
@@ -122,6 +123,36 @@ package "qualitrack-frontend" {
       class ProductForm
       class RawMaterialList
       class RawMaterialForm
+    }
+  }
+
+  package "inventory" {
+    package "domain" {
+      class "RawMaterial" as InvRawMaterial
+      class "RawMaterialBatch" as InvRawMaterialBatch
+      class "InventoryMovement" as InvInventoryMovement
+      interface "AvailableReceipt" as InvAvailableReceipt
+      interface "LegacyMaterial" as InvLegacyMaterial
+    }
+    package "application" {
+      class "InventoryStore" as InvInventoryStore
+      class "ReceiptConsumptionStore" as InvReceiptConsumptionStore
+    }
+    package "infrastructure" {
+      class "InventoryApi" as InvInventoryApi
+      class "RawMaterialApiEndpoint" as InvRawMaterialApiEndpoint
+      class "RawMaterialBatchApiEndpoint" as InvRawMaterialBatchApiEndpoint
+      class "InventoryMovementApiEndpoint" as InvInventoryMovementApiEndpoint
+      class "LegacyInventoryApiEndpoint" as InvLegacyInventoryApiEndpoint
+      class "RawMaterialAssembler" as InvRawMaterialAssembler
+      class "RawMaterialBatchAssembler" as InvRawMaterialBatchAssembler
+      class "InventoryMovementAssembler" as InvInventoryMovementAssembler
+    }
+    package "presentation" {
+      class "inventoryRoutes" as InvinventoryRoutes
+      class "InventoryCatalogue" as InvInventoryCatalogue
+      class "RegisterMaterial" as InvRegisterMaterial
+      class "InventoryDetail" as InvInventoryDetail
     }
   }
 
@@ -423,5 +454,53 @@ BaseApiEndpoint ..> BaseAssembler
 BaseApiEndpoint ..> BaseEntity
 BaseApiEndpoint ..> BaseResource
 BaseApiEndpoint ..> BaseResponse
+
+AppRoutes --> InvinventoryRoutes
+InvinventoryRoutes ..> Layout
+InvinventoryRoutes ..> InvInventoryCatalogue
+InvinventoryRoutes ..> InvRegisterMaterial
+InvinventoryRoutes ..> InvInventoryDetail
+InvInventoryCatalogue --> InvInventoryStore
+InvRegisterMaterial --> InvInventoryStore
+InvInventoryDetail --> InvInventoryStore
+InvInventoryStore --> IamStore
+InvInventoryStore --> BatchApi : legacy history
+InvInventoryStore --> InvInventoryApi
+InvReceiptConsumptionStore --> IamStore
+InvReceiptConsumptionStore --> InvInventoryApi
+RawMaterialUsageComponent --> InvReceiptConsumptionStore : consume reviewed receipt
+InvInventoryApi --|> BaseApi
+InvInventoryApi --> InvRawMaterialApiEndpoint
+InvInventoryApi --> InvRawMaterialBatchApiEndpoint
+InvInventoryApi --> InvInventoryMovementApiEndpoint
+InvInventoryApi --> InvLegacyInventoryApiEndpoint
+InvRawMaterialApiEndpoint --|> BaseApiEndpoint
+InvRawMaterialBatchApiEndpoint --|> BaseApiEndpoint
+InvInventoryMovementApiEndpoint --|> BaseApiEndpoint
+InvLegacyInventoryApiEndpoint --|> ErrorHandlingEnabledBaseType
+InvRawMaterialApiEndpoint --> InvRawMaterialAssembler
+InvRawMaterialBatchApiEndpoint --> InvRawMaterialBatchAssembler
+InvInventoryMovementApiEndpoint --> InvInventoryMovementAssembler
+InvRawMaterialAssembler ..|> BaseAssembler
+InvRawMaterialBatchAssembler ..|> BaseAssembler
+InvInventoryMovementAssembler ..|> BaseAssembler
+InvRawMaterial ..|> BaseEntity
+InvRawMaterialBatch ..|> BaseEntity
+InvInventoryMovement ..|> BaseEntity
+InvAvailableReceipt --|> BaseEntity
+InvLegacyMaterial --|> BaseEntity
+InvRawMaterial "1" <-- "0..*" InvRawMaterialBatch : rawMaterialId
+InvRawMaterialBatch "1" <-- "0..*" InvInventoryMovement : receiptId
+
+note bottom of InvInventoryApi
+  Uses the normal environment.serverBasePath and inventory endpoint paths.
+end note
+note bottom of InvRegisterMaterial
+  Dedicated registration form; catalogue and detail are separate routes.
+end note
+note bottom of RawMaterial
+  Laboratory legacy model retained for historical records.
+  New catalogue, receipts and stock movements belong to Inventory.
+end note
 
 @enduml

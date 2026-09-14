@@ -53,6 +53,9 @@ package "batch.domain.model" {
     +batchId: number
     +rawMaterialId: number
     +rawMaterialName: string
+    +inventoryReceiptId: number | null
+    +stockBefore: number | null
+    +stockAfter: number | null
     +quantityUsed: number
     +unit: string
     +usageDate: string
@@ -308,8 +311,7 @@ BatchReleaseForm --> BatchStore
 BatchRejectForm --> BatchStore
 
 RawMaterialUsageComponent --> BatchStore
-RawMaterialUsageComponent --> LaboratoryStore
-RawMaterialUsageComponent --> IamStore
+RawMaterialUsageComponent --> ReceiptConsumptionStore
 
 BatchRoutes ..> BatchList
 BatchRoutes ..> BatchForm
@@ -317,4 +319,16 @@ BatchRoutes ..> BatchDetail
 BatchRoutes ..> BatchReleaseForm
 BatchRoutes ..> BatchRejectForm
 
+package "inventory.application" <<External>> {
+  class ReceiptConsumptionStore {
+    +loadMaterials()
+    +selectMaterial(material)
+    +consume(batchId, amount): Promise<boolean>
+  }
+}
+note bottom of RawMaterialUsageComponent
+  Reads usage history through BatchStore.
+  Writes consumption through Inventory ReceiptConsumptionStore.
+  The legacy linkMaterial API is retained but its backend POST returns 410.
+end note
 @enduml

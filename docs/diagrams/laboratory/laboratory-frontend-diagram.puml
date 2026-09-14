@@ -353,4 +353,9 @@ LaboratoryRoutes ..> ProductForm
 LaboratoryRoutes ..> RawMaterialList
 LaboratoryRoutes ..> RawMaterialForm
 
+note bottom of RawMaterial
+  Legacy Laboratory model retained for historical reads.
+  Inventory owns the new catalogue, supplier receipts and movement history.
+  See inventory/inventory-frontend-diagram.puml.
+end note
 @enduml
