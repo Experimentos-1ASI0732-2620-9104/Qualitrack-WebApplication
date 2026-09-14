@@ -9,7 +9,8 @@ import { CaApi } from '../../ca/infrastructure/ca-api';
 import { TrackingApi } from '../../tracking/infrastructure/tracking-api';
 import { SubscriptionApi } from '../../subscription/infrastructure/subscription-api';
 import { Laboratory } from '../../laboratory/domain/model/laboratory.entity';
-import { RawMaterial } from '../../laboratory/domain/model/raw-material.entity';
+import { RawMaterial } from '../../inventory/domain/model/raw-material.entity';
+import { InventoryApi } from '../../inventory/infrastructure/inventory-api';
 import { Equipment } from '../../equipment/domain/model/equipment.entity';
 import { Batch } from '../../batch/domain/model/batch.entity';
 import { DeviationAlert } from '../../ca/domain/model/deviation-alert.entity';
@@ -25,6 +26,7 @@ const resource = <T>() => signal<LoadState<T>>({ status: 'idle', data: null });
 export class DashboardStore {
   private readonly iam = inject(IamStore);
   private readonly labApi = inject(LaboratoryApi);
+  private readonly inventoryApi = inject(InventoryApi);
   private readonly equipmentApi = inject(EquipmentApi);
   private readonly batchApi = inject(BatchApi);
   private readonly caApi = inject(CaApi);
@@ -49,7 +51,7 @@ export class DashboardStore {
     .sort((a, b) => Number(b.severity === 'CRITICAL') - Number(a.severity === 'CRITICAL')
       || Date.parse(b.timestamp) - Date.parse(a.timestamp)));
   readonly lowStock = computed(() => (this.materials().data ?? [])
-    .filter(material => material.quantityInStock < material.minimumStock));
+    .filter(material => material.usableStock < material.minimumStock));
   readonly currentPlan = computed(() => {
     const sub = this.subscription().data;
     return this.plans().data?.find(plan => plan.code === sub?.planCode && plan.billingPeriod === sub.billingCycle) ?? null;
@@ -82,7 +84,7 @@ export class DashboardStore {
     this.measurements.set({ status: 'idle', data: null });
     this.alerts.set({ status: 'loading', data: null });
     this.load(this.laboratory, this.labApi.getLaboratory(id));
-    this.load(this.materials, this.labApi.getRawMaterials(id).pipe(map(items => items.filter(item => item.laboratoryId === id))));
+    this.load(this.materials, this.inventoryApi.materials(id).pipe(map(items => items.filter(item => item.laboratoryId === id))));
     this.load(this.batches, this.batchApi.getBatches(id).pipe(map(items => items.filter(item => item.labId === id))));
     this.load(this.equipment, this.equipmentApi.getEquipment(id).pipe(map(items => items.filter(item => item.labId === id))), items => {
       this.selectEquipment(items.find(item => item.id === preferredEquipment)?.id ?? items[0]?.id ?? null);

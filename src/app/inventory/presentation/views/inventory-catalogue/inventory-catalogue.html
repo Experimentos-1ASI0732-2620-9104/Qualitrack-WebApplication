@@ -1,0 +1,110 @@
+<main class="inventory-page">
+  <header class="page-heading">
+    <h1><mat-icon>inventory_2</mat-icon>{{ 'inventory.title' | translate }}</h1>
+    <div class="actions">
+      <button
+        mat-stroked-button
+        (click)="store.load()"
+        [disabled]="store.loading() || store.saving()"
+      >
+        <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
+      </button>
+      @if (store.canReview()) {
+        <button mat-stroked-button (click)="showImports()" [disabled]="store.saving()">
+          <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.legacy' | translate }}
+        </button>
+      }
+      <button mat-flat-button routerLink="/inventory/register-material">
+        <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
+      </button>
+    </div>
+  </header>
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error() | translate }}</p>
+  }
+  @if (store.notice()) {
+    <p class="success" role="status">{{ store.notice() | translate }}</p>
+  }
+  @if (importing()) {
+    <section class="editor">
+      <h2>{{ 'inventory.legacy' | translate }}</h2>
+      <p class="notice">{{ 'inventory.importNotice' | translate }}</p>
+      @for (item of store.legacy(); track item.id) {
+        <div class="legacy-row">
+          <div>
+            <strong>{{ item.name }}</strong>
+            <p>
+              {{ item.code }} · {{ item.batchNumber }} · {{ item.balance | number: '1.0-3' }}
+              {{ item.unit }}
+            </p>
+          </div>
+          <button mat-stroked-button (click)="import(item.id)" [disabled]="store.saving()">
+            <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.import' | translate }}
+          </button>
+        </div>
+      } @empty {
+        <p>{{ 'inventory.noLegacy' | translate }}</p>
+      }
+    </section>
+  }
+  <section class="summary-strip">
+    <div>
+      <span>{{ 'inventory.materials' | translate }}</span
+      ><strong>{{ store.materials().length }}</strong>
+    </div>
+    <div>
+      <span>{{ 'inventory.lowStock' | translate }}</span
+      ><strong>{{ lowCount() }}</strong>
+    </div>
+  </section>
+  <div class="filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>{{ 'inventory.search' | translate }}</mat-label
+      ><mat-icon matPrefix>search</mat-icon
+      ><input matInput [ngModel]="search()" (ngModelChange)="search.set($event)"
+    /></mat-form-field>
+    <mat-checkbox [checked]="lowOnly()" (change)="lowOnly.set($event.checked)">{{
+      'inventory.lowStock' | translate
+    }}</mat-checkbox>
+  </div>
+  @if (store.loading()) {
+    <p role="status">{{ 'inventory.loading' | translate }}</p>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ 'inventory.name' | translate }}</th>
+          <th>{{ 'inventory.usableStock' | translate }}</th>
+          <th>{{ 'inventory.physicalStock' | translate }}</th>
+          <th>{{ 'inventory.minimum' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (material of filtered(); track material.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/inventory/inventory-detail', material.id]">{{ material.name }}</a
+              ><small>{{ material.code }}</small>
+            </td>
+            <td
+              [attr.data-label]="'inventory.usableStock' | translate"
+              [class.warning]="material.usableStock < material.minimumStock"
+            >
+              {{ material.usableStock | number: '1.0-3' }} {{ material.unit }}
+            </td>
+            <td [attr.data-label]="'inventory.physicalStock' | translate">
+              {{ material.physicalStock | number: '1.0-3' }} {{ material.unit }}
+            </td>
+            <td [attr.data-label]="'inventory.minimum' | translate">
+              {{ material.minimumStock | number: '1.0-3' }} {{ material.unit }}
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">{{ 'inventory.empty' | translate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</main>

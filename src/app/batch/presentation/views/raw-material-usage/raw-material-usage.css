@@ -67,7 +67,12 @@ mat-error { color: #b3261e; line-height: 1.35; }
 
 table {
   width: 100%;
+  table-layout: fixed;
 }
+
+td, th { overflow-wrap: anywhere; }
+td small { display: block; margin-top: 6px; }
+.usage-container { min-width: 0; }
 
 .mat-column-material {
   font-weight: 500;
@@ -92,4 +97,5 @@ table {
   .usage-form button {
     width: 100%;
   }
+  td, th { padding-inline: 6px; font-size: 12px; }
 }

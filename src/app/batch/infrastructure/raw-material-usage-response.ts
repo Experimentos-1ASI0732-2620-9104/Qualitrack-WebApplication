@@ -34,6 +34,7 @@ export interface RawMaterialUsageResource extends BaseResource {
    */
   id: number;
   stockBefore?: number | null;
+  inventoryReceiptId?: number | null;
   stockAfter?: number | null;
 
   /**

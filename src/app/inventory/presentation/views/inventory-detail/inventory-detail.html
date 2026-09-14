@@ -1,0 +1,352 @@
+<main class="inventory-page">
+  <a routerLink="/inventory">{{ 'inventory.title' | translate }}</a>
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error() | translate }}</p>
+  }
+  @if (store.notice()) {
+    <p class="success" role="status">{{ store.notice() | translate }}</p>
+  }
+  @if (store.loading()) {
+    <p role="status">{{ 'inventory.loading' | translate }}</p>
+  }
+  @if (store.selected(); as material) {
+    <header class="page-heading">
+      <div>
+        <h1>{{ material.name }}</h1>
+        <p class="muted">{{ material.code }} · {{ material.unit }}</p>
+      </div>
+      <div class="actions">
+        <button mat-stroked-button (click)="load()" [disabled]="store.loading() || store.saving()">
+          <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
+        </button>
+        <button mat-stroked-button (click)="edit()" [disabled]="store.saving()">
+          <mat-icon>edit</mat-icon>{{ 'inventory.edit' | translate }}
+        </button>
+        <button mat-flat-button (click)="receiving.set(!receiving())" [disabled]="store.saving()">
+          <mat-icon>add</mat-icon>{{ 'inventory.newReceipt' | translate }}
+        </button>
+      </div>
+    </header>
+    <section class="summary-strip">
+      <div>
+        <span>{{ 'inventory.usableStock' | translate }}</span
+        ><strong>{{ material.usableStock | number: '1.0-3' }} {{ material.unit }}</strong>
+      </div>
+      <div>
+        <span>{{ 'inventory.physicalStock' | translate }}</span
+        ><strong>{{ material.physicalStock | number: '1.0-3' }} {{ material.unit }}</strong>
+      </div>
+      <div>
+        <span>{{ 'inventory.minimum' | translate }}</span
+        ><strong>{{ material.minimumStock | number: '1.0-3' }} {{ material.unit }}</strong>
+      </div>
+    </section>
+    @if (affectedBatches().length) {
+      <section class="notice">
+        <h2>{{ 'inventory.affectedBatches' | translate }}</h2>
+        @for (id of affectedBatches(); track id) {
+          <p>
+            <a [routerLink]="['/batches/batch-detail', id]"
+              >{{ 'inventory.productBatch' | translate }} #{{ id }}</a
+            >
+          </p>
+        }
+      </section>
+    }
+    @if (editing()) {
+      <section class="editor">
+        <h2>{{ 'inventory.edit' | translate }}</h2>
+        <form [formGroup]="metadata" (ngSubmit)="save()">
+          <div class="form-grid">
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.code' | translate }}</mat-label
+              ><input matInput formControlName="code" maxlength="50" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.name' | translate }}</mat-label
+              ><input matInput formControlName="name" maxlength="150" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.minimum' | translate }}</mat-label
+              ><input
+                matInput
+                type="number"
+                formControlName="minimumStock"
+                min="0"
+                step="0.001"
+              /><span matTextSuffix>{{ material.unit }}</span
+              ><mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error></mat-form-field
+            >
+          </div>
+          <div class="actions">
+            <button mat-flat-button [disabled]="store.saving()">
+              <mat-icon>save</mat-icon>{{ 'inventory.save' | translate }}</button
+            ><button
+              mat-button
+              type="button"
+              (click)="editing.set(false)"
+              [disabled]="store.saving()"
+            >
+              {{ 'inventory.cancel' | translate }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+    @if (receiving()) {
+      <section class="editor">
+        <h2>{{ 'inventory.newReceipt' | translate }}</h2>
+        <form [formGroup]="receiptForm" (ngSubmit)="receive()">
+          <div class="form-grid">
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.supplier' | translate }}</mat-label
+              ><input matInput formControlName="supplier" maxlength="150" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.receiptNumber' | translate }}</mat-label
+              ><input matInput formControlName="batchNumber" maxlength="50" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.amount' | translate }}</mat-label
+              ><input
+                matInput
+                type="number"
+                formControlName="amount"
+                min="0.001"
+                step="0.001"
+              /><span matTextSuffix>{{ material.unit }}</span
+              ><mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.receivedOn' | translate }}</mat-label
+              ><input matInput type="date" formControlName="receivedOn" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.expiresOn' | translate }}</mat-label
+              ><input matInput type="date" formControlName="expiresOn" /><mat-error>{{
+                'inventory.required' | translate
+              }}</mat-error></mat-form-field
+            >
+          </div>
+          <p class="notice">{{ 'inventory.quarantineNotice' | translate }}</p>
+          <div class="actions">
+            <button mat-flat-button [disabled]="store.saving()">
+              <mat-icon>save</mat-icon>{{ 'inventory.save' | translate }}</button
+            ><button
+              mat-button
+              type="button"
+              (click)="receiving.set(false)"
+              [disabled]="store.saving()"
+            >
+              {{ 'inventory.cancel' | translate }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+    @if (reviewing(); as receipt) {
+      <section class="review" role="region" [attr.aria-label]="'inventory.review' | translate">
+        <h2>{{ 'inventory.review' | translate }} · {{ receipt.batchNumber }}</h2>
+        <form [formGroup]="reviewForm" (ngSubmit)="review()">
+          <div class="form-grid">
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.decision' | translate }}</mat-label
+              ><mat-select formControlName="status">
+                @if (receipt.status === 'QUARANTINED' && receipt.availability !== 'EXPIRED') {
+                  <mat-option value="RELEASED">{{
+                    'inventory.status.RELEASED' | translate
+                  }}</mat-option>
+                }
+                @if (receipt.status === 'RELEASED') {
+                  <mat-option value="OBSERVED">{{
+                    'inventory.status.OBSERVED' | translate
+                  }}</mat-option>
+                }
+                <mat-option value="REJECTED">{{
+                  'inventory.status.REJECTED' | translate
+                }}</mat-option>
+              </mat-select></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'inventory.reason' | translate }}</mat-label
+              ><textarea matInput formControlName="reason" maxlength="500" rows="3"></textarea
+              ><mat-error>{{ 'inventory.required' | translate }}</mat-error></mat-form-field
+            >
+          </div>
+          <div class="actions">
+            <button mat-flat-button [disabled]="store.saving()">
+              <mat-icon>fact_check</mat-icon>{{ 'inventory.confirmReview' | translate }}</button
+            ><button
+              mat-button
+              type="button"
+              (click)="reviewing.set(null)"
+              [disabled]="store.saving()"
+            >
+              {{ 'inventory.cancel' | translate }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+    <mat-tab-group>
+      <mat-tab [label]="'inventory.receipts' | translate"
+        ><div class="tab-content">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ 'inventory.receiptNumber' | translate }}</th>
+                <th>{{ 'inventory.amount' | translate }}</th>
+                <th>{{ 'inventory.available' | translate }}</th>
+                <th>{{ 'inventory.expiresOn' | translate }}</th>
+                <th>{{ 'inventory.state' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (receipt of store.receipts(); track receipt.id) {
+                <tr>
+                  <td>
+                    <strong>{{ receipt.batchNumber }}</strong
+                    ><small>{{ receipt.supplier }}</small
+                    ><small>#{{ receipt.id }} · {{ receipt.receivedOn }}</small>
+                  </td>
+                  <td [attr.data-label]="'inventory.amount' | translate">
+                    {{ receipt.initialAmount | number: '1.0-3' }} {{ receipt.unit }}
+                  </td>
+                  <td [attr.data-label]="'inventory.available' | translate">
+                    {{ receipt.availableAmount | number: '1.0-3' }} {{ receipt.unit }}
+                  </td>
+                  <td [attr.data-label]="'inventory.expiresOn' | translate">
+                    {{ receipt.expiresOn }}
+                  </td>
+                  <td>
+                    <span
+                      class="status"
+                      [class.released]="receipt.status === 'RELEASED'"
+                      [class.rejected]="receipt.status === 'REJECTED'"
+                      >{{ 'inventory.status.' + receipt.status | translate }}</span
+                    >
+                    @if (receipt.availability && receipt.availability !== receipt.status) {
+                      <small>{{ 'inventory.status.' + receipt.availability | translate }}</small>
+                    }
+                    @if (store.canReview() && receipt.status !== 'REJECTED') {
+                      <div>
+                        <button
+                          mat-button
+                          (click)="startReview(receipt)"
+                          [disabled]="store.saving()"
+                        >
+                          <mat-icon>fact_check</mat-icon>{{ 'inventory.review' | translate }}
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5">{{ 'inventory.noReceipts' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div></mat-tab
+      >
+      <mat-tab [label]="'inventory.movements' | translate"
+        ><div class="tab-content">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ 'inventory.movement' | translate }}</th>
+                <th>{{ 'inventory.receiptNumber' | translate }}</th>
+                <th>{{ 'inventory.balance' | translate }}</th>
+                <th>{{ 'inventory.traceability' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movement of store.movements(); track movement.id) {
+                <tr>
+                  <td>
+                    <strong>{{ 'inventory.types.' + movement.type | translate }}</strong
+                    ><small>{{ movement.occurredAt | date: 'short' }}</small
+                    ><small>{{ 'inventory.reviewer' | translate }} #{{ movement.actorId }}</small>
+                  </td>
+                  <td [attr.data-label]="'inventory.receiptNumber' | translate">
+                    #{{ movement.receiptId
+                    }}<small>{{ 'inventory.status.' + movement.statusAfter | translate }}</small>
+                  </td>
+                  <td [attr.data-label]="'inventory.balance' | translate">
+                    {{ movement.stockBefore | number: '1.0-3' }} →
+                    {{ movement.stockAfter | number: '1.0-3' }} {{ movement.unit
+                    }}<small
+                      >{{ movement.amount > 0 ? '+' : '' }}{{ movement.amount | number: '1.0-3' }}
+                      {{ movement.unit }}</small
+                    >
+                  </td>
+                  <td [attr.data-label]="'inventory.traceability' | translate">
+                    @if (movement.productBatchId) {
+                      <a [routerLink]="['/batches/batch-detail', movement.productBatchId]"
+                        >{{ 'inventory.productBatch' | translate }} #{{
+                          movement.productBatchId
+                        }}</a
+                      >
+                    }
+                    <small>{{ movement.reason }}</small>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4">{{ 'inventory.noMovements' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div></mat-tab
+      >
+      @if (material.legacyId) {
+        <mat-tab [label]="'inventory.legacyHistory' | translate"
+          ><div class="tab-content">
+            <p class="notice">{{ 'inventory.legacyHistoryNotice' | translate }}</p>
+            @if (store.legacyError()) {
+              <p class="error" role="alert">{{ store.legacyError() | translate }}</p>
+            }
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>{{ 'inventory.productBatch' | translate }}</th>
+                  <th>{{ 'inventory.amount' | translate }}</th>
+                  <th>{{ 'inventory.date' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (usage of store.legacyHistory(); track usage.id) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/batches/batch-detail', usage.batchId]"
+                        >#{{ usage.batchId }}</a
+                      >
+                    </td>
+                    <td>{{ usage.quantityUsed | number: '1.0-3' }} {{ usage.unit }}</td>
+                    <td>{{ usage.usageDate | date: 'short' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">{{ 'inventory.noMovements' | translate }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div></mat-tab
+        >
+      }
+    </mat-tab-group>
+  }
+</main>

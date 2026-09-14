@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
+import { ApiError } from './api-error';
 
 /**
  * Abstract base class providing centralized HTTP error handling for QualiTrack.
@@ -37,7 +38,9 @@ export abstract class ErrorHandlingEnabledBaseType {
       }
 
       console.error(`[QualiTrack API Error] ${errorMessage}`, error);
-      return throwError(() => new Error(errorMessage));
+      const details = typeof error.error?.details === 'string' ? error.error.details
+        : typeof error.error?.message === 'string' ? error.error.message : undefined;
+      return throwError(() => new ApiError(errorMessage, error.status, details));
     };
   }
 }

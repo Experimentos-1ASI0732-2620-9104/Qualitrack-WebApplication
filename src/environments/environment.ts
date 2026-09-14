@@ -19,6 +19,17 @@ export const environment = {
   laboratoryProductsEndpointPath: '/products',
   laboratoryRawMaterialsEndpointPath: '/raw-materials',
 
+  // Inventory
+  inventoryEndpointPath: '/inventory',
+  inventoryMaterialsEndpointPath: '/materials',
+  inventoryReceiptsEndpointPath: '/receipts',
+  inventoryUsableReceiptsEndpointPath: '/usable-receipts',
+  inventoryReceiptReviewsEndpointPath: '/reviews',
+  inventoryConsumptionsEndpointPath: '/consumptions',
+  inventoryMovementsEndpointPath: '/movements',
+  inventoryLegacyMaterialsEndpointPath: '/legacy-materials',
+  inventoryLegacyImportEndpointPath: '/import',
+
   // Equipment
   equipmentEndpointPath: '/equipments',
   equipmentBpmConfigEndpointPath: '/bpm-configs',
