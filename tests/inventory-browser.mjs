@@ -16,7 +16,7 @@ try {
    localStorage.setItem('userId', '27'); localStorage.setItem('username', 'Inventory fixture');
    localStorage.setItem('roles', '["ROLE_QA_MANAGER"]');
   });
-  let material = null, receipt = null, stale = false, posts = 0;
+  let material = null, receipt = null, stale = false, posts = 0, rejectRegistration = true;
   const movements = [], usages = [];
   const batch = { id: 7, labId: 42, productId: 3, productName: 'Test product', batchNumber: 'LOT-007',
    quantity: 10, unit: 'units', status: 'IN_PROGRESS', startDate: '2026-09-08' };
@@ -32,7 +32,10 @@ try {
    let body = [], status = 200;
    if (path.endsWith('/users/me/onboarding')) body = { userId: 27, laboratoryId: 42, subscriptionId: 73, subscriptionStatus: 'ACTIVE', nextStep: 'READY' };
    else if (path.endsWith('/inventory/materials')) {
-    if (method === 'POST') { material = { ...data, id: 2, laboratoryId: 42, legacyId: null }; status = 201; body = material; }
+    if (method === 'POST') {
+     if (rejectRegistration) { rejectRegistration = false; status = 409; body = { details: 'Material code already exists' }; }
+     else { material = { ...data, id: 2, laboratoryId: 42, legacyId: null }; status = 201; body = material; }
+    }
     else body = material ? [{ ...material, usableStock: receipt?.status === 'RELEASED' ? receipt.availableAmount : 0, physicalStock: receipt?.availableAmount ?? 0 }] : [];
    } else if (path.endsWith('/inventory/materials/2/receipts')) {
     if (method === 'POST') {
@@ -84,14 +87,31 @@ try {
   await inventoryMenu.getByRole('button', { name: 'Register material', exact: true }).click();
   await page.waitForURL('**/inventory/register-material');
   await page.getByLabel('Code', { exact: true }).waitFor();
+  const registration = page.locator('app-register-material');
+  assert.equal(await registration.count(), 1);
+  assert.equal(await page.locator('app-inventory-catalogue').count(), 0);
+  assert.equal(await registration.locator('table, .summary-strip').count(), 0);
+  assert.equal(await registration.getByRole('button', { name: 'Previous balances', exact: true }).count(), 0);
+  await page.screenshot({ path: join(output, `register-${width}.png`), fullPage: true, animations: 'disabled' });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.waitForURL('**/inventory/inventory-catalogue');
   await page.getByRole('button', { name: 'New material', exact: true }).click();
   await page.waitForURL('**/inventory/register-material');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await registration.getByText('Complete this field.', { exact: true }).first().waitFor();
+  assert.equal(await registration.getByText('Complete this field.', { exact: true }).count(), 2);
+  assert.equal(material, null);
   await page.getByLabel('Code', { exact: true }).fill('RM-001');
   await page.getByLabel('Material', { exact: true }).fill('Sodium chloride');
   await page.getByLabel('Minimum stock', { exact: true }).fill('20');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Material code already exists' }).waitFor();
+  assert.equal(await page.getByLabel('Code', { exact: true }).inputValue(), 'RM-001');
+  assert.equal(await page.getByLabel('Material', { exact: true }).inputValue(), 'Sodium chloride');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForURL('**/inventory/inventory-catalogue');
+  assert.equal(await page.locator('app-register-material').count(), 0);
   await page.getByRole('link', { name: 'Sodium chloride', exact: true }).click();
   await page.waitForURL('**/inventory/inventory-detail/2');
   await page.goto(origin + '/inventory/materials/2');

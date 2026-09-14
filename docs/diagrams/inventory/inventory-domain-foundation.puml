@@ -5,6 +5,7 @@ package "inventory.presentation" {
   component "inventory-routes" as Routes
   component "views/inventory-catalogue" as Catalogue
   component "views/inventory-detail" as Detail
+  component "views/register-material" as Registration
 }
 package "inventory.application" {
   component InventoryStore
@@ -36,6 +37,9 @@ package "shared" {
 }
 Routes --> Catalogue
 Routes --> Detail
+Routes --> Registration
+Registration --> InventoryStore
+Registration --> SharedUI
 Catalogue --> InventoryStore
 Detail --> InventoryStore
 Catalogue --> SharedUI

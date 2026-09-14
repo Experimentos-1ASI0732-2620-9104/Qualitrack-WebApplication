@@ -25,57 +25,6 @@
   @if (store.notice()) {
     <p class="success" role="status">{{ store.notice() | translate }}</p>
   }
-  @if (creating()) {
-    <section class="editor">
-      <h2>{{ 'inventory.newMaterial' | translate }}</h2>
-      <form [formGroup]="form" (ngSubmit)="save()">
-        <div class="form-grid">
-          <mat-form-field appearance="outline"
-            ><mat-label>{{ 'inventory.code' | translate }}</mat-label
-            ><input matInput formControlName="code" maxlength="50" /><mat-error>{{
-              'inventory.required' | translate
-            }}</mat-error></mat-form-field
-          >
-          <mat-form-field appearance="outline"
-            ><mat-label>{{ 'inventory.name' | translate }}</mat-label
-            ><input matInput formControlName="name" maxlength="150" /><mat-error>{{
-              'inventory.required' | translate
-            }}</mat-error></mat-form-field
-          >
-          <mat-form-field appearance="outline"
-            ><mat-label>{{ 'inventory.unit' | translate }}</mat-label
-            ><mat-select formControlName="unit">
-              @for (unit of units; track unit) {
-                <mat-option [value]="unit">{{ unit }}</mat-option>
-              }
-            </mat-select></mat-form-field
-          >
-          <mat-form-field appearance="outline"
-            ><mat-label>{{ 'inventory.minimum' | translate }}</mat-label
-            ><input
-              matInput
-              type="number"
-              formControlName="minimumStock"
-              min="0"
-              step="0.001"
-            /><mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error></mat-form-field
-          >
-        </div>
-        <div class="actions">
-          <button mat-flat-button [disabled]="store.saving()">
-            <mat-icon>save</mat-icon>{{ 'inventory.save' | translate }}</button
-          ><button
-            mat-button
-            type="button"
-            (click)="cancelCreate()"
-            [disabled]="store.saving()"
-          >
-            {{ 'inventory.cancel' | translate }}
-          </button>
-        </div>
-      </form>
-    </section>
-  }
   @if (importing()) {
     <section class="editor">
       <h2>{{ 'inventory.legacy' | translate }}</h2>
