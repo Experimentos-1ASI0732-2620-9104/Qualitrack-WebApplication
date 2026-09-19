@@ -2,7 +2,7 @@ export const environment = {
   production: true,
 
   // Base API URL
-  serverBasePath: 'https://qualitrack-platform.onrender.com/api/v1',
+  serverBasePath: 'https://qualitrack-experimentos-api.onrender.com/api/v1',
 
   // IAM
   iamSignInEndpointPath: '/authentication/sign-in',

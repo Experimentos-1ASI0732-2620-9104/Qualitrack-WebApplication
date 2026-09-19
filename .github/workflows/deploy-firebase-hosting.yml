@@ -1,7 +1,7 @@
 # Despliega la web de QualiTrack en Firebase Hosting.
 # Secreto necesario en el repositorio (Settings > Secrets and variables > Actions):
 #   FIREBASE_SERVICE_ACCOUNT  -> JSON de una cuenta de servicio con rol
-#                                "Firebase Hosting Admin" del proyecto qualitrack-iotech
+#                                "Firebase Hosting Admin" del proyecto qualitrack-experimentos-2620
 name: Deploy web to Firebase Hosting
 
 on:
@@ -31,5 +31,5 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: qualitrack-iotech
+          projectId: qualitrack-experimentos-2620
           channelId: live
