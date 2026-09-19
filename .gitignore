@@ -8,6 +8,10 @@
 /out-tsc
 /bazel-out
 
+# Firebase deployment cache
+/.firebase/
+firebase-debug.log*
+
 # Node
 /node_modules
 npm-debug.log
