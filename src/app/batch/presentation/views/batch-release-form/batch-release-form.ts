@@ -1,99 +1,119 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import {
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import {
+  ActivatedRoute,
+  Router,
+  RouterLink
+} from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
-
+import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
 import { BatchStore } from '../../../application/batch.store';
-import { ReleaseBatchCommand } from '../../../domain/model/release-batch.command';
+import { IamStore } from '../../../../iam/application/iam.store';
+import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
 
 /**
- * Component responsible for releasing a production batch.
+ * Releases a batch after quality review. The backend signs the release for the current user.
  *
  * @remarks
- * This standalone presentation component reads the batch identifier from the
- * route, collects release information through a reactive form, and sends a
- * {@link ReleaseBatchCommand} to the batch application store.
+ * Only quality managers and administrators can release a batch; for other users the form shows a notice and
+ * the submit button is disabled. When the batch is released, the view returns to its detail.
  *
- * The release operation represents the approval of a batch after successful
- * quality control and BPM/GMP verification.
+ * @author Qualitrack
  */
 @Component({
   selector: 'app-batch-release-form',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
+    RouterLink,
     MatButtonModule,
     MatIconModule,
+    MatInputModule,
     TranslateModule,
-    RouterLink,
   ],
   templateUrl: './batch-release-form.html',
-  styleUrl: './batch-release-form.css',
+  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
 })
 export class BatchReleaseForm implements OnInit {
-  /**
-   * FormBuilder used to create and configure the reactive form.
-   */
+  protected readonly store = inject(BatchStore);
+  private readonly iam = inject(IamStore);
   private readonly fb = inject(FormBuilder);
-
-  /**
-   * Activated route used to read the batch identifier from the URL.
-   */
   private readonly route = inject(ActivatedRoute);
-
-  /**
-   * Router used to return to the batch list after submitting the form.
-   */
   private readonly router = inject(Router);
 
   /**
-   * Store responsible for batch lifecycle operations.
+   * Laboratory, environment and product of the batch, taken from the route.
    */
-  protected readonly store = inject(BatchStore);
+  protected path!: BatchPath;
 
   /**
-   * Reactive form group for release data.
+   * Identifier of the batch, taken from the route.
    */
-  protected releaseForm!: FormGroup;
+  protected batchId = 0;
 
   /**
-   * Unique numeric identifier of the batch being released.
+   * Form of the release: date (today by default) and quality control notes (between 10 and 500 characters).
    */
-  protected batchId: number = 0;
+  protected readonly form = this.fb.nonNullable.group({
+    releaseDate: [localIsoDate(), Validators.required],
+    notes: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+  });
 
   /**
-   * Lifecycle hook that initializes the release form.
+   * Lifecycle hook that reads the route parameters.
    */
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.batchId = idParam ? Number(idParam) : 0;
-
-    this.releaseForm = this.fb.group({
-      releaseDate: [new Date().toISOString().substring(0, 10), Validators.required],
-      notes: ['', [Validators.required, Validators.minLength(10)]],
-    });
+    const params = this.route.snapshot.paramMap;
+    this.path = {
+      laboratoryId: this.iam.requireLaboratoryId(),
+      environmentId: Number(params.get('environmentId')),
+      productId: Number(params.get('productId')),
+    };
+    this.batchId = Number(params.get('batchId'));
+    this.store.clearMessages();
   }
 
   /**
-   * Submits the release command for the current batch.
+   * Route of the detail of the batch.
+   *
+   * @returns The router link segments of the batch.
    */
-  protected onSubmit(): void {
-    if (this.releaseForm.invalid || !this.batchId) return;
+  protected get batchLink(): (string | number)[] {
+    return [
+      '/batches/environments',
+      this.path.environmentId,
+      'products',
+      this.path.productId,
+      'batches',
+      this.batchId,
+    ];
+  }
 
-    const command: ReleaseBatchCommand = {
-      releaseDate: this.releaseForm.value.releaseDate,
-      notes: this.releaseForm.value.notes,
-    };
-
-    this.store.releaseBatch(this.batchId, command);
-    this.router.navigate(['/batches/batch-list']).then();
+  /**
+   * Validates the form, releases the batch and returns to its detail.
+   */
+  protected async submit(): Promise<void> {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
+    if (
+      await this.store.releaseBatch(this.path, this.batchId, {
+        releaseDate: value.releaseDate,
+        notes: value.notes.trim(),
+      })
+    ) {
+      await this.router.navigate(this.batchLink);
+    }
   }
 }

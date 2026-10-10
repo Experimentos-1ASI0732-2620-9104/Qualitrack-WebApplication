@@ -1,13 +1,25 @@
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  map
+} from 'rxjs';
 import { BaseApiEndpoint } from '../../shared/infrastructure/base-api-endpoint';
 import { environment } from '../../../environments/environment';
 import { RawMaterialUsage } from '../domain/model/raw-material-usage.entity';
-import { RawMaterialUsageResource, RawMaterialUsagesResponse } from './raw-material-usage-response';
+import {
+  RawMaterialUsageResource,
+  RawMaterialUsagesResponse
+} from './raw-material-usage-response';
 import { RawMaterialUsageAssembler } from './raw-material-usage-assembler';
-import { LinkRawMaterialRequest } from './raw-material-usage.request';
+import { RegisterRawMaterialUsageRequest } from './raw-material-usage.request';
+import { BatchPath } from './batch-api-endpoint';
 
-const usageEndpointUrl = `${environment.serverBasePath}${environment.batchEndpointPath}`;
+/**
+ * Base URL of the laboratories resource.
+ */
+const usageEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
+
 /**
  * HTTP endpoint client for raw material usage and traceability operations.
  *
@@ -18,11 +30,20 @@ const usageEndpointUrl = `${environment.serverBasePath}${environment.batchEndpoi
  * standard infrastructure behaviors for API interaction.
  *
  * The endpoint handles:
- * - GET /usage/:batchId/materials - Retrieve all materials consumed by a specific batch.
- * - POST /usage/:batchId/materials - Record the link/usage of a material within a batch.
+ * - POST .../products/{productId}/batches/{batchId}/raw-material-usages - Consume a raw material lot.
+ * - GET .../environments/{environmentId}/raw-materials/{rawMaterialId}/usages - Batches that used a material.
+ * - GET /laboratories/{laboratoryId}/raw-materials/{legacyRawMaterialId}/usages - History of a pre-Inventory raw material.
  *
  * Data transformation is delegated to {@link RawMaterialUsageAssembler}, ensuring the
  * application layer remains decoupled from API-specific resource shapes.
+ *
+ * @example
+ * ```typescript
+ * const endpoint = new RawMaterialUsageApiEndpoint(http);
+ *
+ * // Batches that consumed lots of an Inventory raw material
+ * endpoint.getUsageByEnvironmentMaterial(1, 3, 45).subscribe(usages => console.log(usages));
+ * ```
  *
  * @author Qualitrack
  */
@@ -42,52 +63,92 @@ export class RawMaterialUsageApiEndpoint extends BaseApiEndpoint<
    * the assembler required to convert between domain entities and infrastructure resources.
    */
   constructor(http: HttpClient) {
-    super(http, usageEndpointUrl, new RawMaterialUsageAssembler());
+    super(
+      http,
+      usageEndpointUrl,
+      new RawMaterialUsageAssembler()
+    );
   }
 
   /**
-   * Retrieves the collection of raw material usage records for a specific production batch.
+   * Retrieves the product batches that consumed lots of an Inventory raw material.
    *
-   * @param batchId - The unique numeric identifier of the batch.
-   * @returns An Observable emitting an array of RawMaterialUsage domain entities.
-   *
-   * @remarks
-   * Performs an HTTP GET request to fetch the traceability data. The response envelope
-   * is automatically mapped into domain entities via the assembler.
+   * @param laboratoryId - The laboratory that owns the environment.
+   * @param environmentId - The environment where the raw material is kept.
+   * @param rawMaterialId - The Inventory raw material identifier.
+   * @returns An Observable emitting the usages, newest first.
    */
-  getUsageByMaterial(rawMaterialId: number): Observable<RawMaterialUsage[]> {
-    return this.http.get<RawMaterialUsageResource[]>(`${environment.serverBasePath}/raw-materials/${rawMaterialId}/usages`)
-      .pipe(map(resources => resources.map(resource => this.assembler.toEntityFromResource(resource))));
-  }
-
-  getUsageByBatch(batchId: number): Observable<RawMaterialUsage[]> {
+  getUsageByEnvironmentMaterial(
+    laboratoryId: number,
+    environmentId: number,
+    rawMaterialId: number,
+  ): Observable<RawMaterialUsage[]> {
     return this.http
-      .get<RawMaterialUsageResource[]>(`${this.endpointUrl}/${batchId}/raw-materials`)
+      .get<RawMaterialUsageResource[]>(
+        `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}/${laboratoryId}${environment.laboratoryEnvironmentsEndpointPath}/${environmentId}${environment.inventoryRawMaterialsEndpointPath}/${rawMaterialId}${environment.inventoryRawMaterialUsagesEndpointPath}`,
+      )
       .pipe(
         map((resources) =>
-          resources.map((resource) => this.assembler.toEntityFromResource(resource)),
+          resources.map((resource) =>
+            this.assembler.toEntityFromResource(resource)
+          ),
         ),
-        catchError(this.handleError(`Failed to fetch raw material usage for batch ${batchId}`)),
+        catchError(this.handleError(`Failed to fetch usages of raw material ${rawMaterialId}`)),
       );
   }
 
   /**
-   * Records the usage of a specific raw material and links it to a production batch.
+   * Retrieves the batches that used a raw material registered before Inventory Management existed.
    *
-   * @param batchId - The numeric identifier of the batch consuming the material.
-   * @param request - The payload containing material ID and quantity used.
-   * @returns An Observable emitting the resulting RawMaterialUsage domain entity.
+   * @param laboratoryId - The laboratory of the material.
+   * @param rawMaterialId - The legacy raw material identifier.
+   * @returns An Observable emitting the usages of the material.
+   */
+  getUsageByMaterial(
+    laboratoryId: number,
+    rawMaterialId: number
+  ): Observable<RawMaterialUsage[]> {
+    return this.http
+      .get<RawMaterialUsageResource[]>(
+        `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}/${laboratoryId}` +
+          `${environment.laboratoryRawMaterialsEndpointPath}/${rawMaterialId}${environment.inventoryRawMaterialUsagesEndpointPath}`
+      )
+      .pipe(
+        map((resources) =>
+          resources.map((resource) =>
+            this.assembler.toEntityFromResource(resource)
+          ),
+        ),
+      );
+  }
+
+  /**
+   * Consumes a released raw material lot for a product batch and returns the recorded usage.
+   *
+   * @param path - Laboratory, environment and product of the batch.
+   * @param batchId - The product batch.
+   * @param request - Lot, amount, unit and idempotency key.
+   * @returns An Observable emitting the recorded usage.
    *
    * @remarks
-   * Performs an HTTP POST request to establish the genealogical link between
-   * the batch and the raw material, critical for quality control and compliance.
+   * The operation id of the request makes the call idempotent: a retry with the same id returns the
+   * original usage instead of consuming the lot twice.
    */
-  linkRawMaterial(batchId: number, request: LinkRawMaterialRequest): Observable<RawMaterialUsage> {
+  registerUsage(
+    path: BatchPath,
+    batchId: number,
+    request: RegisterRawMaterialUsageRequest,
+  ): Observable<RawMaterialUsage> {
     return this.http
-      .post<RawMaterialUsageResource>(`${this.endpointUrl}/${batchId}/raw-materials`, request)
+      .post<RawMaterialUsageResource>(
+        `${this.endpointUrl}/${path.laboratoryId}${environment.laboratoryEnvironmentsEndpointPath}/${path.environmentId}` +
+          `${environment.productsEndpointPath}/${path.productId}${environment.productBatchesEndpointPath}/${batchId}` +
+          environment.batchRawMaterialUsagesEndpointPath,
+        request,
+      )
       .pipe(
         map((resource) => this.assembler.toEntityFromResource(resource)),
-
+        catchError(this.handleError(`Failed to register raw material usage for batch ${batchId}`)),
       );
   }
 }

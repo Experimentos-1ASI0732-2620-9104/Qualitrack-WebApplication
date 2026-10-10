@@ -10,9 +10,9 @@
  * @example
  * ```typescript
  * const command: RejectBatchCommand = {
- * batchId: 101,
- * rejectionDate: '2026-05-12T10:00:00Z',
- * reason: 'Failed pH level test during final quality control phase. Does not meet BPM standards.'
+ *  batchId: 101,
+ *  rejectionDate: '2026-10-05T10:00:00Z',
+ *  reason: 'Failed pH level test during final quality control phase. Does not meet BPM standards.'
  * };
  *
  * await rejectBatchUseCase.execute(command);

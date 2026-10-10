@@ -1,0 +1,66 @@
+@if (store.traceability(); as trace) {
+  <!-- Summary: product and number of records of each kind, plus the container -->
+  <section class="summary-strip" [attr.aria-label]="'batch-traceability.title' | translate">
+    <div><span>{{ 'batches.fields.product' | translate }}</span><strong>{{ trace.product.name }}</strong></div>
+    <div><span>{{ 'batch-traceability.raw-materials' | translate }}</span><strong>{{ trace.rawMaterials.length }}</strong></div>
+    <div><span>{{ 'batch-traceability.equipment' | translate }}</span><strong>{{ trace.equipment.length }}</strong></div>
+    <div><span>{{ 'batch-traceability.staff' | translate }}</span><strong>{{ trace.staff.length }}</strong></div>
+    <div>
+      <span>{{ 'batch-traceability.container' | translate }}</span>
+      <strong>{{ trace.container ? (trace.container.containerName ?? '#' + trace.container.containerMonitorId) : ('batch-storage.empty' | translate) }}</strong>
+      @if (trace.container) {
+        <small class="muted">{{ 'batch-storage.assigned-at' | translate }}: {{ trace.container.assignedAt | date: 'short' }}</small>
+      }
+    </div>
+  </section>
+
+  <!-- Raw material lots consumed; usages without a lot are legacy records -->
+  <h2>{{ 'batch-traceability.raw-materials' | translate }}</h2>
+  <ul>
+    @for (usage of trace.rawMaterials; track usage.id) {
+      <li>
+        {{ usage.rawMaterialName }} — {{ usage.quantityUsed | number: '1.0-3' }} {{ usage.unit }}
+        @if (usage.inventoryReceiptId !== null) {
+          ({{ 'batch-usage.fields.lot' | translate }} #{{ usage.inventoryReceiptId }})
+        }
+      </li>
+    } @empty {
+      <li class="muted">{{ 'batch-usage.empty' | translate }}</li>
+    }
+  </ul>
+
+  <!-- Equipment used -->
+  <h2>{{ 'batch-traceability.equipment' | translate }}</h2>
+  <ul>
+    @for (usage of trace.equipment; track usage.id) {
+      <li>{{ usage.equipmentName }}</li>
+    } @empty {
+      <li class="muted">{{ 'batch-participants.no-equipment' | translate }}</li>
+    }
+  </ul>
+
+  <!-- Staff that took part -->
+  <h2>{{ 'batch-traceability.staff' | translate }}</h2>
+  <ul>
+    @for (participation of trace.staff; track participation.id) {
+      <li>{{ participation.staffName }}@if (participation.staffRole) { · {{ participation.staffRole }} }</li>
+    } @empty {
+      <li class="muted">{{ 'batch-participants.no-staff' | translate }}</li>
+    }
+  </ul>
+
+  <!-- Final decision: release with its signature, rejection with its reason, or pending -->
+  <h2>{{ 'batch-traceability.decision' | translate }}</h2>
+  @if (trace.release; as release) {
+    <p class="success">
+      {{ 'batch-traceability.released' | translate: { date: (release.signedAt | date: 'medium'), user: release.signedByUserId } }}
+      <small class="muted">SHA-256 {{ release.signatureHash }}</small>
+    </p>
+  } @else if (trace.rejection; as rejection) {
+    <p class="error">
+      {{ 'batch-traceability.rejected' | translate: { date: rejection.rejectionDate } }} {{ rejection.reason }}
+    </p>
+  } @else {
+    <p class="muted">{{ 'batch-traceability.pending' | translate }}</p>
+  }
+}

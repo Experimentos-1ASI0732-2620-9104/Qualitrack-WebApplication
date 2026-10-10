@@ -1,0 +1,61 @@
+<main class="operations-page">
+  <!-- Heading with the environment selector and the actions -->
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">factory</mat-icon>{{ 'product-catalog.title' | translate }}</h1>
+    <div class="actions">
+      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
+      <a mat-stroked-button routerLink="/batches/batch-list">
+        <mat-icon>list_alt</mat-icon>{{ 'batches.title' | translate }}
+      </a>
+      <!-- Registering products is reserved to quality roles -->
+      @if (store.canManage()) {
+        <a mat-flat-button [routerLink]="['/batches/environments', store.environmentId(), 'products', 'new']">
+          <mat-icon>add</mat-icon>{{ 'product-catalog.add' | translate }}
+        </a>
+      }
+    </div>
+  </header>
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  }
+  <!-- Text search by code or name -->
+  <div class="filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.search' | translate }}</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </mat-form-field>
+  </div>
+  @if (store.loading()) {
+    <p role="status">{{ 'common.status-loading' | translate }}</p>
+  } @else {
+    <!-- Table of products -->
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>{{ 'product-catalog.name' | translate }}</th>
+        <th>{{ 'product-catalog.specifications' | translate }}</th>
+        <th>{{ 'common.status' | translate }}</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (product of filtered(); track product.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/batches/environments', store.environmentId(), 'products', product.id]">{{ product.name }}</a>
+              <small>{{ product.code }}</small>
+            </td>
+            <td [attr.data-label]="'product-catalog.specifications' | translate">{{ product.specifications }}</td>
+            <td [attr.data-label]="'common.status' | translate">
+              {{ (product.active ? 'common.active' : 'common.inactive') | translate }}
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3">{{ 'product-catalog.empty' | translate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</main>

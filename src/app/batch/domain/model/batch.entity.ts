@@ -1,46 +1,58 @@
 import { BaseEntity } from '../../../shared/domain/model/base-entity';
 
 /**
- * Represents a production batch within the manufacturing domain.
+ * Lifecycle status of a product batch.
  *
  * @remarks
- * In Domain-Driven Design, a Batch is an entity in the laboratory bounded context
- * that tracks the manufacturing lifecycle of a product. Each batch has a unique identity
- * that persists throughout its lifecycle, from creation to its final release or rejection.
+ * A batch starts as `PENDING`, moves to `IN_PROGRESS` with its first raw material consumption and
+ * ends as `RELEASED` or `REJECTED`.
+ */
+export type BatchStatus = 'PENDING' | 'IN_PROGRESS' | 'RELEASED' | 'REJECTED';
+
+/**
+ * One manufacturing run of a pharmaceutical product.
  *
- * This entity models the core concept of a batch as understood within the
- * production and quality control domain, managing its state and traceability.
+ * @remarks
+ * In Domain-Driven Design, `Batch` is the aggregate root of the Product Batch bounded context. A batch is
+ * addressed through its laboratory, environment and product. Batches registered before environments
+ * existed have a null environment and can only be listed.
  *
  * @example
  * ```typescript
- * const productBatch = new Batch({
- * id: 1,
- * labId: 101,
- * productId: 890,
- * productName: 'Ibuprofen 400mg',
- * batchNumber: 'LOTE-2026A',
- * quantity: 5000,
- * unit: 'units',
- * status: 'IN_PROGRESS',
- * startDate: '2026-05-12T08:00:00Z',
- * createdAt: '2026-05-12T07:30:00Z'
+ * const batch = new Batch({
+ *   id: 101,
+ *   labId: 1,
+ *   environmentId: 3,
+ *   productId: 12,
+ *   productName: 'Paracetamol 500 mg',
+ *   batchNumber: 'L-2026-001',
+ *   quantity: 1000,
+ *   unit: 'units',
+ *   status: 'PENDING',
+ *   startDate: '2026-10-05'
  * });
  *
- * console.log(productBatch.batchNumber); // 'LOTE-2026A'
+ * console.log(batch.isOpen); // true
  * ```
  *
  * @author Qualitrack
  */
 export class Batch implements BaseEntity {
   /**
-   * The unique numeric identifier for this batch.
+   * The unique numeric identifier of the batch.
    */
   id: number;
 
   /**
-   * The numeric identifier of the laboratory responsible for this batch.
+   * The numeric identifier of the laboratory that owns the batch.
    */
   labId: number;
+
+  /**
+   * The numeric identifier of the environment where the batch is produced; null for batches registered
+   * before environments existed.
+   */
+  environmentId: number | null;
 
   /**
    * The numeric identifier of the product being manufactured.
@@ -48,87 +60,86 @@ export class Batch implements BaseEntity {
   productId: number;
 
   /**
-   * The display name of the product.
+   * The display name of the product being manufactured.
    */
   productName: string;
 
   /**
-   * The alphanumeric traceability code assigned to this specific batch run.
+   * The traceability code of the batch, unique in the laboratory.
    */
   batchNumber: string;
 
   /**
-   * The total volume or amount produced in this batch.
+   * The quantity to produce.
    */
   quantity: number;
 
   /**
-   * The unit of measurement for the batch quantity (e.g., 'kg', 'ml', 'units').
+   * The production unit of the quantity (e.g., 'units', 'kg').
    */
   unit: string;
 
   /**
-   * The current stage in the batch's manufacturing lifecycle.
+   * The current lifecycle status of the batch.
    */
-  status: 'PENDING' | 'IN_PROGRESS' | 'RELEASED' | 'REJECTED';
+  status: BatchStatus;
 
   /**
-   * The ISO date string representing when the batch processing began.
+   * The start date of the manufacturing run (yyyy-MM-dd).
    */
   startDate: string;
 
   /**
-   * The ISO date string representing when the batch processing concluded.
+   * The optional end date of the manufacturing run.
    */
   endDate?: string;
 
   /**
-   * Optional domain-specific remarks or quality control observations.
+   * Optional manufacturing notes.
    */
   notes?: string;
 
   /**
-   * The ISO date string representing the exact moment this entity was created.
+   * Container monitor of the container where the batch is stored; null while it has none.
    */
-  createdAt: string;
+  containerMonitorId: number | null;
 
   /**
    * Creates a new Batch entity.
    *
    * @param params - Initialization properties
-   * @param params.id - The unique numeric identifier for the batch
-   * @param params.labId - The numeric laboratory identifier
-   * @param params.productId - The numeric product identifier
-   * @param params.productName - The product display name
-   * @param params.batchNumber - The specific traceability code for the batch
-   * @param params.quantity - The total amount produced
-   * @param params.unit - The unit of measurement for the quantity
-   * @param params.status - The current manufacturing status
-   * @param params.startDate - The start date of the batch processing
-   * @param params.endDate - The end date of the batch processing (optional)
-   * @param params.notes - Additional observations or remarks (optional)
-   * @param params.createdAt - The creation timestamp of the record
-   *
-   * @remarks
-   * Constructor initializes the batch with the provided values. The entity
-   * requires all mandatory manufacturing and traceability data to be created.
+   * @param params.id - The unique numeric identifier of the batch
+   * @param params.labId - The owning laboratory identifier
+   * @param params.environmentId - The environment identifier, or null for legacy batches
+   * @param params.productId - The manufactured product identifier
+   * @param params.productName - The name of the manufactured product
+   * @param params.batchNumber - The traceability code of the batch
+   * @param params.quantity - The quantity to produce
+   * @param params.unit - The production unit
+   * @param params.status - The lifecycle status
+   * @param params.startDate - The start date (yyyy-MM-dd)
+   * @param params.endDate - The optional end date
+   * @param params.notes - The optional manufacturing notes
+   * @param params.containerMonitorId - The container monitor where the batch is stored; defaults to null
    */
   constructor(params: {
     id: number;
     labId: number;
+    environmentId: number | null;
     productId: number;
     productName: string;
     batchNumber: string;
     quantity: number;
     unit: string;
-    status: 'PENDING' | 'IN_PROGRESS' | 'RELEASED' | 'REJECTED';
+    status: BatchStatus;
     startDate: string;
     endDate?: string;
     notes?: string;
-    createdAt: string;
+    containerMonitorId?: number | null;
   }) {
     this.id = params.id;
     this.labId = params.labId;
+    this.environmentId = params.environmentId;
     this.productId = params.productId;
     this.productName = params.productName;
     this.batchNumber = params.batchNumber;
@@ -138,6 +149,36 @@ export class Batch implements BaseEntity {
     this.startDate = params.startDate;
     this.endDate = params.endDate;
     this.notes = params.notes;
-    this.createdAt = params.createdAt;
+    this.containerMonitorId = params.containerMonitorId ?? null;
+  }
+
+  /**
+   * Indicates whether the batch is still open.
+   *
+   * @remarks
+   * Pending and in-progress batches still accept consumptions, equipment and staff.
+   *
+   * @returns True when the status is `PENDING` or `IN_PROGRESS`.
+   */
+  get isOpen(): boolean {
+    return this.status === 'PENDING' || this.status === 'IN_PROGRESS';
+  }
+
+  /**
+   * Gets the route of the batch detail.
+   *
+   * @returns The router link segments, or null when the batch has no environment yet.
+   */
+  get detailLink(): (string | number)[] | null {
+    return this.environmentId === null
+      ? null
+      : [
+          '/batches/environments',
+          this.environmentId,
+          'products',
+          this.productId,
+          'batches',
+          this.id,
+      ];
   }
 }
