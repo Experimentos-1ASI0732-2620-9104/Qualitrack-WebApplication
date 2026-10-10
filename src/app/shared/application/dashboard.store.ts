@@ -15,6 +15,7 @@ import { Equipment } from '../../equipment/domain/model/equipment.entity';
 import { Batch } from '../../batch/domain/model/batch.entity';
 import { DeviationAlert } from '../../ca/domain/model/deviation-alert.entity';
 import { Measurement } from '../../tracking/domain/model/measurement.entity';
+import { recentPeriod } from '../../tracking/application/tracking.store';
 import { Subscription } from '../../subscription/domain/model/subscription.entity';
 import { SubscriptionPlan } from '../../subscription/domain/model/subscription-plan.entity';
 
@@ -42,7 +43,11 @@ export class DashboardStore {
   readonly measurements = resource<Measurement[]>();
   readonly subscription = resource<Subscription | null>();
   readonly plans = resource<SubscriptionPlan[]>();
+  /** The subscription belongs to quality managers; staff members do not see it. */
+  readonly managesSubscription = this.iam.canManageQuality;
   readonly selectedEquipmentId = signal<number | null>(null);
+  /** IoT devices of the laboratory, the only equipment with telemetry. */
+  readonly devices = computed(() => (this.equipment().data ?? []).filter(item => item.isIotDevice));
   readonly selectedSeriesKey = signal('');
   readonly isLoading = computed(() => [this.laboratory(), this.equipment(), this.batches(),
     this.materials(), this.alerts(), this.measurements(), this.subscription(), this.plans()]
@@ -51,7 +56,7 @@ export class DashboardStore {
     .sort((a, b) => Number(b.severity === 'CRITICAL') - Number(a.severity === 'CRITICAL')
       || Date.parse(b.timestamp) - Date.parse(a.timestamp)));
   readonly lowStock = computed(() => (this.materials().data ?? [])
-    .filter(material => material.usableStock < material.minimumStock));
+    .filter(material => material.isLowStock));
   readonly currentPlan = computed(() => {
     const sub = this.subscription().data;
     return this.plans().data?.find(plan => plan.code === sub?.planCode && plan.billingPeriod === sub.billingCycle) ?? null;
@@ -59,19 +64,19 @@ export class DashboardStore {
   readonly series = computed(() => {
     const series = new Map<string, { key: string; parameter: string; unit: string }>();
     for (const point of this.measurements().data ?? []) {
-      const key = JSON.stringify([point.parameterName, point.unit]);
-      series.set(key, { key, parameter: point.parameterName, unit: point.unit });
+      const key = JSON.stringify([point.metric, point.unit]);
+      series.set(key, { key, parameter: point.metric, unit: point.unit });
     }
     return [...series.values()];
   });
   readonly activeSeries = computed<{ key: string; parameter: string; unit: string } | null>(() => this.series().find(item => item.key === this.selectedSeriesKey())
     ?? this.series()[0] ?? null);
   readonly readings = computed(() => (this.measurements().data ?? [])
-    .filter(point => point.parameterName === this.activeSeries()?.parameter && point.unit === this.activeSeries()?.unit)
-    .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp)).slice(-48));
+    .filter(point => point.metric === this.activeSeries()?.parameter && point.unit === this.activeSeries()?.unit)
+    .sort((a, b) => Date.parse(a.measuredAt) - Date.parse(b.measuredAt)).slice(-48));
   readonly latestReading = computed(() => this.readings().at(-1) ?? null);
   readonly readingRange = computed(() => {
-    const values = this.readings().map(point => point.value);
+    const values = this.readings().map(point => point.value ?? 0);
     return values.length ? { min: Math.min(...values), max: Math.max(...values) } : null;
   });
 
@@ -84,14 +89,21 @@ export class DashboardStore {
     this.measurements.set({ status: 'idle', data: null });
     this.alerts.set({ status: 'loading', data: null });
     this.load(this.laboratory, this.labApi.getLaboratory(id));
-    this.load(this.materials, this.inventoryApi.materials(id).pipe(map(items => items.filter(item => item.laboratoryId === id))));
-    this.load(this.batches, this.batchApi.getBatches(id).pipe(map(items => items.filter(item => item.labId === id))));
+    // Low stock is classified per environment by the server (TS27); the dashboard adds up every environment.
+    this.load(this.materials, this.labApi.getEnvironments(id).pipe(
+      mergeMap(environments => from(environments).pipe(
+        mergeMap(environment => this.inventoryApi.materials(id, environment.id, 'LOW'), 4),
+        toArray(), map(groups => groups.flat())))));
+    this.load(this.batches, this.batchApi.getBatches(id));
     this.load(this.equipment, this.equipmentApi.getEquipment(id).pipe(map(items => items.filter(item => item.labId === id))), items => {
-      this.selectEquipment(items.find(item => item.id === preferredEquipment)?.id ?? items[0]?.id ?? null);
-      this.loadAlerts();
-    }, () => this.alerts.set({ status: 'error', data: null }));
-    this.loadSubscription();
-    this.loadPlans();
+      const devices = items.filter(item => item.isIotDevice);
+      this.selectEquipment(devices.find(item => item.id === preferredEquipment)?.id ?? devices[0]?.id ?? null);
+    });
+    this.loadAlerts();
+    if (this.managesSubscription()) {
+      this.loadSubscription();
+      this.loadPlans();
+    }
   }
   loadSubscription(): void {
     const id = this.iam.requireLaboratoryId();
@@ -102,21 +114,30 @@ export class DashboardStore {
   }
   loadPlans(): void { this.load(this.plans, this.subscriptionApi.getPlans()); }
   loadAlerts(): void {
-    if (this.equipment().status !== 'ready') return;
-    // An incomplete equipment load must not be presented as zero laboratory alerts.
-    this.load(this.alerts, from(this.equipment().data ?? []).pipe(
-      mergeMap(item => this.caApi.getAlerts({ equipmentId: item.id }).pipe(
-        map(alerts => alerts.filter(alert => alert.equipmentId === item.id))), 4),
-      toArray(), map(groups => [...new Map(groups.flat().map(alert => [alert.id, alert])).values()])));
+    const laboratoryId = this.iam.requireLaboratoryId();
+    // Open alerts of every environment (US85); an incomplete load must not be presented as zero laboratory alerts.
+    this.load(this.alerts, this.labApi.getEnvironments(laboratoryId).pipe(
+      mergeMap(environments => from(environments).pipe(
+        mergeMap(environment => this.caApi.getEnvironmentAlerts(laboratoryId, environment.id, { active: true }), 4),
+        toArray(), map(groups => groups.flat())))));
   }
   selectEquipment(id: number | null): void {
-    if (id !== null && !this.equipment().data?.some(item => item.id === id)) return;
+    if (id !== null && !this.devices().some(item => item.id === id)) return;
     this.requests.get(this.measurements)?.unsubscribe();
     this.selectedEquipmentId.set(id);
     this.measurements.set({ status: 'idle', data: null });
-    if (id !== null) this.load(this.measurements, this.trackingApi.getLatestMeasurements(id).pipe(
-      map(points => points.filter(point => point.equipmentId === id && Number.isFinite(point.value)
-        && Number.isFinite(Date.parse(point.timestamp))))));
+    const device = this.devices().find(item => item.id === id);
+    if (!device) return;
+    // A device only reports readings once it is located in an environment.
+    if (device.environmentId === null) {
+      this.measurements.set({ status: 'ready', data: [] });
+      return;
+    }
+    const target = { laboratoryId: this.iam.requireLaboratoryId(), environmentId: device.environmentId,
+      deviceId: device.deviceType === 'CONTAINER_MONITOR' ? device.id : null };
+    this.load(this.measurements, this.trackingApi.getMeasurements(target, recentPeriod()).pipe(
+      map(points => points.filter(point => point.deviceId === id && point.value !== null && Number.isFinite(point.value)
+        && point.metric !== 'MOTION' && Number.isFinite(Date.parse(point.measuredAt))))));
   }
   equipmentName(id: number): string { return this.equipment().data?.find(item => item.id === id)?.name ?? String(id); }
   private load<T>(target: WritableSignal<LoadState<T>>, source: Observable<T>,

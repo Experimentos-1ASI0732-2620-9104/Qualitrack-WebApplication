@@ -1,6 +1,8 @@
 <mat-toolbar color="primary" class="toolbar">
-  <img src="/qualitrack-logo.png" alt="QualiTrack Logo" class="toolbar-logo" />
-  <p class="toolbar-title">QualiTrack</p>
+  <a class="brand" [routerLink]="brandLink()" [attr.aria-label]="brandLabel() | translate">
+    <img src="/qualitrack-logo.png" alt="" class="toolbar-logo" />
+    <span class="toolbar-title">QualiTrack</span>
+  </a>
 
   <span class="spacer"></span>
 

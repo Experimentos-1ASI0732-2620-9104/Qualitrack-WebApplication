@@ -6,13 +6,14 @@ skinparam classAttributeIconSize 0
 
 package "external bounded contexts" <<External>> {
   class IamStore
-  class LaboratoryStore
-  class EquipmentStore
-  class BatchStore
-  class CaStore
-  class RaStore
-  class TrackingStore
-  class SubscriptionStore
+  class LaboratoryApi
+  class InventoryApi
+  class EquipmentApi
+  class BatchApi
+  class CaApi
+  class TrackingApi
+  class SubscriptionApi
+  class recentPeriod <<function>>
   class AuthenticationSection
 }
 
@@ -31,9 +32,6 @@ package "shared" {
 
     interface BaseResponse
 
-    interface MessageResource {
-      +message: string
-    }
 
     interface BaseAssembler<TEntity, TResource, TResponse> {
       +toEntityFromResource(resource: TResource): TEntity
@@ -60,22 +58,45 @@ package "shared" {
     }
   }
 
+  package "application" {
+    class DashboardStore <<view-scoped>> {
+      -iam: IamStore
+      -trackingApi: TrackingApi
+      +laboratory / equipment / batches / materials: Signal<LoadState>
+      +alerts / measurements / subscription / plans: Signal<LoadState>
+      +devices: Signal<Equipment[]>
+      +selectedEquipmentId: Signal<number | null>
+      +series / readings / latestReading / readingRange: Signal
+      +reload(): void
+      +loadSubscription(): void
+      +loadPlans(): void
+      +loadAlerts(): void
+      +selectEquipment(id: number | null): void
+      +equipmentName(id: number): string
+    }
+  }
+
   package "presentation.components" {
     class LanguageSwitcher {
       #currentLang: string
       #languages: string[]
       #translate: TranslateService
+      #compact: Signal<boolean>
       +useLanguage(language: string): void
     }
 
     class Toolbar {
+      -iam: IamStore
+      #brandLink: Signal<string>
+      #brandLabel: Signal<string>
     }
 
     class Layout {
       -router: Router
       #sidenavMode: 'side' | 'over'
       #sidenavOpened: boolean
-      #options: NavigationOption[]
+      -options: NavigationOption[]
+      #visibleOptions: Signal<NavigationOption[]>
       #navigateTo(link: string): void
       #isActive(link: string): boolean
     }
@@ -84,13 +105,19 @@ package "shared" {
       +label: string
       +icon: string
       +link: string
+      +qualityOnly?: boolean
       +children?: NavigationChild[]
     }
 
     class NavigationChild <<type>> {
       +label: string
       +link: string
+      +qualityOnly?: boolean
     }
+    note bottom of NavigationChild
+      Entries marked qualityOnly (subscription, equipment and staff registration)
+      are only listed for quality managers.
+    end note
   }
 
   package "presentation.views" {
@@ -109,54 +136,17 @@ package "shared" {
     }
 
     class Dashboard {
-      #iamStore: IamStore
-      #laboratoryStore: LaboratoryStore
-      #equipmentStore: EquipmentStore
-      #batchStore: BatchStore
-      #caStore: CaStore
-      #raStore: RaStore
-      #trackingStore: TrackingStore
-      #subscriptionStore: SubscriptionStore
-      -router: Router
+      #store: DashboardStore
       -translate: TranslateService
-      -equipmentPollId?: interval
-      -telemetryInitialized: boolean
-      -langSubscription?: Subscription
-      -languageVersion: Signal<number>
-      #overviewChartType: ChartType
-      #riskChartType: ChartType
-      #chartOptions: ChartOptions
-      #riskChartOptions: ChartOptions
-      #isLoading: Signal<boolean>
-      #healthScore: Signal<number>
-      #healthLabelKey: Signal<string>
-      #healthClass: Signal<string>
-      #summaryCards: Signal<DashboardCard[]>
-      #overviewChartData: Signal<ChartData>
-      #riskChartData: Signal<ChartData>
-      #attentionItems: Signal<AttentionItem[]>
-      +ngOnInit(): void
-      +ngOnDestroy(): void
-      #navigateTo(route: string): void
-      -initializeTelemetryFromFirstEquipment(): void
-      -t(key: string, params?: Record<string, unknown>): string
-    }
-
-    class DashboardCard <<type>> {
-      +labelKey: string
-      +value: number
-      +detailKey: string
-      +detailParams: object
-      +icon: string
-      +className: string
-      +route: string
-    }
-
-    class AttentionItem <<type>> {
-      +labelKey: string
-      +value: number
-      +icon: string
-      +route: string
+      #summaryCards: Signal<object[]>
+      #batchDistribution: Signal<object[]>
+      #recentBatches: Signal<Batch[]>
+      #chartData: Signal<ChartData>
+      #chartOptions: Signal<ChartOptions>
+      #reloadAll(): void
+      #retryTelemetry(): void
+      #retrySubscription(): void
+      #retryAlerts(): void
     }
   }
 }
@@ -172,9 +162,32 @@ BaseAssembler ..> BaseEntity
 BaseAssembler ..> BaseResource
 BaseAssembler ..> BaseResponse
 
+package "iam.presentation.components" <<External>> {
+  class UserSessionSection
+}
+
+package "ca.presentation.components" <<External>> {
+  class NotificationBell
+}
+
 Toolbar --> LanguageSwitcher
 Layout --> LanguageSwitcher
+Layout --> UserSessionSection
+Layout --> NotificationBell : with operational access
 Layout *-- NavigationOption
+Toolbar --> IamStore
+note bottom of Toolbar
+  Pages before signing in (home, about, sign-in, sign-up) and onboarding pages.
+  The logo and the name lead to /home without a session and to /dashboard with one.
+end note
+note bottom of Layout
+  The logo and the name lead to /dashboard. Menu labels only use nav.* keys:
+  English Title Case, Spanish sentence case, "Catalog" spelling.
+  The toolbar shows the notification bell (ca) and the user section (iam),
+  whose photo and name open the profile. Up to 720px wide the brand is hidden
+  so the user section stays complete; up to 480px the language switcher is
+  compact (no check mark).
+end note
 NavigationOption *-- NavigationChild
 
 Home --> Toolbar
@@ -182,17 +195,20 @@ Home --> AuthenticationSection
 PageNotFound --> Router
 PageNotFound --> ActivatedRoute
 
-Dashboard --> IamStore
-Dashboard --> LaboratoryStore
-Dashboard --> EquipmentStore
-Dashboard --> BatchStore
-Dashboard --> CaStore
-Dashboard --> RaStore
-Dashboard --> TrackingStore
-Dashboard --> SubscriptionStore
-Dashboard --> Router
+Dashboard *-- DashboardStore
+DashboardStore --> IamStore
+DashboardStore --> LaboratoryApi
+DashboardStore --> InventoryApi
+DashboardStore --> EquipmentApi
+DashboardStore --> BatchApi
+DashboardStore --> CaApi : open alerts of every environment
+DashboardStore --> TrackingApi
+DashboardStore --> SubscriptionApi
+DashboardStore ..> recentPeriod
+note bottom of DashboardStore
+  Telemetry widget: readings of the last 24 hours of the selected IoT device,
+  from its environment (environmental device) or container monitor route.
+end note
 Dashboard --> TranslateService
-Dashboard *-- DashboardCard
-Dashboard *-- AttentionItem
 
 @enduml

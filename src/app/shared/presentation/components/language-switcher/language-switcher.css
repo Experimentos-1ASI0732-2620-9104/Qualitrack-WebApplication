@@ -1,0 +1,12 @@
+/* Narrow screens: smaller buttons so the toolbar keeps room for the user. */
+@media (max-width: 480px) {
+  :host ::ng-deep .mat-button-toggle-label-content {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 340px) {
+  :host ::ng-deep .mat-button-toggle-label-content {
+    padding: 0 7px;
+  }
+}

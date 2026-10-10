@@ -37,11 +37,11 @@ export class Dashboard {
   protected readonly batchDistribution = computed(() => this.batchStatuses.map(status => ({ status,
     count: this.store.batches().data?.filter(batch => batch.status === status).length ?? 0 })));
   protected readonly recentBatches = computed(() => [...(this.store.batches().data ?? [])]
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4));
+    .sort((a, b) => b.id - a.id).slice(0, 4));
   protected readonly chartData = computed<ChartData<'line'>>(() => {
     this.language();
     return { datasets: [{ label: this.store.activeSeries()?.parameter,
-      data: this.store.readings().map(point => ({ x: Date.parse(point.timestamp), y: point.value })),
+      data: this.store.readings().map(point => ({ x: Date.parse(point.measuredAt), y: point.value ?? 0 })),
       borderColor: '#158378', backgroundColor: '#15837818', pointRadius: 3,
       borderWidth: 2, fill: true, tension: 0 }] };
   });
@@ -59,7 +59,7 @@ export class Dashboard {
   protected readonly reloadAll = () => this.store.reload();
   protected readonly retryTelemetry = () => this.store.selectEquipment(this.store.selectedEquipmentId());
   protected readonly retrySubscription = () => this.store.loadSubscription();
-  protected readonly retryAlerts = () => this.store.equipment().status === 'ready' ? this.store.loadAlerts() : this.store.reload();
+  protected readonly retryAlerts = () => this.store.loadAlerts();
   constructor() { this.store.reload(); }
   protected formatDate(value: string | number, short = false): string {
     this.language();
