@@ -1,101 +1,105 @@
-<div class="equipment-list-container">
-  <app-calibration-alert></app-calibration-alert>
-
-  <header class="page-header">
-    <div class="header-content">
-      <h1>{{ 'equipment-list.title' | translate }}</h1>
-      <p>{{ 'equipment-list.subtitle' | translate }}</p>
-    </div>
-
-    <div class="header-actions">
-      <button
-        mat-icon-button
-        type="button"
-        (click)="onRefresh()"
-        [disabled]="store.isLoading()"
-        [attr.aria-label]="'common.refresh' | translate">
-        <mat-icon>refresh</mat-icon>
+<main class="operations-page">
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">precision_manufacturing</mat-icon>{{ 'equipment-list.title' | translate }}</h1>
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="reload()" [disabled]="store.isLoading()">
+        <mat-icon>refresh</mat-icon>{{ 'common.refresh' | translate }}
       </button>
-
-      <button mat-raised-button color="primary" routerLink="../register-equipment">
-        <mat-icon>add</mat-icon>
-        {{ 'equipment-list.add-button' | translate }}
-      </button>
+      @if (store.canManage()) {
+        <a mat-stroked-button routerLink="../register-device">
+          <mat-icon>sensors</mat-icon>{{ 'device-form.add-button' | translate }}
+        </a>
+        <a mat-flat-button routerLink="../register-equipment">
+          <mat-icon>add</mat-icon>{{ 'equipment-list.add-button' | translate }}
+        </a>
+      }
     </div>
   </header>
 
-  @if (store.isLoading()) {
-    <div class="loading-shade">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
-  }
-
   @if (store.error()) {
-    <div class="error-container">
-      <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error() }}</p>
-    </div>
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
   }
 
-  <div class="table-container mat-elevation-z2">
-    <table mat-table [dataSource]="store.equipmentList()">
+  <section class="summary-strip">
+    <div>
+      <span>{{ 'equipment-list.summary.equipment' | translate }}</span><strong>{{ store.processEquipment().length }}</strong>
+    </div>
+    <div>
+      <span>{{ 'equipment-list.summary.devices' | translate }}</span><strong>{{ store.iotDevices().length }}</strong>
+    </div>
+    <div>
+      <span>{{ 'equipment-list.summary.attention' | translate }}</span>
+      <strong [class.warning]="store.needsMaintenance().length > 0">{{ store.needsMaintenance().length }}</strong>
+    </div>
+  </section>
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.name' | translate }}</th>
-        <td mat-cell *matCellDef="let element" class="bold-text">{{ element.name }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="type">
-        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.type' | translate }}</th>
-        <td mat-cell *matCellDef="let element">{{ element.type }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="model">
-        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.model' | translate }}</th>
-        <td mat-cell *matCellDef="let element">{{ element.model }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="serialNumber">
-        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.serial' | translate }}</th>
-        <td mat-cell *matCellDef="let element">
-          <code>{{ element.serialNumber }}</code>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>{{ 'equipment-list.fields.status' | translate }}</th>
-        <td mat-cell *matCellDef="let element">
-          <mat-chip-set>
-            <mat-chip [class]="element.status.toLowerCase()">
-              {{ 'equipment-status.' + element.status.toLowerCase() | translate }}
-            </mat-chip>
-          </mat-chip-set>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'common.actions.label' | translate }}</th>        <td mat-cell *matCellDef="let element">
-          <button
-            mat-icon-button
-            color="primary"
-            [routerLink]="['../equipment-detail', element.id]"
-            [matTooltip]="'equipment-list.actions.view-detail' | translate"
-            [attr.aria-label]="'equipment-list.actions.view-detail' | translate">
-            <mat-icon>visibility</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="6">
-          <div class="empty-table-message">
-            {{ 'equipment-list.empty' | translate }}
-          </div>
-        </td>
-      </tr>
-    </table>
+  <div class="filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'equipment-list.search' | translate }}</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)">
+    </mat-form-field>
+    <mat-button-toggle-group
+      [value]="filter()"
+      (change)="filter.set($event.value)"
+      [attr.aria-label]="'equipment-list.filter.label' | translate">
+      <mat-button-toggle value="all">{{ 'equipment-list.filter.all' | translate }}</mat-button-toggle>
+      <mat-button-toggle value="equipment">{{ 'equipment-list.filter.equipment' | translate }}</mat-button-toggle>
+      <mat-button-toggle value="devices">{{ 'equipment-list.filter.devices' | translate }}</mat-button-toggle>
+    </mat-button-toggle-group>
+    <mat-checkbox [checked]="attentionOnly()" (change)="attentionOnly.set($event.checked)">
+      {{ 'equipment-list.summary.attention' | translate }}
+    </mat-checkbox>
   </div>
-</div>
+
+  @if (store.isLoading() && !store.equipmentList().length) {
+    <p role="status">{{ 'common.status-loading' | translate }}</p>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ 'equipment-list.fields.name' | translate }}</th>
+          <th>{{ 'equipment-list.fields.type' | translate }}</th>
+          <th>{{ 'equipment-list.fields.environment' | translate }}</th>
+          <th>{{ 'equipment-list.fields.status' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (equipment of visibleEquipment(); track equipment.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['../equipment-detail', equipment.id]">{{ equipment.name }}</a>
+              <small>{{ equipment.model }} · {{ equipment.serialNumber }}</small>
+            </td>
+            <td [attr.data-label]="'equipment-list.fields.type' | translate">
+              @if (equipment.deviceType) {
+                <span class="device-type">
+                  <mat-icon aria-hidden="true">sensors</mat-icon>{{ 'device-types.' + equipment.deviceType | translate }}
+                </span>
+                <small>{{ equipment.sensorExternalId }}</small>
+              } @else {
+                {{ equipment.type }}
+              }
+            </td>
+            <td [attr.data-label]="'equipment-list.fields.environment' | translate">
+              @if (environmentName(equipment); as name) {
+                {{ name }}
+              } @else {
+                <span class="muted">{{ 'equipment-list.not-located' | translate }}</span>
+              }
+            </td>
+            <td [attr.data-label]="'equipment-list.fields.status' | translate">
+              <span class="status" [ngClass]="equipment.status.toLowerCase()">
+                {{ 'equipment-status.' + equipment.status.toLowerCase() | translate }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">{{ 'equipment-list.empty' | translate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</main>

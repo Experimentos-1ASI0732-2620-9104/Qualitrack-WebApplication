@@ -1,0 +1,56 @@
+<main class="operations-page">
+  <!-- Back link to the products of the environment -->
+  <a [routerLink]="catalogueLink">{{ 'product-catalog.title' | translate }}</a>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">add_box</mat-icon>{{ 'product-form.title' | translate }}</h1>
+  </header>
+  <p class="muted">{{ 'product-form.subtitle' | translate }}</p>
+  <!-- Notice for users who cannot register products -->
+  @if (!store.canManage()) {
+    <p class="notice" role="status">{{ 'product-form.quality-only' | translate }}</p>
+  }
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  }
+  <!-- Registration form of the product -->
+  <form class="editor form-grid" [formGroup]="form" (ngSubmit)="save()">
+    <!-- Catalog code, unique in the laboratory -->
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'product-form.code' | translate }}</mat-label>
+      <input matInput formControlName="code" maxlength="50" autocomplete="off" />
+      @if (form.controls.code.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+    <!-- Product name, unique in the laboratory -->
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'product-form.name' | translate }}</mat-label>
+      <input matInput formControlName="name" maxlength="150" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+    <!-- Optional description -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'product-form.description' | translate }}</mat-label>
+      <textarea matInput formControlName="description" rows="2" maxlength="500"></textarea>
+      <mat-hint>{{ 'product-form.description-hint' | translate }}</mat-hint>
+    </mat-form-field>
+    <!-- Technical specifications -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'product-form.specifications' | translate }}</mat-label>
+      <textarea matInput formControlName="specifications" rows="4" maxlength="1000"></textarea>
+      <mat-hint>{{ 'product-form.specifications-hint' | translate }}</mat-hint>
+      @if (form.controls.specifications.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+    <!-- Actions: the submit button is disabled for users who cannot register products -->
+    <div class="actions full-width">
+      <a mat-button [routerLink]="catalogueLink">{{ 'common.cancel' | translate }}</a>
+      <button mat-flat-button type="submit" [disabled]="store.saving() || !store.canManage()">
+        <mat-icon>save</mat-icon>{{ 'common.register' | translate }}
+      </button>
+    </div>
+  </form>
+</main>

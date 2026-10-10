@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -14,7 +14,7 @@ import {
   RawMaterialBatch,
   RawMaterialBatchStatus,
 } from '../../../domain/model/raw-material-batch.entity';
-import { stockQuantityValidator } from '../../../../shared/presentation/stock-quantity-validator';
+import { stockQuantityValidator } from '../../../../shared/presentation/validators/stock-quantity.validator';
 
 @Component({
   selector: 'app-inventory-detail',
@@ -32,7 +32,7 @@ import { stockQuantityValidator } from '../../../../shared/presentation/stock-qu
     TranslateModule,
   ],
   templateUrl: './inventory-detail.html',
-  styleUrl: '../inventory.css',
+  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
 })
 export class InventoryDetail implements OnInit {
   readonly store = inject(InventoryStore);
@@ -42,23 +42,7 @@ export class InventoryDetail implements OnInit {
   readonly receiving = signal(false);
   readonly editing = signal(false);
   readonly reviewing = signal<RawMaterialBatch | null>(null);
-  readonly affectedBatches = computed(() => [
-    ...new Set(
-      this.store
-        .movements()
-        .filter((movement) => movement.type === 'CONSUMPTION' && movement.productBatchId !== null)
-        .filter((movement) =>
-          this.store
-            .receipts()
-            .some(
-              (receipt) =>
-                receipt.id === movement.receiptId &&
-                ['OBSERVED', 'REJECTED'].includes(receipt.status),
-            ),
-        )
-        .map((movement) => movement.productBatchId!),
-    ),
-  ]);
+  readonly storing = signal<RawMaterialBatch | null>(null);
   readonly metadata = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.maxLength(50)]],
     name: ['', [Validators.required, Validators.maxLength(150)]],
@@ -75,16 +59,20 @@ export class InventoryDetail implements OnInit {
     status: ['RELEASED' as RawMaterialBatchStatus, Validators.required],
     reason: ['', [Validators.required, Validators.maxLength(500)]],
   });
+  readonly containerForm = this.fb.group({
+    containerMonitorId: this.fb.control<number | null>(null, Validators.required),
+  });
   ngOnInit() {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
       this.receiving.set(false);
       this.editing.set(false);
       this.reviewing.set(null);
-      void this.load(Number(params.get('id')));
+      this.storing.set(null);
+      void this.store.load(Number(params.get('environmentId')), Number(params.get('rawMaterialId')));
     });
   }
-  load(id = this.store.selectedId()!) {
-    return this.store.load(id);
+  load() {
+    return this.store.load(this.store.environmentId()!, this.store.selectedId());
   }
   edit() {
     const material = this.store.selected();
@@ -137,6 +125,7 @@ export class InventoryDetail implements OnInit {
     }
   }
   startReview(receipt: RawMaterialBatch) {
+    this.storing.set(null);
     this.reviewing.set(receipt);
     this.reviewForm.reset({
       status:
@@ -146,11 +135,25 @@ export class InventoryDetail implements OnInit {
       reason: '',
     });
   }
+  /** Opens the form to store the lot in a container monitor of the environment (US43). */
+  startStoring(receipt: RawMaterialBatch) {
+    this.reviewing.set(null);
+    this.storing.set(receipt);
+    const current = this.store.availableContainers().some((container) => container.id === receipt.containerMonitorId);
+    this.containerForm.reset({ containerMonitorId: current ? receipt.containerMonitorId : null });
+  }
+  async storeInContainer() {
+    this.containerForm.markAllAsTouched();
+    const receipt = this.storing();
+    const containerMonitorId = this.containerForm.controls.containerMonitorId.value;
+    if (this.containerForm.invalid || !receipt || containerMonitorId === null) return;
+    if (await this.store.assignContainer(receipt, containerMonitorId)) this.storing.set(null);
+  }
   async review() {
     this.reviewForm.markAllAsTouched();
     const receipt = this.reviewing();
     if (this.reviewForm.invalid || !receipt) return;
     const value = this.reviewForm.getRawValue();
-    if (await this.store.review(receipt.id, value)) this.reviewing.set(null);
+    if (await this.store.review(receipt, value)) this.reviewing.set(null);
   }
 }

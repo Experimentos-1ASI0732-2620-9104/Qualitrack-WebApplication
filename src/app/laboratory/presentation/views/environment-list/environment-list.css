@@ -1,0 +1,141 @@
+.environments-container {
+  padding: 24px;
+  position: relative;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-icon {
+  color: #1a3a5c;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.title-group h2 {
+  margin: 0;
+  font-weight: 700;
+  color: #1a3a5c;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #5f6368;
+}
+
+.error-box {
+  background: #fff5f5;
+  color: #c53030;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #fc8181;
+}
+
+.error-box span {
+  flex: 1;
+}
+
+.table-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.full-width-table {
+  width: 100%;
+}
+
+.environment-row:hover {
+  background-color: #f8fafc;
+}
+
+.code-cell {
+  font-weight: 600;
+  color: #1a3a5c;
+  white-space: nowrap;
+}
+
+.description-cell {
+  color: #5f6368;
+}
+
+.usage-tag {
+  background: #e8f0fe;
+  color: #1a3a5c;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.usage-tag.usage-missing {
+  background: #f0f2f5;
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.empty-state {
+  padding: 48px;
+  text-align: center;
+  color: #5f6368;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .environments-container {
+    padding: 16px;
+  }
+
+  .section-header {
+    align-items: stretch;
+  }
+
+  .section-header button {
+    width: 100%;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
+
+  .full-width-table {
+    min-width: 640px;
+  }
+}

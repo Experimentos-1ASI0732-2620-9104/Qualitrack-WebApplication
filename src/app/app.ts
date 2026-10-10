@@ -16,6 +16,6 @@ export class App {
   constructor() {
     this.translate.addLangs(['en_US', 'es_419']);
     this.translate.use('en_US');
-    document.documentElement.lang = 'en-US';
+    document.documentElement.lang = 'en';
   }
 }

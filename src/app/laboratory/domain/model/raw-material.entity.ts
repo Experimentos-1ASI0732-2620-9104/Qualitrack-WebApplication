@@ -7,6 +7,10 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  * In DDD, a RawMaterial is an entity that models an input substance managed by
  * a laboratory. It captures traceability data, supplier information, expiration,
  * and stock thresholds used for inventory monitoring.
+ *
+ * Within the Laboratory bounded context it is read-only: it represents the raw
+ * materials registered before Inventory Management existed, which now owns
+ * the registration of new raw materials.
  */
 export class RawMaterial implements BaseEntity {
   /**
@@ -67,7 +71,7 @@ export class RawMaterial implements BaseEntity {
   /**
    * Creates a new RawMaterial entity.
    *
-   * @param params - Initialization properties
+   * @param params - Initialization properties, one per field of the entity
    */
   constructor(params: {
     id: number;

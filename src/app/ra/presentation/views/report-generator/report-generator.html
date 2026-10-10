@@ -1,5 +1,4 @@
 <div class="generator-container">
-  <!-- Header de la sección -->
   <div class="section-header">
     <div class="title-group">
       <mat-icon class="title-icon">description</mat-icon>
@@ -7,7 +6,6 @@
     </div>
   </div>
 
-  <!-- Alertas globales del store -->
   @if (store.error()) {
     <div class="alert error-message">
       <mat-icon>error_outline</mat-icon>
@@ -21,14 +19,13 @@
   @if (store.successMsg()) {
     <div class="alert success-message">
       <mat-icon>check_circle</mat-icon>
-      {{ store.successMsg() }}
+      <span role="status">{{ store.successMsg()! | translate }}</span>
       <button mat-icon-button type="button" (click)="store.clearMessages()">
         <mat-icon>close</mat-icon>
       </button>
     </div>
   }
 
-  <!-- Overlay global de carga cuando un archivo se está generando -->
   @if (store.isLoading()) {
     <div class="loading-overlay">
       <mat-spinner diameter="60"></mat-spinner>
@@ -36,7 +33,6 @@
     </div>
   }
 
-  <!-- Cuadrícula de tarjetas de reportes -->
   <div class="reports-grid" [class.loading-blur]="store.isLoading()">
 
     <!-- Batch report -->
@@ -75,21 +71,17 @@
         }
 
         <div class="checkbox-group">
-          <mat-checkbox [(ngModel)]="batchForm.includeTelemetry" [disabled]="true" color="primary">
-            {{ 'report-generator.batch.include-telemetry' | translate }}
-          </mat-checkbox>
-          <p>{{ 'onboarding.batch-telemetry-unavailable' | translate }}</p>
-
           <mat-checkbox [(ngModel)]="batchForm.includeDeviations" color="primary">
             {{ 'report-generator.batch.include-deviations' | translate }}
           </mat-checkbox>
+          <p>{{ 'report-generator.batch.scope' | translate }}</p>
         </div>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'common.format' | translate }}</mat-label>
           <mat-select [(ngModel)]="batchForm.format">
-            <mat-option value="PDF">PDF Document (.pdf)</mat-option>
-            <mat-option value="CSV">Data Export (.csv)</mat-option>
+            <mat-option value="PDF">{{ 'report-generator.formats.pdf' | translate }}</mat-option>
+            <mat-option value="CSV">{{ 'report-generator.formats.csv' | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
       </mat-card-content>
@@ -119,10 +111,20 @@
 
       <mat-card-content class="form-content">
         <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'environments.selector' | translate }}</mat-label>
+          <mat-select [(ngModel)]="complianceForm.environmentId" (selectionChange)="store.clearMessages()">
+            <mat-option [value]="ALL_ENVIRONMENTS">{{ 'reporting.all-environments' | translate }}</mat-option>
+            @for (environment of environments.environments(); track environment.id) {
+              <mat-option [value]="environment.id">{{ environment.code }} · {{ environment.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'common.date-range' | translate }}</mat-label>
           <mat-date-range-input [rangePicker]="compPicker">
-            <input matStartDate [(ngModel)]="complianceForm.startDate" placeholder="Start date">
-            <input matEndDate [(ngModel)]="complianceForm.endDate" placeholder="End date">
+            <input matStartDate [(ngModel)]="complianceForm.startDate" [placeholder]="'report-generator.start-date' | translate">
+            <input matEndDate [(ngModel)]="complianceForm.endDate" [placeholder]="'report-generator.end-date' | translate">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="compPicker"></mat-datepicker-toggle>
           <mat-date-range-picker #compPicker></mat-date-range-picker>
@@ -131,8 +133,8 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'common.format' | translate }}</mat-label>
           <mat-select [(ngModel)]="complianceForm.format">
-            <mat-option value="PDF">PDF Document (.pdf)</mat-option>
-            <mat-option value="CSV">Data Export (.csv)</mat-option>
+            <mat-option value="PDF">{{ 'report-generator.formats.pdf' | translate }}</mat-option>
+            <mat-option value="CSV">{{ 'report-generator.formats.csv' | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
       </mat-card-content>
@@ -144,6 +146,45 @@
           type="button"
           [disabled]="!complianceForm.startDate || !complianceForm.endDate || store.isLoading()"
           (click)="onGenerateComplianceReport()">
+          <mat-icon>download</mat-icon>
+          {{ 'common.download' | translate }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Inventory report -->
+    <mat-card class="report-card">
+      <mat-card-header>
+        <div mat-card-avatar class="card-icon-container bg-primary">
+          <mat-icon>inventory</mat-icon>
+        </div>
+        <mat-card-title>{{ 'report-generator.inventory.title' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'report-generator.inventory.desc' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content class="form-content">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'environments.selector' | translate }}</mat-label>
+          <mat-select [(ngModel)]="inventoryForm.environmentId" (selectionChange)="store.clearMessages()">
+            <mat-option [value]="ALL_ENVIRONMENTS">{{ 'reporting.all-environments' | translate }}</mat-option>
+            @for (environment of environments.environments(); track environment.id) {
+              <mat-option [value]="environment.id">{{ environment.code }} · {{ environment.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'common.format' | translate }}</mat-label>
+          <mat-select [(ngModel)]="inventoryForm.format">
+            <mat-option value="PDF">{{ 'report-generator.formats.pdf' | translate }}</mat-option>
+            <mat-option value="CSV">{{ 'report-generator.formats.csv' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button mat-flat-button color="primary" type="button" [disabled]="store.isLoading()"
+          (click)="onGenerateInventoryReport()">
           <mat-icon>download</mat-icon>
           {{ 'common.download' | translate }}
         </button>
@@ -165,7 +206,7 @@
           <mat-label>{{ 'report-generator.equipment.select-label' | translate }}</mat-label>
           <mat-select [(ngModel)]="equipmentForm.equipmentId" data-testid="equipment-select"
             [disabled]="equipmentStore.isLoading() || !!equipmentStore.error()" (selectionChange)="store.clearMessages()">
-            @for (equipment of equipmentStore.equipmentList(); track equipment.id) {
+            @for (equipment of locatedEquipment(); track equipment.id) {
               <mat-option [value]="equipment.id">{{ equipment.name }} (#{{ equipment.id }})</mat-option>
             } @empty {
               <mat-option disabled>{{ 'report-generator.equipment.empty' | translate }}</mat-option>
@@ -188,8 +229,8 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'common.date-range' | translate }}</mat-label>
           <mat-date-range-input [rangePicker]="eqPicker">
-            <input matStartDate [(ngModel)]="equipmentForm.startDate" placeholder="Start date">
-            <input matEndDate [(ngModel)]="equipmentForm.endDate" placeholder="End date">
+            <input matStartDate [(ngModel)]="equipmentForm.startDate" [placeholder]="'report-generator.start-date' | translate">
+            <input matEndDate [(ngModel)]="equipmentForm.endDate" [placeholder]="'report-generator.end-date' | translate">
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="eqPicker"></mat-datepicker-toggle>
           <mat-date-range-picker #eqPicker></mat-date-range-picker>
@@ -198,8 +239,8 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'common.format' | translate }}</mat-label>
           <mat-select [(ngModel)]="equipmentForm.format">
-            <mat-option value="PDF">PDF Document (.pdf)</mat-option>
-            <mat-option value="CSV">Data Export (.csv)</mat-option>
+            <mat-option value="PDF">{{ 'report-generator.formats.pdf' | translate }}</mat-option>
+            <mat-option value="CSV">{{ 'report-generator.formats.csv' | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
       </mat-card-content>

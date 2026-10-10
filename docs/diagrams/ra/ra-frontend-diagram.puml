@@ -13,6 +13,7 @@ package "shared" {
   interface BaseAssembler
   interface BaseResource
   interface BaseResponse
+  class "localIsoDate()" as LocalIsoDate
 }
 
 package "iam.application" {
@@ -23,10 +24,34 @@ package "iam.application" {
   }
 }
 
-package "equipment.application" {
+package "equipment" {
   class EquipmentStore {
     +equipmentList
     +loadEquipment(labId: number): void
+  }
+  class EquipmentApi {
+    +getEquipment(laboratoryId: number)
+  }
+}
+
+package "batch.application" {
+  class BatchStore {
+    +batches
+    +loadBatches(labId: number): void
+  }
+}
+
+package "laboratory" {
+  class EnvironmentStore {
+    +environments
+    +isEmpty
+    +loadEnvironments(): Promise<void>
+    +preferredEnvironment(usage?, scope): Environment
+    +rememberEnvironment(environmentId, scope): void
+  }
+  class EnvironmentSelector {
+    +selectedId
+    +selectedChange
   }
 }
 
@@ -36,7 +61,23 @@ package "ra.domain.model" {
     +laboratoryId: number
     +timestamp: string
     +overallHealthScore: number
+    +from: string
+    +to: string
     +metrics: KpiMetric[]
+    +measurementSummaries: MeasurementSummary[]
+  }
+
+  interface MeasurementSummary {
+    +environmentId: number
+    +deviceId: number
+    +metric: string
+    +unit: string
+    +readings: number
+    +average: number
+    +minimum: number
+    +maximum: number
+    +firstMeasuredAt: string
+    +lastMeasuredAt: string
   }
 
   class KpiMetric {
@@ -53,7 +94,13 @@ package "ra.domain.model" {
     +id: number
     +parameterName: string
     +equipmentId: number
+    +environmentId: number
+    +unit: string
     +trendDirection: "STABLE | INCREASING | DECREASING"
+    +evaluatedReadings: number
+    +timeInRangePercent: number
+    +deviationCount: number
+    +criticalDeviationCount: number
     +dataPoints: DataPoint[]
   }
 
@@ -62,7 +109,15 @@ package "ra.domain.model" {
     +recordedValue: number
     +upperThreshold: number
     +lowerThreshold: number
+    +state: "NORMAL | WARNING | CRITICAL"
   }
+
+  interface IndicatorPeriod {
+    +from: string
+    +to: string
+  }
+
+  class "lastDays(days)" as LastDays
 
   class AuditLogEntry {
     +id: number
@@ -76,56 +131,31 @@ package "ra.domain.model" {
 
   interface GenerateBatchReportCommand {
     +batchId: number
-    +includeTelemetry: boolean
     +includeDeviations: boolean
     +format: "PDF | CSV"
-    +requestedBy: number
   }
 
   interface GenerateComplianceReportCommand {
     +laboratoryId: number
+    +environmentId: number
     +startDate: string
     +endDate: string
     +format: "PDF | CSV"
-    +requestedBy: number
+  }
+
+  interface GenerateInventoryReportCommand {
+    +laboratoryId: number
+    +environmentId: number
+    +format: "PDF | CSV"
   }
 
   interface ExportEquipmentLogCommand {
+    +laboratoryId: number
+    +environmentId: number
     +equipmentId: number
     +startDate: string
     +endDate: string
     +format: "PDF | CSV"
-    +requestedBy: number
-  }
-}
-
-package "ra.application" {
-  class RaStore {
-    -api: RaApi
-    -_dashboard
-    -_deviationTrends
-    -_auditLogs
-    -_isLoading
-    -_error
-    -_successMsg
-
-    +dashboard
-    +deviationTrends
-    +auditLogs
-    +isLoading
-    +error
-    +successMsg
-    +criticalMetrics
-    +atRiskMetrics
-    +hasCriticalDeviations
-
-    +loadDashboard(laboratoryId: number): void
-    +loadDeviationTrends(equipmentId: number): void
-    +loadAuditLog(filters?): void
-    +generateBatchReport(command: GenerateBatchReportCommand): void
-    +generateComplianceReport(command: GenerateComplianceReportCommand): void
-    +exportEquipmentLog(command: ExportEquipmentLogCommand): void
-    +clearMessages(): void
   }
 }
 
@@ -136,31 +166,51 @@ package "ra.infrastructure" {
     -_auditLogEndpoint: AuditLogApiEndpoint
     -_reportEndpoint: ReportApiEndpoint
 
-    +getDashboardByLaboratory(laboratoryId: number)
-    +getTrendsByEquipment(equipmentId: number)
-    +getAuditLog(filters?)
+    +getDashboardByLaboratory(laboratoryId, period?, environmentId?)
+    +getTrendsByEnvironment(laboratoryId, environmentId, period)
+    +getAuditLog(laboratoryId: number, filters?)
+    +getStaffActivity(laboratoryId: number, staffId: number)
     +generateBatchReport(request: GenerateBatchReportRequest)
     +generateComplianceReport(request: GenerateComplianceReportRequest)
+    +generateInventoryReport(request: GenerateInventoryReportRequest)
     +exportEquipmentLog(request: ExportEquipmentLogRequest)
   }
 
   class KpiApiEndpoint {
-    +getDashboardByLaboratory(laboratoryId: number)
+    +getDashboardByLaboratory(laboratoryId, period?, environmentId?)
   }
+
+  note bottom of KpiApiEndpoint
+    GET /laboratories/{lab}/kpi-dashboards?from&to&environmentId (TS81)
+  end note
 
   class DeviationTrendApiEndpoint {
-    +getTrendsByEquipment(equipmentId: number)
+    +getTrendsByEnvironment(laboratoryId, environmentId, period)
   }
 
+  note bottom of DeviationTrendApiEndpoint
+    GET /laboratories/{lab}/environments/{env}/deviation-trends?from&to (TS82)
+  end note
+
   class AuditLogApiEndpoint {
-    +getAuditLog(filters?)
+    +getAuditLog(laboratoryId: number, filters?)
+    +getStaffActivity(laboratoryId: number, staffId: number)
   }
 
   class ReportApiEndpoint {
     +generateBatchReport(request: GenerateBatchReportRequest)
     +generateComplianceReport(request: GenerateComplianceReportRequest)
+    +generateInventoryReport(request: GenerateInventoryReportRequest)
     +exportEquipmentLog(request: ExportEquipmentLogRequest)
+    -createAndDownload(url, body, fallback): Observable<Blob>
   }
+
+  note bottom of ReportApiEndpoint
+    POST creates the report (201 + Location /reports/{reportId}), then
+    GET /reports/{reportId}/content downloads its PDF or CSV (TS83-TS87).
+    Inventory: /laboratories/{lab}/inventory/reports (TS85).
+    Equipment logs: /laboratories/{lab}/environments/{env}/equipments/{id}/log-reports.
+  end note
 
   class KpiAssembler
   class DeviationTrendAssembler
@@ -181,7 +231,10 @@ package "ra.infrastructure" {
     +laboratoryId: number
     +timestamp: string
     +overallHealthScore: number
+    +from: string
+    +to: string
     +metrics: KpiMetricResource[]
+    +measurementSummaries: MeasurementSummary[]
   }
 
   interface KpiDashboardsResponse {
@@ -193,13 +246,20 @@ package "ra.infrastructure" {
     +recordedValue: number
     +upperThreshold: number
     +lowerThreshold: number
+    +state: "NORMAL | WARNING | CRITICAL"
   }
 
   interface DeviationTrendResource {
     +id: number
     +parameterName: string
     +equipmentId: number
+    +environmentId: number
+    +unit: string
     +trendDirection: "STABLE | INCREASING | DECREASING"
+    +evaluatedReadings: number
+    +timeInRangePercent: number
+    +deviationCount: number
+    +criticalDeviationCount: number
     +dataPoints: DataPointResource[]
   }
 
@@ -223,26 +283,63 @@ package "ra.infrastructure" {
 
   interface GenerateBatchReportRequest {
     +batchId: number
-    +includeTelemetry: boolean
     +includeDeviations: boolean
     +format: "PDF | CSV"
-    +requestedBy: number
   }
 
   interface GenerateComplianceReportRequest {
     +laboratoryId: number
+    +environmentId: number
     +startDate: string
     +endDate: string
     +format: "PDF | CSV"
-    +requestedBy: number
+  }
+
+  interface GenerateInventoryReportRequest {
+    +laboratoryId: number
+    +environmentId: number
+    +format: "PDF | CSV"
   }
 
   interface ExportEquipmentLogRequest {
+    +laboratoryId: number
+    +environmentId: number
     +equipmentId: number
     +startDate: string
     +endDate: string
     +format: "PDF | CSV"
-    +requestedBy: number
+  }
+}
+
+package "ra.application" {
+  class RaStore {
+    -api: RaApi
+    -equipmentApi: EquipmentApi
+    -_dashboard
+    -_deviationTrends
+    -_devices
+    -_auditLogs
+    -_isLoading
+    -_error
+    -_successMsg
+
+    +dashboard
+    +deviationTrends
+    +auditLogs
+    +isLoading
+    +error
+    +successMsg
+
+    +deviceName(deviceId: number): string
+    +loadDevices(): void
+    +loadDashboard(period: IndicatorPeriod, environmentId: number): void
+    +loadDeviationTrends(environmentId: number, period: IndicatorPeriod): void
+    +loadAuditLog(filters?): void
+    +generateBatchReport(command: GenerateBatchReportCommand): void
+    +generateComplianceReport(command: GenerateComplianceReportCommand): void
+    +generateInventoryReport(command: GenerateInventoryReportCommand): void
+    +exportEquipmentLog(command: ExportEquipmentLogCommand): void
+    +clearMessages(): void
   }
 }
 
@@ -250,30 +347,50 @@ package "ra.presentation" {
   class RaRoutes
 
   class KpiDashboardComponent {
-    +displayedColumns
-    +barChartOptions
-    +barChartType
-    +chartData
-    +ngOnInit(): void
+    +periods
+    +days
+    +environmentId
+    +groups
+    +ngOnInit(): Promise<void>
+    +changePeriod(days: number): void
+    +changeEnvironment(environmentId: number): void
+    +reload(): void
   }
 
+  note bottom of KpiDashboardComponent
+    Environmental summary (US93): average, minimum and maximum
+    per environment, device and variable of the last 24 hours,
+    7 or 31 days; every environment or one. Without readings
+    it states that nothing is calculated.
+  end note
+
   class DeviationTrendChartComponent {
-    +equipmentId: number
-    +selectedEquipmentId
-    +displayedColumns
-    +ngOnInit(): void
-    +onEquipmentSelected(equipmentId: number): void
-    +loadTrends(): void
-    +getTrendIcon(direction): string
-    +isDeviated(value: number, min: number, max: number): boolean
+    +periods
+    +days
+    +environmentId
+    +activeTrend
+    +chartData
+    +chartOptions
+    +ngOnInit(): Promise<void>
+    +changeEnvironment(environmentId: number): void
+    +changePeriod(days: number): void
+    +select(trend: DeviationTrend): void
   }
+
+  note bottom of DeviationTrendChartComponent
+    Deviation indicators (US94): time in range, deviations and
+    critical deviations per device and variable, with the readings
+    of the selected one colored by condition.
+  end note
 
   class ReportGeneratorComponent {
     +batchForm
     +complianceForm
+    +inventoryForm
     +equipmentForm
     +onGenerateBatchReport(): void
     +onGenerateComplianceReport(): void
+    +onGenerateInventoryReport(): void
     +onExportEquipmentLog(): void
   }
 
@@ -293,7 +410,9 @@ DeviationTrend ..|> BaseEntity
 AuditLogEntry ..|> BaseEntity
 
 KpiDashboard *-- KpiMetric
+KpiDashboard *-- MeasurementSummary
 DeviationTrend *-- DataPoint
+LastDays ..> IndicatorPeriod
 
 RaApi --|> BaseApi
 KpiApiEndpoint --|> BaseApiEndpoint
@@ -312,12 +431,16 @@ AuditLogEntryResource ..|> BaseResource
 AuditLogEntriesResponse ..|> BaseResponse
 
 RaStore --> RaApi
+RaStore --> EquipmentApi : device names
+RaStore --> IamStore
 
 RaStore ..> KpiDashboard
 RaStore ..> DeviationTrend
 RaStore ..> AuditLogEntry
+RaStore ..> IndicatorPeriod
 RaStore ..> GenerateBatchReportCommand
 RaStore ..> GenerateComplianceReportCommand
+RaStore ..> GenerateInventoryReportCommand
 RaStore ..> ExportEquipmentLogCommand
 
 RaApi --> KpiApiEndpoint
@@ -330,11 +453,14 @@ DeviationTrendApiEndpoint --> DeviationTrendAssembler
 AuditLogApiEndpoint --> AuditLogAssembler
 
 KpiApiEndpoint ..> KpiDashboardResource
+KpiApiEndpoint ..> IndicatorPeriod
 DeviationTrendApiEndpoint ..> DeviationTrendResource
+DeviationTrendApiEndpoint ..> IndicatorPeriod
 AuditLogApiEndpoint ..> AuditLogEntryResource
 
 ReportApiEndpoint ..> GenerateBatchReportRequest
 ReportApiEndpoint ..> GenerateComplianceReportRequest
+ReportApiEndpoint ..> GenerateInventoryReportRequest
 ReportApiEndpoint ..> ExportEquipmentLogRequest
 
 KpiAssembler ..> KpiDashboard
@@ -346,14 +472,20 @@ AuditLogAssembler ..> AuditLogEntry
 AuditLogAssembler ..> AuditLogEntryResource
 
 KpiDashboardComponent --> RaStore
-KpiDashboardComponent --> IamStore
+KpiDashboardComponent --> EnvironmentStore
+KpiDashboardComponent ..> LastDays
 
 DeviationTrendChartComponent --> RaStore
-DeviationTrendChartComponent --> EquipmentStore
-DeviationTrendChartComponent --> IamStore
+DeviationTrendChartComponent --> EnvironmentStore
+DeviationTrendChartComponent --> EnvironmentSelector
+DeviationTrendChartComponent ..> LastDays
 
 ReportGeneratorComponent --> RaStore
 ReportGeneratorComponent --> IamStore
+ReportGeneratorComponent --> BatchStore
+ReportGeneratorComponent --> EquipmentStore
+ReportGeneratorComponent --> EnvironmentStore
+ReportGeneratorComponent ..> LocalIsoDate : report days
 
 AuditLogViewerComponent --> RaStore
 

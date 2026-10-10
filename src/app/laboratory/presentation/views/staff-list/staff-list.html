@@ -5,11 +5,24 @@
       <h2>{{ 'staff-list.title' | translate }}</h2>
     </div>
 
-    <button mat-flat-button color="primary" type="button" (click)="onRegister()">
-      <mat-icon>person_add</mat-icon>
-      {{ 'staff-list.register' | translate }}
-    </button>
+    @if (iamStore.canManageQuality()) {
+      <button mat-flat-button color="primary" type="button" (click)="onRegister()">
+        <mat-icon>person_add</mat-icon>
+        {{ 'staff-list.register' | translate }}
+      </button>
+    }
   </div>
+
+  @if (canSeeActivity()) {
+    <p class="hint">{{ 'staff-list.activity-hint' | translate }}</p>
+  }
+
+  @if (error(); as message) {
+    <p class="error-box" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ message | translate }}</span>
+    </p>
+  }
 
   <div class="table-card mat-elevation-z2">
     @if (store.isLoading()) {
@@ -18,11 +31,16 @@
       </div>
     }
 
-    <table mat-table [dataSource]="store.staffList()" class="full-width-table">
+    <table mat-table [dataSource]="store.staffList()" class="full-width-table"
+           [attr.aria-label]="'staff-list.title' | translate">
       <ng-container matColumnDef="fullName">
         <th mat-header-cell *matHeaderCellDef>{{ 'staff-list.name' | translate }}</th>
         <td mat-cell *matCellDef="let member" class="name-cell">
-          {{ member.fullName }}
+          @if (canSeeActivity()) {
+            <a [routerLink]="['/laboratories/staff', member.id]">{{ member.fullName }}</a>
+          } @else {
+            {{ member.fullName }}
+          }
         </td>
       </ng-container>
 
@@ -30,6 +48,17 @@
         <th mat-header-cell *matHeaderCellDef>{{ 'staff-list.role' | translate }}</th>
         <td mat-cell *matCellDef="let member">
           <span class="role-tag">{{ member.role }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="accessRole">
+        <th mat-header-cell *matHeaderCellDef>{{ 'staff-list.access-role' | translate }}</th>
+        <td mat-cell *matCellDef="let member">
+          @if (member.accessRole) {
+            {{ 'staff.access-roles.' + member.accessRole.toLowerCase() | translate }}
+          } @else {
+            <span class="muted">{{ 'staff.no-account' | translate }}</span>
+          }
         </td>
       </ng-container>
 
@@ -52,15 +81,17 @@
       </ng-container>
 
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'common.actions.label' | translate }}</th>        <td mat-cell *matCellDef="let member">
+        <th mat-header-cell *matHeaderCellDef>{{ 'common.actions.label' | translate }}</th>
+        <td mat-cell *matCellDef="let member">
           @if (member.active) {
             <button
               mat-icon-button
               color="warn"
               type="button"
-              matTooltip="Deactivate member"
-              aria-label="Deactivate staff member"
-              (click)="onDeactivate(member.id)"
+              [matTooltip]="'staff-list.deactivate' | translate"
+              [attr.aria-label]="'staff-list.deactivate' | translate"
+              [disabled]="store.isLoading()"
+              (click)="onDeactivate(member)"
             >
               <mat-icon>person_off</mat-icon>
             </button>
@@ -68,8 +99,8 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="staff-row"></tr>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns();" class="staff-row"></tr>
     </table>
 
     @if (!store.isLoading() && store.staffList().length === 0) {

@@ -1,0 +1,94 @@
+<div class="form-container">
+  <mat-card class="environment-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="header-icon" aria-hidden="true">
+        {{ isEdit ? 'edit_location_alt' : 'add_location_alt' }}
+      </mat-icon>
+      <mat-card-title>
+        {{ (isEdit ? 'environments.form.edit-title' : 'environments.form.create-title') | translate }}
+      </mat-card-title>
+      <mat-card-subtitle>{{ 'environments.form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (store.error()) {
+        <div class="error-box" role="alert">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="environment-form" novalidate>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'environments.code' | translate }}</mat-label>
+          <input matInput formControlName="code" maxlength="30" placeholder="WH-RM-01" autocomplete="off">
+          <mat-icon matPrefix aria-hidden="true">tag</mat-icon>
+          <mat-hint>{{ 'environments.form.code-hint' | translate }}</mat-hint>
+          @if (form.controls.code.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+          @if (form.controls.code.hasError('maxlength')) {
+            <mat-error>{{ 'environments.form.max-length' | translate: { max: 30 } }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'environments.name' | translate }}</mat-label>
+          <input matInput formControlName="name" maxlength="100">
+          <mat-icon matPrefix aria-hidden="true">meeting_room</mat-icon>
+          @if (form.controls.name.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+          @if (form.controls.name.hasError('maxlength')) {
+            <mat-error>{{ 'environments.form.max-length' | translate: { max: 100 } }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'environments.description' | translate }}</mat-label>
+          <textarea matInput formControlName="description" rows="3" maxlength="255"></textarea>
+          @if (form.controls.description.hasError('maxlength')) {
+            <mat-error>{{ 'environments.form.max-length' | translate: { max: 255 } }}</mat-error>
+          }
+        </mat-form-field>
+
+        @if (isEdit) {
+          <p class="usage-readonly">
+            <mat-icon aria-hidden="true">category</mat-icon>
+            <span>
+              {{ 'environments.usage' | translate }}:
+              <strong>
+                {{ (currentUsage() ? 'environment-usage.' + currentUsage() : 'environments.usage-not-assigned') | translate }}
+              </strong>
+            </span>
+          </p>
+          <p class="hint">{{ 'environments.form.usage-edit-hint' | translate }}</p>
+        } @else {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'environments.usage' | translate }}</mat-label>
+            <mat-select formControlName="usage">
+              <mat-option [value]="null">{{ 'environments.usage-not-assigned' | translate }}</mat-option>
+              @for (usage of usages; track usage) {
+                <mat-option [value]="usage">{{ 'environment-usage.' + usage | translate }}</mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix aria-hidden="true">category</mat-icon>
+            <mat-hint>{{ 'environments.form.usage-hint' | translate }}</mat-hint>
+          </mat-form-field>
+        }
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="onCancel()">{{ 'common.cancel' | translate }}</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="store.isLoading()">
+            @if (store.isLoading()) {
+              <mat-spinner diameter="20" [attr.aria-label]="'common.status-loading' | translate"></mat-spinner>
+            } @else {
+              <mat-icon>save</mat-icon>
+            }
+            {{ (isEdit ? 'common.save' : 'common.register') | translate }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

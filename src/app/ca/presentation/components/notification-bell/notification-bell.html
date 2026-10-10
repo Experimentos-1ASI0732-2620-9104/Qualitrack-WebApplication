@@ -1,0 +1,84 @@
+<button
+  mat-icon-button
+  type="button"
+  class="bell-button"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="(store.hasUnread() ? 'notifications.open-unread' : 'notifications.open') | translate: { count: store.unreadCount() }"
+  (click)="toggle()"
+>
+  <mat-icon
+    aria-hidden="true"
+    [matBadge]="badge()"
+    [matBadgeHidden]="!store.hasUnread()"
+    matBadgeColor="warn"
+  >{{ store.hasUnread() ? 'notifications_active' : 'notifications' }}</mat-icon>
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (backdropClick)="close()"
+  (detach)="close()"
+  (overlayKeydown)="onKeydown($event)"
+>
+  <section class="panel" role="dialog" [attr.aria-label]="'notifications.title' | translate">
+    <header class="panel-header">
+      <h2>{{ 'notifications.title' | translate }}</h2>
+      @if (store.hasUnread()) {
+        <button mat-button type="button" class="mark-all" (click)="store.markAllAsRead()">
+          {{ 'notifications.mark-all' | translate }}
+        </button>
+      }
+    </header>
+
+    <div class="panel-body">
+      @if (store.loading() && store.notifications().length === 0) {
+        <div class="state">
+          <mat-spinner diameter="28" [attr.aria-label]="'notifications.loading' | translate"></mat-spinner>
+        </div>
+      } @else if (store.failed()) {
+        <p class="state error" role="alert">{{ 'notifications.load-error' | translate }}</p>
+      } @else if (store.notifications().length === 0) {
+        <div class="state empty">
+          <mat-icon aria-hidden="true">notifications_none</mat-icon>
+          <p>{{ 'notifications.empty' | translate }}</p>
+        </div>
+      } @else {
+        <ul class="items">
+          @for (notification of store.notifications(); track notification.id) {
+            <li>
+              <button
+                type="button"
+                class="item"
+                [class.unread]="!notification.isRead"
+                (click)="openNotification(notification)"
+              >
+                <mat-icon class="item-icon" [class]="tone(notification)" aria-hidden="true">{{ notification.icon }}</mat-icon>
+                <span class="item-text">
+                  <span class="message">{{ 'notifications.types.' + notification.type | translate: params(notification) }}</span>
+                  <span class="time">{{ timeAgo(notification.occurredAt) }}</span>
+                </span>
+                @if (!notification.isRead) {
+                  <span class="unread-dot" [attr.aria-label]="'notifications.unread' | translate"></span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <footer class="panel-footer">
+      <a routerLink="/profile" fragment="notifications" (click)="close()">
+        <mat-icon aria-hidden="true">tune</mat-icon>{{ 'notifications.preferences' | translate }}
+      </a>
+    </footer>
+  </section>
+</ng-template>

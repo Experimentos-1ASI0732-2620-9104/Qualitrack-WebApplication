@@ -14,13 +14,13 @@ import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-res
  * @example
  * ```typescript
  * const resource: BpmConfigResource = {
- * id: 1,
- * equipmentId: 101,
- * parameterName: 'Temperature',
- * minValue: 20,
- * maxValue: 80,
- * unit: '°C',
- * createdAt: '2026-05-12T10:00:00Z'
+ *   id: 1,
+ *   equipmentId: 101,
+ *   parameterName: 'Temperature',
+ *   minValue: 20,
+ *   maxValue: 80,
+ *   unit: '°C',
+ *   createdAt: '2026-05-12T10:00:00Z'
  * };
  * ```
  */
@@ -79,6 +79,7 @@ export interface BpmConfigResource extends BaseResource {
    *
    * @remarks
    * This value is stored as a string, commonly using ISO 8601 date format.
+   * It is optional because the API may not return it.
    */
   createdAt?: string;
 }
@@ -95,17 +96,17 @@ export interface BpmConfigResource extends BaseResource {
  * @example
  * ```typescript
  * const response: BpmConfigsResponse = {
- * bpmConfigs: [
- * {
- * id: 1,
- * equipmentId: 101,
- * parameterName: 'Temperature',
- * minValue: 20,
- * maxValue: 80,
- * unit: '°C',
- * createdAt: '2026-05-12T10:00:00Z'
- * }
- * ]
+ *   bpmConfigs: [
+ *     {
+ *       id: 1,
+ *       equipmentId: 101,
+ *       parameterName: 'Temperature',
+ *       minValue: 20,
+ *       maxValue: 80,
+ *       unit: '°C',
+ *       createdAt: '2026-05-12T10:00:00Z'
+ *     }
+ *   ]
  * };
  * ```
  */

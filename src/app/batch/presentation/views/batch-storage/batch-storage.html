@@ -1,0 +1,65 @@
+<section aria-labelledby="storage-title">
+  <h2 id="storage-title">{{ 'batch-storage.title' | translate }}</h2>
+  @if (loadError()) {
+    <p class="error" role="alert">{{ loadError()! | translate }}</p>
+  }
+  <!-- Current container of the batch, or an empty message -->
+  @if (container(); as current) {
+    <section class="summary-strip">
+      <div>
+        <span>{{ 'batch-storage.container' | translate }}</span>
+        <strong>{{ current.containerName ?? '#' + current.containerMonitorId }}</strong>
+      </div>
+      <div>
+        <span>{{ 'batch-storage.environment' | translate }}</span>
+        <strong>{{ environmentName(current.environmentId) }}</strong>
+      </div>
+      <div>
+        <span>{{ 'batch-storage.assigned-at' | translate }}</span>
+        <strong>{{ current.assignedAt | date: 'short' }}</strong>
+        <small class="muted">{{ 'batch-storage.assigned-by' | translate: { user: current.assignedBy } }}</small>
+      </div>
+    </section>
+    <!-- Link to the conditions (telemetry history) of the container -->
+    <p>
+      <a mat-stroked-button [routerLink]="['/tracking/history']"
+         [queryParams]="{ environmentId: current.environmentId, deviceId: current.containerMonitorId }">
+        <mat-icon>monitoring</mat-icon>{{ 'batch-storage.view-conditions' | translate }}
+      </a>
+    </p>
+  } @else {
+    <p class="muted">{{ 'batch-storage.empty' | translate }}</p>
+  }
+
+  <!-- Store or move the batch: only for users who operate -->
+  @if (editable()) {
+    @if (hasContainers()) {
+      <div class="filters">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'batch-storage.container' | translate }}</mat-label>
+          <mat-select [(ngModel)]="containerMonitorId">
+            <!-- Containers grouped by product storage environment; the current one cannot be selected -->
+            @for (area of storageAreas(); track area.environment.id) {
+              @if (area.containers.length) {
+                <mat-optgroup [label]="area.environment.code + ' · ' + area.environment.name">
+                  @for (item of area.containers; track item.id) {
+                    <mat-option [value]="item.id" [disabled]="item.id === container()?.containerMonitorId">
+                      {{ item.name }} · {{ item.serialNumber }}
+                    </mat-option>
+                  }
+                </mat-optgroup>
+              }
+            }
+          </mat-select>
+          <mat-hint>{{ 'batch-storage.hint' | translate }}</mat-hint>
+        </mat-form-field>
+        <button mat-flat-button type="button" (click)="storeBatch()" [disabled]="containerMonitorId === null || store.saving()">
+          <mat-icon>inventory</mat-icon>
+          {{ (container() ? 'batch-storage.change' : 'batch-storage.store') | translate }}
+        </button>
+      </div>
+    } @else if (!loadError()) {
+      <p class="notice">{{ 'batch-storage.no-containers' | translate }}</p>
+    }
+  }
+</section>

@@ -14,12 +14,12 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  * @example
  * ```typescript
  * const securityEvent = new ComplianceEvent({
- * id: 1,
- * relatedEntityId: 456,
- * eventType: 'UNAUTHORIZED_ACCESS',
- * description: 'Attempted access to restricted resource',
- * timestamp: '2026-05-12T10:00:00Z',
- * createdAt: '2026-05-12T10:05:00Z'
+ *   id: 1,
+ *   relatedEntityId: 456,
+ *   eventType: 'UNAUTHORIZED_ACCESS',
+ *   description: 'Attempted access to restricted resource',
+ *   timestamp: '2026-05-12T10:00:00Z',
+ *   createdAt: '2026-05-12T10:05:00Z'
  * });
  *
  * console.log(securityEvent.eventType); // 'UNAUTHORIZED_ACCESS'

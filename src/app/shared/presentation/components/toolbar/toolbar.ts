@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
 import { LanguageSwitcher } from '../language-switcher/language-switcher';
+import { IamStore } from '../../../../iam/application/iam.store';
 
 /**
  * @summary Barra de navegación superior (Toolbar) para QualiTrack.
@@ -12,8 +15,14 @@ import { LanguageSwitcher } from '../language-switcher/language-switcher';
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [MatToolbarModule, LanguageSwitcher],
+  imports: [MatToolbarModule, RouterLink, TranslateModule, LanguageSwitcher],
   templateUrl: './toolbar.html',
   styleUrl: './toolbar.css',
 })
-export class Toolbar {}
+export class Toolbar {
+  private readonly iam = inject(IamStore);
+
+  /** The logo and the name lead to the home page before signing in and to the dashboard afterwards. */
+  protected readonly brandLink = computed(() => (this.iam.isSignedIn() ? '/dashboard' : '/home'));
+  protected readonly brandLabel = computed(() => (this.iam.isSignedIn() ? 'brand.go-dashboard' : 'brand.go-home'));
+}

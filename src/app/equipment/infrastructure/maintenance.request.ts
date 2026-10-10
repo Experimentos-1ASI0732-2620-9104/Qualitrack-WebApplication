@@ -1,69 +1,31 @@
 /**
- * Represents a request used to register a maintenance activity for an equipment.
- *
- * @remarks
- * This request contains the required data to create a maintenance record
- * associated with a specific equipment. It is commonly used in the presentation
- * or application layer when a user or client submits maintenance information.
- *
- * Unlike a domain entity, this request only carries input data needed to
- * register the maintenance activity, including the equipment reference,
- * maintenance date, technician name, description, and maintenance type.
+ * Body of `POST .../environments/{environmentId}/equipments/{equipmentId}/maintenance-records` (TS35).
  *
  * @example
  * ```typescript
  * const request: RegisterMaintenanceRequest = {
- * equipmentId: 101,
- * maintenanceDate: '2026-05-12',
- * technicianName: 'John Doe',
- * description: 'Preventive maintenance and calibration performed.',
- * type: 'PREVENTIVE'
+ *   maintenanceDate: '2026-05-12',
+ *   technicianStaffId: 7,
+ *   description: 'Preventive maintenance and calibration performed.',
+ *   type: 'PREVENTIVE'
  * };
  * ```
  */
 export interface RegisterMaintenanceRequest {
   /**
-   * The numeric identifier of the equipment associated with the maintenance activity.
+   * The date of the intervention, in `yyyy-MM-dd` format.
    *
    * @remarks
-   * This value links the maintenance registration request to a specific
-   * equipment registered in the system.
-   */
-  equipmentId: number;
-
-  /**
-   * The date when the maintenance activity was performed.
-   *
-   * @remarks
-   * This value is stored as a string and may follow a standard date format,
-   * such as ISO 8601.
+   * It cannot be a date in the future.
    */
   maintenanceDate: string;
 
-  /**
-   * The name of the technician responsible for the maintenance activity.
-   *
-   * @remarks
-   * This field identifies the person who performed or registered the
-   * maintenance work.
-   */
-  technicianName: string;
+  /** The identifier of the staff member who performed the maintenance. */
+  technicianStaffId: number;
 
-  /**
-   * A descriptive summary of the maintenance activity.
-   *
-   * @remarks
-   * This description may include performed tasks, detected issues,
-   * replaced components, calibration details, or recommendations.
-   */
+  /** A descriptive summary of the maintenance activity. */
   description: string;
 
-  /**
-   * The type of maintenance performed.
-   *
-   * @remarks
-   * Examples may include PREVENTIVE, CORRECTIVE, CALIBRATION, INSPECTION,
-   * or other maintenance categories defined by the system.
-   */
+  /** The type of maintenance performed, such as PREVENTIVE or CORRECTIVE. */
   type: string;
 }

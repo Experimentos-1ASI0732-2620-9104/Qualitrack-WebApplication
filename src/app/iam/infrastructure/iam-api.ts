@@ -14,11 +14,12 @@ import { SignUpApiEndpoint } from './sign-up-api-endpoint';
 import { SignUpAssembler } from './sign-up-assembler';
 import { SignUpRequest } from './sign-up.request';
 import { SignUpResource } from './sign-up-response';
+import { ChangePasswordRequest } from './change-password.request';
+import { UpdateAccountRequest } from './update-account.request';
 
-import { RecoverPasswordApiEndpoint } from './recover-password-api-endpoint';
-import { RecoverPasswordAssembler } from './recover-password-assembler';
-import { RecoverPasswordRequest } from './recover-password.request';
-import { RecoverPasswordResource } from './recover-password-response';
+import { PasswordRecoveryApiEndpoint } from './password-recovery-api-endpoint';
+import { PasswordRecoveryRequest, PasswordResetRequest } from './password-recovery.request';
+import { PasswordRecoveryAcceptedResource, PasswordResetCompletedResource } from './password-recovery-response';
 
 /**
  * HTTP API facade for Identity and Access Management operations.
@@ -45,7 +46,7 @@ export class IamApi extends BaseApi {
   /**
    * Endpoint client responsible for password recovery operations.
    */
-  private readonly recoverPasswordEndpoint: RecoverPasswordApiEndpoint;
+  private readonly passwordRecoveryEndpoint: PasswordRecoveryApiEndpoint;
 
   /**
    * Creates a new IamApi facade.
@@ -56,10 +57,7 @@ export class IamApi extends BaseApi {
     super();
     this.signInEndpoint = new SignInApiEndpoint(http, new SignInAssembler());
     this.signUpEndpoint = new SignUpApiEndpoint(http, new SignUpAssembler());
-    this.recoverPasswordEndpoint = new RecoverPasswordApiEndpoint(
-      http,
-      new RecoverPasswordAssembler(),
-    );
+    this.passwordRecoveryEndpoint = new PasswordRecoveryApiEndpoint(http);
   }
 
   /**
@@ -72,8 +70,39 @@ export class IamApi extends BaseApi {
     return this.signInEndpoint.signIn(request);
   }
 
+  /**
+   * Reads the onboarding state of the authenticated user (GET /users/me/onboarding).
+   *
+   * @returns Observable emitting the next step the user must complete
+   */
   getOnboarding(): Observable<OnboardingState> {
     return this.http.get<OnboardingState>(`${environment.serverBasePath}/users/me/onboarding`);
+  }
+
+  /**
+   * Changes the password of the authenticated user.
+   *
+   * @param request - current password and the new password
+   * @returns completes when the platform answers 204 No Content
+   */
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.post<void>(
+      `${environment.serverBasePath}${environment.usersEndpointPath}${environment.currentUserPasswordChangesEndpointPath}`,
+      request,
+    );
+  }
+
+  /**
+   * Replaces the username and the e-mail of the authenticated user.
+   *
+   * @param request - New username and e-mail with the current password
+   * @returns The session with a new token: the previous one stops working
+   */
+  updateAccount(request: UpdateAccountRequest): Observable<SignInResource> {
+    return this.http.put<SignInResource>(
+      `${environment.serverBasePath}${environment.usersEndpointPath}${environment.currentUserAccountEndpointPath}`,
+      request,
+    );
   }
 
   /**
@@ -92,7 +121,17 @@ export class IamApi extends BaseApi {
    * @param request - Password recovery request payload
    * @returns Observable stream emitting the recovery result resource
    */
-  recoverPassword(request: RecoverPasswordRequest): Observable<RecoverPasswordResource> {
-    return this.recoverPasswordEndpoint.recoverPassword(request);
+  requestPasswordRecovery(request: PasswordRecoveryRequest): Observable<PasswordRecoveryAcceptedResource> {
+    return this.passwordRecoveryEndpoint.requestRecovery(request);
+  }
+
+  /**
+   * Sets a new password with the verification code received by e-mail.
+   *
+   * @param request - Account, verification code and new password
+   * @returns Observable stream emitting the username to sign in with
+   */
+  resetPassword(request: PasswordResetRequest): Observable<PasswordResetCompletedResource> {
+    return this.passwordRecoveryEndpoint.resetPassword(request);
   }
 }

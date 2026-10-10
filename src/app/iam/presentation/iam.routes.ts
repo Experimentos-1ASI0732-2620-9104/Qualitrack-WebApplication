@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { iamGuard } from '../infrastructure/iam-guard';
+import { passwordChangeGuard } from '../infrastructure/onboarding-guard';
 
 /**
  * Lazy loads the sign-in form view component.
@@ -33,4 +34,8 @@ export const iamRoutes: Routes = [
     loadComponent: () => import('./views/onboarding/onboarding').then((m) => m.Onboarding) },
   { path: 'sign-in', loadComponent: signInForm, title: `Sign In | ${baseTitle}` },
   { path: 'sign-up', loadComponent: signUpForm, title: `Sign Up | ${baseTitle}` },
+  { path: 'password-recovery', title: `Password Recovery | ${baseTitle}`,
+    loadComponent: () => import('./views/password-recovery/password-recovery').then((m) => m.PasswordRecovery) },
+  { path: 'change-password', canActivate: [iamGuard, passwordChangeGuard], title: `Change Password | ${baseTitle}`,
+    loadComponent: () => import('./views/change-password-form/change-password-form').then((m) => m.ChangePasswordForm) },
 ];

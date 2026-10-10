@@ -1,110 +1,134 @@
-<div class="detail-container">
+<main class="operations-page">
+  <a routerLink="/alerts/alert-dashboard">{{ 'ca-alerts.active.title' | translate }}</a>
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  }
+  @if (store.notice()) {
+    <p class="success" role="status">{{ store.notice()! | translate: store.noticeParams() }}</p>
+  }
 
-  <header class="page-header">
-    <div class="header-content">
-      <button mat-icon-button routerLink="../../alert-dashboard" color="primary">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
+  @if (alert(); as alert) {
+    <header class="page-heading">
       <div>
-        <h1>{{ 'ca-alerts.detail.title' | translate }}</h1>
-        <p>{{ 'ca-alerts.detail.subtitle' | translate }} - {{ alertId }}</p>
+        <h1>{{ variable(alert.parameterName) }} · {{ (alert.origin ? 'ca-alerts.origin.' + alert.origin : 'ca-alerts.origin.EQUIPMENT') | translate }}</h1>
+        <p class="muted">
+          {{ environmentName() ?? ('ca-alerts.detail.no-environment' | translate) }} ·
+          {{ store.deviceName(alert.equipmentId) ?? '#' + alert.equipmentId }} ·
+          {{ 'ca-alerts.detail.alert' | translate }} #{{ alert.id }}
+        </p>
       </div>
-    </div>
-  </header>
+      <div class="actions">
+        @if (alert.environmentId !== null && alert.origin) {
+          <a mat-stroked-button [routerLink]="['/tracking/history']"
+            [queryParams]="{ environmentId: alert.environmentId, deviceId: alert.equipmentId }">
+            <mat-icon>monitoring</mat-icon>{{ 'ca-alerts.actions.view-conditions' | translate }}
+          </a>
+        }
+        @if (alert.isOpen && alert.severity === 'CRITICAL' && store.canAttend()) {
+          <button mat-stroked-button type="button" (click)="sendEmail()" [disabled]="store.saving()">
+            <mat-icon>forward_to_inbox</mat-icon>{{ 'ca-alerts.actions.email' | translate }}
+          </button>
+        }
+        @if (alert.status === 'UNRESOLVED' && store.canAttend()) {
+          <button mat-flat-button type="button" (click)="acknowledge()" [disabled]="store.saving()">
+            <mat-icon>pan_tool</mat-icon>{{ 'ca-alerts.actions.acknowledge' | translate }}
+          </button>
+        }
+      </div>
+    </header>
 
-  @if (store.loading() && !alert()) {
-    <div class="loading-shade">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
-  }
+    <section class="summary-strip">
+      <div>
+        <span>{{ 'ca-alerts.fields.severity' | translate }}</span>
+        <strong class="status" [class.rejected]="alert.severity === 'CRITICAL'">{{ 'ca-alerts.severity.' + alert.severity.toLowerCase() | translate }}</strong>
+      </div>
+      <div>
+        <span>{{ 'common.status' | translate }}</span>
+        <strong class="status" [class.released]="alert.status === 'RESOLVED'">{{ 'ca-alerts.status.' + alert.status.toLowerCase() | translate }}</strong>
+      </div>
+      <div>
+        <span>{{ 'ca-alerts.fields.recorded' | translate }}</span>
+        <strong>{{ alert.recordedValue | number: '1.0-2' }} {{ alert.unit }}</strong>
+        <small class="muted">{{ 'ca-alerts.fields.threshold' | translate }} {{ alert.thresholdValue | number: '1.0-2' }} {{ alert.unit }}</small>
+      </div>
+      <div>
+        <span>{{ 'ca-alerts.fields.deviations-label' | translate }}</span>
+        <strong>{{ alert.deviationCount }}</strong>
+      </div>
+    </section>
 
-  @if (alert()) {
-    <div class="content-grid">
-      <mat-card class="detail-card mat-elevation-z2">
-        <mat-card-header>
-          <mat-icon mat-card-avatar color="warn">report_problem</mat-icon>
-          <mat-card-title>{{ alert()?.parameterName }}</mat-card-title>
-          <mat-card-subtitle>{{ alert()?.timestamp | date:'medium' }}</mat-card-subtitle>
-        </mat-card-header>
+    @if (alert.isNormalized) {
+      <p class="notice" role="status">{{ 'ca-alerts.detail.normalized' | translate: { date: (alert.normalizedAt | date: 'medium') } }}</p>
+    }
 
-        <mat-card-content>
-          <mat-divider></mat-divider>
-          <div class="info-grid">
+    <h2>{{ 'ca-alerts.detail.timeline' | translate }}</h2>
+    <ul>
+      <li>{{ 'ca-alerts.detail.detected' | translate: { date: (alert.timestamp | date: 'medium') } }}</li>
+      @if (alert.deviationCount > 1 && alert.lastDetectedAt) {
+        <li>{{ 'ca-alerts.detail.last-deviation' | translate: { date: (alert.lastDetectedAt | date: 'medium'), count: alert.deviationCount } }}</li>
+      }
+      @if (alert.acknowledgedBy) {
+        <li>{{ 'ca-alerts.detail.acknowledged' | translate: { user: alert.acknowledgedBy, date: (alert.acknowledgedAt | date: 'medium') } }}</li>
+      }
+      @if (alert.resolvedBy) {
+        <li>
+          {{ 'ca-alerts.detail.resolved' | translate: { user: alert.resolvedBy, date: (alert.resolvedAt | date: 'medium') } }}
+          <strong>{{ alert.resolutionNotes }}</strong>
+        </li>
+      }
+    </ul>
 
-            <div class="info-item">
-              <span class="label">{{ 'ca-alerts.fields.severity' | translate }}</span>
-              <mat-chip-set>
-                <mat-chip [class]="alert()?.severity?.toLowerCase()">
-                  {{ 'ca-alerts.severity.' + alert()?.severity?.toLowerCase() | translate }}
-                </mat-chip>
-              </mat-chip-set>
-            </div>
+    <h2>{{ 'ca-alerts.detail.actions-title' | translate }}</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ 'ca-alerts.fields.action' | translate }}</th>
+          <th>{{ 'ca-alerts.fields.trigger' | translate }}</th>
+          <th>{{ 'ca-alerts.fields.result' | translate }}</th>
+          <th>{{ 'ca-alerts.fields.occurred-at' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (action of alert.relatedActuations; track action.id) {
+          <tr>
+            <td><strong>{{ 'tracking.actions.' + action.action | translate }}</strong></td>
+            <td [attr.data-label]="'ca-alerts.fields.trigger' | translate">
+              {{ action.triggerState ? ('tracking.states.' + action.triggerState | translate) : '—' }}
+            </td>
+            <td [attr.data-label]="'ca-alerts.fields.result' | translate">
+              <span class="status" [class.released]="action.result === 'EXECUTED'" [class.rejected]="action.result === 'FAILED'">
+                {{ 'tracking.results.' + action.result | translate }}
+              </span>
+            </td>
+            <td [attr.data-label]="'ca-alerts.fields.occurred-at' | translate">{{ action.occurredAt | date: 'medium' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">{{ (alert.origin === 'CONTAINER' ? 'ca-alerts.detail.no-actions' : 'ca-alerts.detail.no-actions-environment') | translate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
 
-            <div class="info-item">
-              <span class="label">{{ 'common.status' | translate }}</span>
-              <mat-chip-set>
-                <mat-chip [class]="alert()?.status?.toLowerCase()">
-                  {{ 'ca-alerts.status.' + alert()?.status?.toLowerCase() | translate }}
-                </mat-chip>
-              </mat-chip-set>
-            </div>
-
-            <div class="info-item">
-              <span class="label">{{ 'ca-alerts.fields.recorded' | translate }}</span>
-              <span class="value danger-text">{{ alert()?.recordedValue }} {{ alert()?.unit }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="label">{{ 'ca-alerts.fields.threshold' | translate }}</span>
-              <span class="value">{{ alert()?.thresholdValue }} {{ alert()?.unit }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="label">{{ 'ca-alerts.fields.equipment' | translate }}</span>
-              <span class="value mono-text">{{ alert()?.equipmentId }}</span>
-            </div>
-
-            @if (alert()?.batchId) {
-              <div class="info-item">
-                <span class="label">{{ 'ca-alerts.fields.batch' | translate }}</span>
-                <span class="value mono-text">{{ alert()?.batchId }}</span>
-              </div>
-            }
-
+    @if (alert.isOpen && store.canAttend()) {
+      <section class="review" role="region" [attr.aria-label]="'ca-alerts.actions.resolve' | translate">
+        <h2>{{ 'ca-alerts.actions.resolve' | translate }}</h2>
+        <form [formGroup]="resolutionForm" (ngSubmit)="resolve()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'ca-alerts.fields.resolution-notes' | translate }}</mat-label>
+            <textarea matInput rows="3" formControlName="resolutionNotes" maxlength="500"></textarea>
+            <mat-hint>{{ 'ca-alerts.detail.resolution-hint' | translate }}</mat-hint>
+            <mat-error>{{ 'ca-alerts.detail.resolution-required' | translate }}</mat-error>
+          </mat-form-field>
+          <div class="actions">
+            <button mat-flat-button [disabled]="store.saving()">
+              <mat-icon>check_circle</mat-icon>{{ 'ca-alerts.actions.resolve' | translate }}
+            </button>
           </div>
-
-          @if (alert()?.status === 'UNRESOLVED') {
-            <form [formGroup]="resolutionForm" class="resolution-form">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>{{ 'ca-alerts.fields.resolution-notes' | translate }}</mat-label>
-                <textarea matInput rows="3" formControlName="resolutionNotes"></textarea>
-              </mat-form-field>
-            </form>
-          }
-        </mat-card-content>
-
-        <mat-card-actions align="end" class="actions-container">
-          <button mat-button routerLink="../../alert-dashboard">
-            {{ 'common.cancel' | translate }}
-          </button>
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="resolveAlert()"
-            [disabled]="alert()?.status !== 'UNRESOLVED' || resolutionForm.invalid || store.loading()"
-          >
-            <mat-icon>check_circle</mat-icon>
-            {{ 'ca-alerts.actions.resolve' | translate }}
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
+        </form>
+      </section>
+    }
+  } @else if (store.loading()) {
+    <p role="status">{{ 'common.status-loading' | translate }}</p>
   }
-  @else if (!store.loading()) {
-    <div class="error-container">
-      <mat-icon>error_outline</mat-icon>
-      <p>{{ 'ca-alerts.not-found' | translate }}</p>
-    </div>
-  }
-
-</div>
+</main>

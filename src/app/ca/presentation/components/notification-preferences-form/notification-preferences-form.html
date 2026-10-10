@@ -1,0 +1,37 @@
+<form class="preferences" [formGroup]="form" (ngSubmit)="save()">
+  <div class="toggle">
+    <mat-slide-toggle formControlName="inAppEnabled" color="primary">
+      {{ 'ca-alerts.settings.in-app' | translate }}
+    </mat-slide-toggle>
+    <p class="hint">{{ 'ca-alerts.settings.in-app-hint' | translate }}</p>
+  </div>
+
+  <div class="toggle">
+    <mat-slide-toggle formControlName="emailEnabled" color="primary">
+      {{ 'ca-alerts.settings.email' | translate }}
+    </mat-slide-toggle>
+    <p class="hint">{{ 'ca-alerts.settings.email-hint' | translate }}</p>
+  </div>
+
+  <mat-form-field appearance="outline" class="severity">
+    <mat-label>{{ 'ca-alerts.settings.threshold-title' | translate }}</mat-label>
+    <mat-select formControlName="minimumSeverity">
+      <mat-option value="WARNING">{{ 'ca-alerts.settings.from-warning' | translate }}</mat-option>
+      <mat-option value="CRITICAL">{{ 'ca-alerts.settings.only-critical' | translate }}</mat-option>
+    </mat-select>
+    <mat-hint>{{ 'ca-alerts.settings.severity-hint' | translate }}</mat-hint>
+  </mat-form-field>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message | translate }}</p>
+  }
+  @if (saved()) {
+    <p class="success" role="status">{{ 'ca-alerts.settings.saved' | translate }}</p>
+  }
+
+  <div class="form-actions">
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving() || form.pristine">
+      <mat-icon>save</mat-icon>{{ 'ca-alerts.settings.save' | translate }}
+    </button>
+  </div>
+</form>

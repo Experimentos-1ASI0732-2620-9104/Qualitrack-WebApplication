@@ -1,4 +1,4 @@
-@import '../inventory.css';
+@import '../../../../shared/presentation/styles/operations-page.css';
 
 .material-form {
   max-width: 880px;

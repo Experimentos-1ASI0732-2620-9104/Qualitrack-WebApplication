@@ -3,22 +3,26 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { BaseApi } from '../../shared/infrastructure/base-api';
-import { MessageResource } from '../../shared/infrastructure/message-response';
 
 import { Laboratory } from '../domain/model/laboratory.entity';
 import { StaffMember } from '../domain/model/staff-member.entity';
-import { PharmaceuticalProduct } from '../domain/model/pharmaceutical-product.entity';
 import { RawMaterial } from '../domain/model/raw-material.entity';
+import { Environment } from '../domain/model/environment.entity';
 
 import { LaboratoryApiEndpoint } from './laboratory-api-endpoint';
 import { StaffApiEndpoint } from './staff-api-endpoint';
-import { ProductApiEndpoint } from './product-api-endpoint';
 import { RawMaterialApiEndpoint } from './raw-material-api-endpoint';
+import { EnvironmentApiEndpoint } from './environment-api-endpoint';
 
 import { CreateLaboratoryRequest, UpdateLaboratoryRequest } from './laboratory.request';
 import { RegisterStaffRequest } from './staff.request';
-import { CreateProductRequest } from './product.request';
-import { CreateRawMaterialRequest } from './raw-material.request';
+import { RegisteredStaff } from '../domain/model/register-staff.command';
+import {
+  AssignEnvironmentUsageRequest,
+  CreateEnvironmentRequest,
+  UpdateEnvironmentRequest,
+} from './environment.request';
+import { EnvironmentUsageAssignmentResource } from './environment-response';
 
 /**
  * Infrastructure facade for Laboratory bounded context API operations.
@@ -26,7 +30,8 @@ import { CreateRawMaterialRequest } from './raw-material.request';
  * @remarks
  * This service centralizes all HTTP access for the Laboratory bounded context.
  * It delegates concrete HTTP operations to specialized endpoint clients while
- * exposing a clean API to the application layer.
+ * exposing a clean API to the application layer. Other bounded contexts read
+ * environments and staff members through this facade.
  */
 @Injectable({ providedIn: 'root' })
 export class LaboratoryApi extends BaseApi {
@@ -41,14 +46,14 @@ export class LaboratoryApi extends BaseApi {
   private readonly staffEndpoint: StaffApiEndpoint;
 
   /**
-   * Endpoint client for pharmaceutical product operations.
-   */
-  private readonly productsEndpoint: ProductApiEndpoint;
-
-  /**
    * Endpoint client for raw material inventory operations.
    */
   private readonly materialsEndpoint: RawMaterialApiEndpoint;
+
+  /**
+   * Endpoint client for laboratory environment operations.
+   */
+  private readonly environmentsEndpoint: EnvironmentApiEndpoint;
 
   /**
    * Creates a new LaboratoryApi facade.
@@ -59,8 +64,8 @@ export class LaboratoryApi extends BaseApi {
     super();
     this.laboratoryEndpoint = new LaboratoryApiEndpoint(http);
     this.staffEndpoint = new StaffApiEndpoint(http);
-    this.productsEndpoint = new ProductApiEndpoint(http);
     this.materialsEndpoint = new RawMaterialApiEndpoint(http);
+    this.environmentsEndpoint = new EnvironmentApiEndpoint(http);
   }
 
   /**
@@ -105,49 +110,40 @@ export class LaboratoryApi extends BaseApi {
   }
 
   /**
-   * Registers a new staff member under a laboratory.
+   * Retrieves one staff member of a laboratory.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param staffId - Numeric identifier of the staff member
+   * @returns Observable stream emitting the StaffMember domain entity
+   */
+  getStaffMember(laboratoryId: number, staffId: number): Observable<StaffMember> {
+    return this.staffEndpoint.getStaffMember(laboratoryId, staffId);
+  }
+
+  /**
+   * Registers a new staff member under a laboratory; the platform creates their account.
    *
    * @param laboratoryId - Numeric identifier of the laboratory
    * @param request - Request payload containing staff registration data
-   * @returns Observable stream emitting a message response
+   * @returns Observable stream emitting the staff member and the delivery of their credentials
    */
-  registerStaff(laboratoryId: number, request: RegisterStaffRequest): Observable<MessageResource> {
+  registerStaff(laboratoryId: number, request: RegisterStaffRequest): Observable<RegisteredStaff> {
     return this.staffEndpoint.registerStaff(laboratoryId, request);
   }
 
   /**
-   * Deactivates an existing staff member.
+   * Deactivates an existing staff member and disables their account.
    *
+   * @param laboratoryId - Numeric identifier of the laboratory
    * @param staffId - Numeric identifier of the staff member to deactivate
-   * @returns Observable stream completing when the deactivation succeeds
+   * @returns Observable stream emitting the deactivated staff member
    */
-  deactivateStaff(staffId: number): Observable<void> {
-    return this.staffEndpoint.deactivateStaff(staffId);
+  deactivateStaff(laboratoryId: number, staffId: number): Observable<StaffMember> {
+    return this.staffEndpoint.deactivateStaff(laboratoryId, staffId);
   }
 
   /**
-   * Retrieves all pharmaceutical products registered under a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   * @returns Observable stream emitting PharmaceuticalProduct domain entities
-   */
-  getProducts(laboratoryId: number): Observable<PharmaceuticalProduct[]> {
-    return this.productsEndpoint.getProductsByLaboratoryId(laboratoryId);
-  }
-
-  /**
-   * Creates a new pharmaceutical product under a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   * @param request - Request payload containing product creation data
-   * @returns Observable stream emitting a message response
-   */
-  createProduct(laboratoryId: number, request: CreateProductRequest): Observable<MessageResource> {
-    return this.productsEndpoint.createProduct(laboratoryId, request);
-  }
-
-  /**
-   * Retrieves all raw materials registered under a laboratory.
+   * Retrieves the raw materials registered before Inventory Management existed (read-only).
    *
    * @param laboratoryId - Numeric identifier of the laboratory
    * @returns Observable stream emitting RawMaterial domain entities
@@ -157,26 +153,66 @@ export class LaboratoryApi extends BaseApi {
   }
 
   /**
-   * Retrieves low-stock raw materials for a laboratory.
+   * Retrieves the environments registered in a laboratory.
    *
    * @param laboratoryId - Numeric identifier of the laboratory
-   * @returns Observable stream emitting low-stock RawMaterial domain entities
+   * @returns Observable stream emitting Environment domain entities
    */
-  getLowStockMaterials(laboratoryId: number): Observable<RawMaterial[]> {
-    return this.materialsEndpoint.getLowStockMaterials(laboratoryId);
+  getEnvironments(laboratoryId: number): Observable<Environment[]> {
+    return this.environmentsEndpoint.getEnvironments(laboratoryId);
   }
 
   /**
-   * Creates a new raw material under a laboratory.
+   * Retrieves one environment of a laboratory.
    *
    * @param laboratoryId - Numeric identifier of the laboratory
-   * @param request - Request payload containing raw material registration data
-   * @returns Observable stream emitting a message response
+   * @param environmentId - Numeric identifier of the environment
+   * @returns Observable stream emitting the Environment domain entity
    */
-  createRawMaterial(
+  getEnvironment(laboratoryId: number, environmentId: number): Observable<Environment> {
+    return this.environmentsEndpoint.getEnvironment(laboratoryId, environmentId);
+  }
+
+  /**
+   * Registers a new environment in a laboratory.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param request - Request payload with the environment data
+   * @returns Observable stream emitting the created Environment
+   */
+  createEnvironment(laboratoryId: number, request: CreateEnvironmentRequest): Observable<Environment> {
+    return this.environmentsEndpoint.createEnvironment(laboratoryId, request);
+  }
+
+  /**
+   * Replaces the identification data of an environment.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param environmentId - Numeric identifier of the environment
+   * @param request - Request payload with the new environment data
+   * @returns Observable stream emitting the updated Environment
+   */
+  updateEnvironment(
     laboratoryId: number,
-    request: CreateRawMaterialRequest,
-  ): Observable<MessageResource> {
-    return this.materialsEndpoint.createRawMaterial(laboratoryId, request);
+    environmentId: number,
+    request: UpdateEnvironmentRequest,
+  ): Observable<Environment> {
+    return this.environmentsEndpoint.updateEnvironment(laboratoryId, environmentId, request);
+  }
+
+  /**
+   * Assigns the main use of an environment.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param environmentId - Numeric identifier of the environment
+   * @param request - Request payload with the usage
+   * @returns Observable stream emitting the usage assignment
+   */
+  assignEnvironmentUsage(
+    laboratoryId: number,
+    environmentId: number,
+    request: AssignEnvironmentUsageRequest,
+  ): Observable<EnvironmentUsageAssignmentResource> {
+    return this.environmentsEndpoint.assignUsage(laboratoryId, environmentId, request);
   }
 }

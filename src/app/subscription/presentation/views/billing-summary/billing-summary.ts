@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -49,6 +49,8 @@ export class BillingSummary implements OnInit {
    */
   protected readonly iamStore = inject(IamStore);
 
+  private readonly translate = inject(TranslateService);
+
   /**
    * Columns rendered in the payment history table.
    */
@@ -79,12 +81,15 @@ export class BillingSummary implements OnInit {
     return status ? status.toLowerCase().replace(/_/g, '-') : 'unknown';
   }
 
-  protected onCancelSubscription(): void {
+  /** Asks for confirmation and cancels the renewal; the subscription stays active until the end of the period. */
+  protected onCancelRenewal(): void {
     const subscription = this.store.currentSubscription();
-    const userId = this.iamStore.currentUserId();
 
-    if (!subscription || !userId) return;
+    if (!subscription || subscription.cancelAtPeriodEnd) return;
+    const end = subscription.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd).toLocaleDateString(this.translate.currentLang || 'en') : '';
+    if (!confirm(this.translate.instant('subscription.billing.cancel-renewal-confirm', { end }))) return;
 
-    this.store.cancelSubscription(subscription.id, userId);
+    this.store.cancelRenewal(subscription.id);
   }
 }

@@ -34,6 +34,22 @@
       </div>
 
       <div class="form-group">
+        <label for="email">{{ 'iam.sign-up.email' | translate }}</label>
+        <input
+          id="email"
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          [placeholder]="'iam.sign-up.email-placeholder' | translate"
+          [class.error]="form.controls.email.invalid && form.controls.email.touched" />
+        <span class="field-hint">{{ 'iam.sign-up.email-hint' | translate }}</span>
+
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="error-message">{{ getEmailErrorKey() | translate }}</span>
+        }
+      </div>
+
+      <div class="form-group">
         <label for="password">{{ 'iam.sign-up.password' | translate }}</label>
         <div class="password-input-wrapper">
           <input

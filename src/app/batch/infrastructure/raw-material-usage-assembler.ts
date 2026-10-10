@@ -1,6 +1,9 @@
 import { BaseAssembler } from '../../shared/infrastructure/base-assembler';
 import { RawMaterialUsage } from '../domain/model/raw-material-usage.entity';
-import { RawMaterialUsageResource, RawMaterialUsagesResponse } from './raw-material-usage-response';
+import {
+  RawMaterialUsageResource,
+  RawMaterialUsagesResponse
+} from './raw-material-usage-response';
 
 /**
  * Assembler for converting between RawMaterialUsage domain entities and infrastructure resources.
@@ -24,7 +27,7 @@ import { RawMaterialUsageResource, RawMaterialUsagesResponse } from './raw-mater
  * // Mapping from domain entity to infrastructure resource
  * const usageResource = assembler.toResourceFromEntity(entity);
  *
- ```
+ * ```
  *
  * @author Qualitrack
  */
@@ -69,7 +72,7 @@ export class RawMaterialUsageAssembler implements BaseAssembler<
       quantityUsed: resource.quantityUsed,
       unit: resource.unit,
       usageDate: resource.usageDate,
-      createdAt: resource.createdAt ?? ''
+      createdAt: resource.createdAt ?? '',
     });
   }
 

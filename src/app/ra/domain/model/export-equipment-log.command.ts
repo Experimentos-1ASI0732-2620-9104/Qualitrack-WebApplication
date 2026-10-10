@@ -7,6 +7,16 @@
  */
 export interface ExportEquipmentLogCommand {
   /**
+   * The laboratory of the equipment.
+   */
+  laboratoryId: number;
+
+  /**
+   * The environment where the equipment is located (TS86).
+   */
+  environmentId: number;
+
+  /**
    * The unique numeric identifier of the equipment.
    */
   equipmentId: number;
@@ -25,9 +35,4 @@ export interface ExportEquipmentLogCommand {
    * The requested output format for the exported file.
    */
   format: 'PDF' | 'CSV';
-
-  /**
-   * The numeric identifier of the user requesting the export.
-   */
-  requestedBy: number;
 }

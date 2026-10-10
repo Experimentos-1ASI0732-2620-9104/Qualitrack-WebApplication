@@ -1,0 +1,72 @@
+<form (ngSubmit)="submit()">
+  @if (!metrics().length) {
+    <p class="muted">{{ 'tracking.profiles.rules-need-thresholds' | translate }}</p>
+  } @else {
+    @if (rows().length) {
+      <table class="data-table editor-table">
+        <thead>
+          <tr>
+            <th>{{ 'tracking.profiles.metric' | translate }}</th>
+            <th>{{ 'tracking.profiles.condition' | translate }}</th>
+            <th>{{ 'tracking.profiles.action' | translate }}</th>
+            @if (!readonly()) { <th><span class="muted">—</span></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track $index) {
+            <tr>
+              <td [attr.data-label]="'tracking.profiles.metric' | translate">
+                <select [(ngModel)]="row.metric" [name]="'rule-metric-' + $index" [disabled]="readonly()"
+                        [attr.aria-label]="'tracking.profiles.metric' | translate">
+                  @for (metric of metrics(); track metric) {
+                    <option [value]="metric">{{ 'tracking.metrics.' + metric | translate }}</option>
+                  }
+                </select>
+              </td>
+              <td [attr.data-label]="'tracking.profiles.condition' | translate">
+                <select [(ngModel)]="row.state" [name]="'rule-state-' + $index" [disabled]="readonly()"
+                        [attr.aria-label]="'tracking.profiles.condition' | translate">
+                  @for (state of states; track state) {
+                    <option [value]="state">{{ 'tracking.states.' + state | translate }}</option>
+                  }
+                </select>
+              </td>
+              <td [attr.data-label]="'tracking.profiles.action' | translate">
+                <select [(ngModel)]="row.action" [name]="'rule-action-' + $index" [disabled]="readonly()"
+                        [attr.aria-label]="'tracking.profiles.action' | translate">
+                  <option value="" disabled>{{ 'tracking.profiles.choose-action' | translate }}</option>
+                  @for (action of actions; track action) {
+                    <option [value]="action">{{ 'tracking.actions.' + action | translate }}</option>
+                  }
+                </select>
+              </td>
+              @if (!readonly()) {
+                <td>
+                  <button mat-icon-button type="button" (click)="remove($index)"
+                          [attr.aria-label]="'tracking.profiles.remove-rule' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="muted">{{ 'tracking.profiles.no-rules' | translate }}</p>
+    }
+    @if (error(); as problem) {
+      <p class="error" role="alert">{{ problem | translate }}</p>
+    }
+    @if (!readonly()) {
+      <div class="section-actions">
+        <button mat-stroked-button type="button" (click)="add()">
+          <mat-icon>add</mat-icon>{{ 'tracking.profiles.add-rule' | translate }}
+        </button>
+        <button mat-flat-button type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>{{ 'tracking.profiles.save-rules' | translate }}
+        </button>
+      </div>
+    }
+  }
+</form>

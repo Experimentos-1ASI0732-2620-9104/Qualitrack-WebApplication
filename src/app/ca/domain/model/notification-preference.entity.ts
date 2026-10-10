@@ -15,13 +15,12 @@ import { AlertSeverity } from './deviation-alert.entity';
  * @example
  * ```typescript
  * const userPrefs = new NotificationPreference({
- * id: 1,
- * userId: 101,
- * emailEnabled: true,
- * smsEnabled: false,
- * inAppEnabled: true,
- * minimumSeverity: 'WARNING',
- * createdAt: '2026-05-12T11:28:14Z'
+ *   id: 1,
+ *   userId: 101,
+ *   emailEnabled: true,
+ *   inAppEnabled: true,
+ *   minimumSeverity: 'WARNING',
+ *   createdAt: '2026-05-12T11:28:14Z'
  * });
  *
  * console.log(userPrefs.emailEnabled); // true
@@ -42,11 +41,6 @@ export class NotificationPreference implements BaseEntity {
    * Indicates if the user wants to receive notifications via email.
    */
   emailEnabled: boolean;
-
-  /**
-   * Indicates if the user wants to receive notifications via SMS.
-   */
-  smsEnabled: boolean;
 
   /**
    * Indicates if the user wants to receive notifications within the application UI.
@@ -70,7 +64,6 @@ export class NotificationPreference implements BaseEntity {
    * @param params.id - The unique numeric identifier for the preference settings
    * @param params.userId - Numeric ID of the owner of these preferences
    * @param params.emailEnabled - Toggle for email delivery
-   * @param params.smsEnabled - Toggle for SMS delivery
    * @param params.inAppEnabled - Toggle for in-app delivery
    * @param params.minimumSeverity - Minimum severity level to notify
    * @param params.createdAt - Record creation timestamp
@@ -83,7 +76,6 @@ export class NotificationPreference implements BaseEntity {
     id: number;
     userId: number;
     emailEnabled: boolean;
-    smsEnabled: boolean;
     inAppEnabled: boolean;
     minimumSeverity: AlertSeverity;
     createdAt?: string;
@@ -91,7 +83,6 @@ export class NotificationPreference implements BaseEntity {
     this.id = params.id;
     this.userId = params.userId;
     this.emailEnabled = params.emailEnabled;
-    this.smsEnabled = params.smsEnabled;
     this.inAppEnabled = params.inAppEnabled;
     this.minimumSeverity = params.minimumSeverity;
     this.createdAt = params.createdAt;

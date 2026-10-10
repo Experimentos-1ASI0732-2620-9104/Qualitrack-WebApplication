@@ -1,23 +1,39 @@
 @if (store.isSignedIn()) {
   <div class="user-session">
-    <div class="user-avatar" aria-hidden="true">
-      {{ store.currentUserInitials() }}
-    </div>
+    <ng-template #identity>
+      <span class="user-avatar" aria-hidden="true">
+        @if (profile.photoUrl(); as photo) {
+          <img [src]="photo" alt="">
+        } @else {
+          {{ profile.initials() }}
+        }
+      </span>
 
-    <div class="user-copy">
-      <span class="user-name">{{ store.currentUsername() }}</span>
+      <span class="user-copy">
+        <span class="user-name">{{ profile.displayName() }}</span>
+        @if (roleKey(); as key) {
+          <span class="user-role">{{ key | translate }}</span>
+        }
+      </span>
+    </ng-template>
 
-      @if (store.currentPrimaryRole()) {
-        <span class="user-role">{{ store.currentPrimaryRole() }}</span>
-      }
-    </div>
+    @if (canOpenProfile()) {
+      <a class="user-identity" routerLink="/profile" [matTooltip]="'profile.open' | translate"
+        [attr.aria-label]="'profile.open-named' | translate: { name: profile.displayName() }">
+        <ng-container [ngTemplateOutlet]="identity" />
+      </a>
+    } @else {
+      <span class="user-identity">
+        <ng-container [ngTemplateOutlet]="identity" />
+      </span>
+    }
 
     <button
       mat-icon-button
       type="button"
       class="sign-out-button"
-      matTooltip="Sign out"
-      aria-label="Sign out"
+      [matTooltip]="'profile.sign-out' | translate"
+      [attr.aria-label]="'profile.sign-out' | translate"
       (click)="signOut()">
       <mat-icon>logout</mat-icon>
     </button>

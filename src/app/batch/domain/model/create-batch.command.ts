@@ -1,58 +1,47 @@
 /**
- * Represents the intention to register a new production batch within the system.
+ * Intent to register a manufacturing batch of the product taken from the route.
  *
  * @remarks
- * In a Domain-Driven Design (DDD) architecture, this command belongs to the
- * application layer. It encapsulates all input data required to create a new
- * production batch, keeping the presentation layer decoupled from the domain
- * entity constructor and backend request details.
+ * In a Domain-Driven Design (DDD) architecture, this Command belongs to the application layer. It
+ * encapsulates the data needed to register a batch, acting as a strict boundary contract for the use case.
+ * The laboratory, environment and product come from the route, not from the command.
  *
  * @example
  * ```typescript
  * const command: CreateBatchCommand = {
- *   labId: 1,
- *   productId: 890,
- *   batchNumber: 'LOT-2026-001',
- *   quantity: 5000,
+ *   batchNumber: 'L-2026-001',
+ *   quantity: 1000,
  *   unit: 'units',
- *   startDate: '2026-05-12T08:00:00Z',
- *   notes: 'Urgent production requested by central distribution.'
+ *   startDate: '2026-10-05',
+ *   notes: 'First run of the month.'
  * };
  * ```
+ *
+ * @author Qualitrack
  */
 export interface CreateBatchCommand {
   /**
-   * The numeric identifier of the laboratory where the batch will be produced.
-   */
-  labId: number;
-
-  /**
-   * The numeric identifier of the product that is going to be manufactured.
-   */
-  productId: number;
-
-  /**
-   * The specific alphanumeric traceability code assigned to this batch run.
+   * Traceability code, unique in the laboratory (maximum 50 characters).
    */
   batchNumber: string;
 
   /**
-   * The intended total volume or amount to be produced in this batch.
+   * Quantity to produce, greater than zero.
    */
   quantity: number;
 
   /**
-   * The unit of measurement for the batch quantity.
+   * Production unit.
    */
   unit: string;
 
   /**
-   * The ISO date string representing when the batch processing is scheduled to begin.
+   * Start date (yyyy-MM-dd).
    */
   startDate: string;
 
   /**
-   * Optional domain-specific remarks or instructions prior to batch creation.
+   * Optional manufacturing notes.
    */
   notes?: string;
 }

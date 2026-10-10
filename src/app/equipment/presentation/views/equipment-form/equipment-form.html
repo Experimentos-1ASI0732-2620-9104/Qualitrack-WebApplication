@@ -7,6 +7,10 @@
 
     <form [formGroup]="form" (ngSubmit)="onSave()" class="equipment-form">
       <mat-card-content>
+        @if (!store.canManage()) {
+          <p class="notice" role="note">{{ 'equipment-form.quality-only' | translate }}</p>
+        }
+
         <div class="form-grid">
           <mat-form-field appearance="outline">
             <mat-label>{{ 'equipment-list.fields.name' | translate }}</mat-label>
@@ -67,9 +71,9 @@
         </div>
 
         @if (store.error()) {
-          <div class="error-msg">
+          <div class="error-msg" role="alert">
             <mat-icon>error</mat-icon>
-            <span>{{ store.error() }}</span>
+            <span>{{ store.error()! | translate }}</span>
           </div>
         }
       </mat-card-content>
@@ -79,8 +83,8 @@
           {{ 'common.cancel' | translate }}
         </button>
 
-        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.isLoading()">
-          @if (store.isLoading()) {
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.saving() || !store.canManage()">
+          @if (store.saving()) {
             <mat-spinner diameter="18"></mat-spinner>
           } @else {
             <mat-icon>save</mat-icon>

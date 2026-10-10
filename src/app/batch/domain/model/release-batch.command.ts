@@ -10,9 +10,9 @@
  * @example
  * ```typescript
  * const command: ReleaseBatchCommand = {
- * batchId: 101,
- * releaseDate: '2026-05-12T11:30:00Z',
- * notes: 'All final quality control tests passed. Product meets pH and viscosity standards. Approved for distribution.'
+ *  batchId: 101,
+ *  releaseDate: '2026-10-05T11:30:00Z',
+ *  notes: 'All final quality control tests passed. Product meets pH and viscosity standards. Approved for distribution.'
  * };
  *
  * await releaseBatchUseCase.execute(command);

@@ -1,22 +1,22 @@
-<main class="inventory-page">
+<main class="operations-page">
   <header class="page-heading">
-    <h1><mat-icon>inventory_2</mat-icon>{{ 'inventory.title' | translate }}</h1>
+    <h1><mat-icon aria-hidden="true">inventory_2</mat-icon>{{ 'inventory.title' | translate }}</h1>
     <div class="actions">
-      <button
-        mat-stroked-button
-        (click)="store.load()"
-        [disabled]="store.loading() || store.saving()"
-      >
+      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
+      <button mat-stroked-button (click)="reload()" [disabled]="store.loading() || store.saving()">
         <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
       </button>
+      <button mat-stroked-button (click)="toggleNearExpiry()" [attr.aria-pressed]="showNearExpiry()">
+        <mat-icon>event_busy</mat-icon>{{ 'inventory.nearExpiry' | translate }}
+      </button>
       @if (store.canReview()) {
-        <button mat-stroked-button (click)="showImports()" [disabled]="store.saving()">
+        <button mat-stroked-button (click)="showImports()" [disabled]="store.saving()" [attr.aria-pressed]="importing()">
           <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.legacy' | translate }}
         </button>
+        <a mat-flat-button [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', 'new']">
+          <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
+        </a>
       }
-      <button mat-flat-button routerLink="/inventory/register-material">
-        <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
-      </button>
     </div>
   </header>
   @if (store.error()) {
@@ -47,14 +47,48 @@
       }
     </section>
   }
+  @if (showNearExpiry()) {
+    <section class="editor" aria-labelledby="near-expiry-title">
+      <h2 id="near-expiry-title">{{ 'inventory.nearExpiry' | translate }}</h2>
+      <p class="notice">{{ 'inventory.nearExpiryNotice' | translate }}</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'inventory.name' | translate }}</th>
+            <th>{{ 'inventory.receiptNumber' | translate }}</th>
+            <th>{{ 'inventory.expiresOn' | translate }}</th>
+            <th>{{ 'inventory.available' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lot of store.nearExpiry(); track lot.id) {
+            <tr>
+              <td>
+                <a [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', lot.rawMaterialId]">
+                  {{ materialNames().get(lot.rawMaterialId) ?? ('#' + lot.rawMaterialId) }}
+                </a>
+              </td>
+              <td [attr.data-label]="'inventory.receiptNumber' | translate">{{ lot.batchNumber }}</td>
+              <td [attr.data-label]="'inventory.expiresOn' | translate" class="warning">{{ lot.expiresOn }}</td>
+              <td [attr.data-label]="'inventory.available' | translate">
+                {{ lot.availableAmount | number: '1.0-3' }} {{ lot.unit }}
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">{{ 'inventory.nearExpiryEmpty' | translate }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
   <section class="summary-strip">
     <div>
-      <span>{{ 'inventory.materials' | translate }}</span
-      ><strong>{{ store.materials().length }}</strong>
+      <span>{{ 'inventory.materials' | translate }}</span><strong>{{ store.materials().length }}</strong>
     </div>
     <div>
-      <span>{{ 'inventory.lowStock' | translate }}</span
-      ><strong>{{ lowCount() }}</strong>
+      <span>{{ 'inventory.lowStock' | translate }}</span><strong>{{ store.lowCount() }}</strong>
     </div>
   </section>
   <div class="filters">
@@ -63,7 +97,7 @@
       ><mat-icon matPrefix>search</mat-icon
       ><input matInput [ngModel]="search()" (ngModelChange)="search.set($event)"
     /></mat-form-field>
-    <mat-checkbox [checked]="lowOnly()" (change)="lowOnly.set($event.checked)">{{
+    <mat-checkbox [checked]="lowOnly()" (change)="toggleLowOnly($event.checked)">{{
       'inventory.lowStock' | translate
     }}</mat-checkbox>
   </div>
@@ -83,13 +117,10 @@
         @for (material of filtered(); track material.id) {
           <tr>
             <td>
-              <a [routerLink]="['/inventory/inventory-detail', material.id]">{{ material.name }}</a
+              <a [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', material.id]">{{ material.name }}</a
               ><small>{{ material.code }}</small>
             </td>
-            <td
-              [attr.data-label]="'inventory.usableStock' | translate"
-              [class.warning]="material.usableStock < material.minimumStock"
-            >
+            <td [attr.data-label]="'inventory.usableStock' | translate" [class.warning]="material.isLowStock">
               {{ material.usableStock | number: '1.0-3' }} {{ material.unit }}
             </td>
             <td [attr.data-label]="'inventory.physicalStock' | translate">

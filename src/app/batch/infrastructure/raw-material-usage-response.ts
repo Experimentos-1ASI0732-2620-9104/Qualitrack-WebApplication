@@ -1,4 +1,7 @@
-import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-response';
+import {
+  BaseResource,
+  BaseResponse
+} from '../../shared/infrastructure/base-response';
 
 /**
  * Resource representation of a raw material usage record for API communication.
@@ -14,14 +17,14 @@ import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-res
  * @example
  * ```typescript
  * const resource: RawMaterialUsageResource = {
- * id: 1,
- * batchId: 101,
- * rawMaterialId: 45,
- * rawMaterialName: 'Purified Water',
- * quantityUsed: 150.5,
- * unit: 'liters',
- * usageDate: '2026-05-12T09:30:00Z',
- * createdAt: '2026-05-12T09:35:00Z'
+ *   id: 1,
+ *   batchId: 101,
+ *   rawMaterialId: 45,
+ *   rawMaterialName: 'Purified Water',
+ *   quantityUsed: 150.5,
+ *   unit: 'liters',
+ *   usageDate: '2026-10-05T09:30:00Z',
+ *   createdAt: '2026-10-05T09:35:00Z'
  * };
  *
  * ```
@@ -33,8 +36,21 @@ export interface RawMaterialUsageResource extends BaseResource {
    * The unique numeric identifier for the raw material usage resource.
    */
   id: number;
+
+  /**
+   * The stock before the consumption; absent or null when not recorded.
+   */
   stockBefore?: number | null;
+
+  /**
+   * The inventory receipt (received lot) that was consumed; absent or null for usages recorded before
+   * Inventory Management existed.
+   */
   inventoryReceiptId?: number | null;
+
+  /**
+   * The stock after the consumption; absent or null when not recorded.
+   */
   stockAfter?: number | null;
 
   /**
@@ -86,10 +102,10 @@ export interface RawMaterialUsageResource extends BaseResource {
  * @example
  * ```typescript
  * const apiResponse: RawMaterialUsagesResponse = {
- * rawMaterialUsages: [
- * { id: 1, rawMaterialName: 'Solvent A', ... },
- * { id: 2, rawMaterialName: 'Active Ingredient B', ... }
- * ]
+ *  rawMaterialUsages: [
+ *    { id: 1, rawMaterialName: 'Solvent A', ... },
+ *    { id: 2, rawMaterialName: 'Active Ingredient B', ... }
+ *  ]
  * };
  *
  * ```

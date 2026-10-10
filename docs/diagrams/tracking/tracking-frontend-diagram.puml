@@ -14,286 +14,379 @@ package "shared" <<External>> {
 
 package "iam" <<External>> {
   class IamStore {
-    +currentLaboratoryId(): number
+    +canManageQuality: Signal<boolean>
+    +requireLaboratoryId(): number
   }
 }
 
 package "equipment" <<External>> {
-  class EquipmentStore {
-    +equipmentList(): Equipment[]
-    +loadEquipment(laboratoryId: number): void
+  class EquipmentApi {
+    +getEquipment(laboratoryId: number): Observable<Equipment[]>
   }
+  enum IotDeviceType {
+    ENVIRONMENTAL_DEVICE
+    CONTAINER_MONITOR
+  }
+}
+
+package "laboratory" <<External>> {
+  class EnvironmentStore {
+    +preferredEnvironment(usage?, scope): Environment | null
+    +rememberEnvironment(environmentId, scope): void
+  }
+  class EnvironmentSelector <<component>>
 }
 
 package "tracking" {
 
   package "domain.model" {
-    enum TelemetryStatus {
-      OPERATIONAL
+    enum MonitoredMetric {
+      AIR_QUALITY
+      MOTION
+      TEMPERATURE
+      HUMIDITY
+      LUMINOSITY
+      RFID_TAG
+    }
+
+    enum EnvironmentalState {
+      NORMAL
       WARNING
       CRITICAL
-      OFFLINE
+    }
+
+    class MetricDefinition <<interface>> {
+      +metric: MonitoredMetric
+      +unit: string
+      +deviceType: IotDeviceType
+      +configurable: boolean
+      +upperOnly: boolean
+    }
+
+    class MonitoredMetrics <<functions>> {
+      +METRICS: MetricDefinition[]
+      +metricsOf(deviceType): MetricDefinition[]
+      +configurableMetricsOf(deviceType): MetricDefinition[]
+      +metricDefinition(metric): MetricDefinition | undefined
     }
 
     class Measurement {
       +id: number
-      +equipmentId: number
-      +parameterName: string
-      +value: number
+      +deviceId: number
+      +environmentId: number | null
+      +metric: MonitoredMetric
+      +value: number | null
+      +textValue: string | null
       +unit: string
-      +timestamp: string
-      +createdAt: string
+      +measuredAt: string
+      +state: EnvironmentalState | null
+      +thresholdValue: number | null
+      +profileVersion: number | null
+      +isDeviation: boolean
     }
 
-    class EquipmentStatus {
-      +id: number
-      +equipmentId: number
-      +isOnline: boolean
-      +currentStatus: TelemetryStatus
-      +lastHeartbeat: string
-      +createdAt: string
+    enum ActuationAction {
+      VENTILATION_ON
+      VENTILATION_OFF
+      COOLING_ON
+      COOLING_OFF
+      SERVO_OPEN
+      SERVO_CLOSE
     }
 
-    class TelemetryHistoryPoint {
+    class ActuationEvent {
       +id: number
-      +equipmentId: number
-      +parameterName: string
-      +recordedValue: number
-      +timestamp: string
-      +isAnomaly: boolean
-      +createdAt: string
+      +deviceId: number
+      +environmentId: number
+      +action: ActuationAction
+      +triggerMetric: MonitoredMetric | null
+      +triggerState: EnvironmentalState | null
+      +result: 'EXECUTED' | 'FAILED'
+      +occurredAt: string
+      +profileVersion: number | null
+    }
+
+    class EnvironmentalThreshold <<interface>> {
+      +metric: MonitoredMetric
+      +unit: string
+      +normalMin: number | null
+      +normalMax: number | null
+      +criticalMin: number | null
+      +criticalMax: number | null
+    }
+
+    class ActuationRule <<interface>> {
+      +metric: MonitoredMetric
+      +state: 'WARNING' | 'CRITICAL'
+      +action: ActuationAction
+    }
+
+    class EnvironmentalProfile {
+      +id: number
+      +scope: 'ENVIRONMENT' | 'CONTAINER_MONITOR'
+      +environmentId: number | null
+      +deviceId: number | null
+      +version: number
+      +thresholds: EnvironmentalThreshold[]
+      +actuationRules: ActuationRule[]
+      +updatedAt: string | null
+      +threshold(metric): EnvironmentalThreshold | undefined
+    }
+
+    enum DeviceConnectionStatus {
+      CONNECTED
+      REQUIRES_REVIEW
+    }
+
+    class DeviceConnection {
+      +id: number
+      +connectionStatus: DeviceConnectionStatus
+      +lastCommunicationAt: string | null
+      +expectedPeriodSeconds: number
+      +isConnected: boolean
     }
   }
 
   package "application" {
-    class TrackingStore {
-      -api: TrackingApi
-      -_measurements: Signal<Measurement[]>
-      -_currentEquipmentStatus: Signal<EquipmentStatus | null>
-      -_telemetryHistory: Signal<TelemetryHistoryPoint[]>
-      -_isLoading: Signal<boolean>
-      -_error: Signal<string | null>
-      -_successMsg: Signal<string | null>
-      +measurements: Signal<Measurement[]>
-      +currentEquipmentStatus: Signal<EquipmentStatus | null>
-      +telemetryHistory: Signal<TelemetryHistoryPoint[]>
-      +isLoading: Signal<boolean>
-      +error: Signal<string | null>
-      +successMsg: Signal<string | null>
-      +isEquipmentOnline: Signal<boolean>
-      +equipmentTelemetryStatus: Signal<string>
-      +anomaliesHistory: Signal<TelemetryHistoryPoint[]>
-      +loadLatestMeasurements(equipmentId?: number): void
-      +loadEquipmentStatus(equipmentId: number): void
-      +loadTelemetryHistory(filters?: TelemetryHistoryFilters): void
-      +clearMessages(): void
-      -formatError(error: unknown, fallback: string): string
+    class DeviceSnapshot <<interface>> {
+      +device: Equipment
+      +readings: Map<MonitoredMetric, Measurement>
+      +lastMotion: Measurement | null
+      +lastAction: ActuationEvent | null
+      +connection: DeviceConnection | null
+      +failed: boolean
     }
 
-    class TelemetryHistoryFilters <<type>> {
-      +equipmentId?: number
-      +from?: string
-      +to?: string
+    class DeviceHistory <<interface>> {
+      +device: Equipment
+      +period: TelemetryPeriod
+      +measurements: Measurement[]
+      +actuationEvents: ActuationEvent[]
+      +profile: EnvironmentalProfile | null
+    }
+
+    class TrackingStore {
+      -api: TrackingApi
+      -equipmentApi: EquipmentApi
+      -iam: IamStore
+      +environmentId: Signal<number | null>
+      +devices: Signal<Equipment[]>
+      +environmentalDevice: Signal<Equipment | null>
+      +containerMonitors: Signal<Equipment[]>
+      +snapshots: Signal<DeviceSnapshot[]>
+      +history: Signal<DeviceHistory | null>
+      +environmentProfile: Signal<EnvironmentalProfile | null>
+      +containerProfiles: Signal<Map<number, EnvironmentalProfile>>
+      +canConfigure: Signal<boolean>
+      +isLoading / saving / error / notice
+      +selectEnvironment(environmentId): Promise<void>
+      +loadSnapshots(): Promise<void>
+      +loadHistory(device, period, metric): Promise<void>
+      +loadProfiles(): Promise<void>
+      +saveThresholds(deviceId | null, thresholds): Promise<boolean>
+      +saveActuationRules(deviceId, rules): Promise<boolean>
+      +clearMessages(): void
+    }
+
+    class recentPeriod <<function>> {
+      +recentPeriod(): TelemetryPeriod
     }
   }
 
   package "infrastructure" {
-    interface MeasurementResource {
-      +id: number
-      +equipmentId: number
-      +parameterName: string
-      +value: number
-      +unit: string
-      +timestamp: string
-      +createdAt: string
+    class DeviceTarget <<interface>> {
+      +laboratoryId: number
+      +environmentId: number
+      +deviceId: number | null
     }
 
-    interface MeasurementsResponse {
-      +measurements: MeasurementResource[]
+    class TelemetryPeriod <<interface>> {
+      +from: string
+      +to: string
     }
 
-    interface EquipmentStatusResource {
-      +id: number
-      +equipmentId: number
-      +isOnline: boolean
-      +currentStatus: TelemetryStatus
-      +lastHeartbeat: string
-      +createdAt: string
-    }
+    interface MeasurementResource
+    interface MeasurementsResponse
+    interface ActuationEventResource
+    interface ActuationEventsResponse
+    interface EnvironmentalProfileResource
+    interface EnvironmentalProfilesResponse
+    interface DeviceConnectionResource
+    interface DeviceConnectionsResponse
 
-    interface EquipmentStatusesResponse {
-      +statuses: EquipmentStatusResource[]
-    }
-
-    interface TelemetryHistoryPointResource {
-      +id: number
-      +equipmentId: number
-      +parameterName: string
-      +recordedValue: number
-      +timestamp: string
-      +isAnomaly: boolean
-      +createdAt: string
-    }
-
-    interface TelemetryHistoryResponse {
-      +historyPoints: TelemetryHistoryPointResource[]
-    }
-
-    class MeasurementAssembler {
-      +toEntityFromResource(resource: MeasurementResource): Measurement
-      +toResourceFromEntity(entity: Measurement): MeasurementResource
-    }
-
-    class EquipmentStatusAssembler {
-      +toEntityFromResource(resource: EquipmentStatusResource): EquipmentStatus
-      +toResourceFromEntity(entity: EquipmentStatus): EquipmentStatusResource
-    }
-
-    class TelemetryHistoryAssembler {
-      +toEntityFromResource(resource: TelemetryHistoryPointResource): TelemetryHistoryPoint
-      +toResourceFromEntity(entity: TelemetryHistoryPoint): TelemetryHistoryPointResource
-    }
+    class MeasurementAssembler
+    class ActuationEventAssembler
+    class EnvironmentalProfileAssembler
+    class DeviceConnectionAssembler
 
     class MeasurementApiEndpoint {
-      -assembler: MeasurementAssembler
-      +getLatestMeasurements(equipmentId?: number): Observable<Measurement[]>
+      +getMeasurements(target, period, metric?): Observable<Measurement[]>
     }
 
-    class EquipmentStatusApiEndpoint {
-      -assembler: EquipmentStatusAssembler
-      +getStatusByEquipment(equipmentId: number): Observable<EquipmentStatus>
+    class ActuationEventApiEndpoint {
+      +getActuationEvents(target, period): Observable<ActuationEvent[]>
     }
 
-    class TelemetryHistoryApiEndpoint {
-      -assembler: TelemetryHistoryAssembler
-      +getTelemetryHistory(filters?: TelemetryHistoryFilters): Observable<TelemetryHistoryPoint[]>
+    class EnvironmentalProfileApiEndpoint {
+      +getProfile(target): Observable<EnvironmentalProfile | null>
+      +updateThresholds(target, thresholds): Observable<EnvironmentalProfile>
+      +updateActuationRules(target, rules): Observable<EnvironmentalProfile>
+    }
+
+    class DeviceConnectionApiEndpoint {
+      +getConnection(laboratoryId, environmentId, deviceId): Observable<DeviceConnection>
     }
 
     class TrackingApi {
-      -measurementEndpoint: MeasurementApiEndpoint
-      -equipmentStatusEndpoint: EquipmentStatusApiEndpoint
-      -telemetryHistoryEndpoint: TelemetryHistoryApiEndpoint
-      +getLatestMeasurements(equipmentId?: number): Observable<Measurement[]>
-      +getEquipmentStatus(equipmentId: number): Observable<EquipmentStatus>
-      +getTelemetryHistory(filters?: TelemetryHistoryFilters): Observable<TelemetryHistoryPoint[]>
+      +getMeasurements(target, period, metric?): Observable<Measurement[]>
+      +getActuationEvents(target, period): Observable<ActuationEvent[]>
+      +getProfile(target): Observable<EnvironmentalProfile | null>
+      +updateThresholds(target, thresholds): Observable<EnvironmentalProfile>
+      +updateActuationRules(target, rules): Observable<EnvironmentalProfile>
+      +getDeviceConnection(laboratoryId, environmentId, deviceId): Observable<DeviceConnection>
     }
   }
 
   package "presentation" {
     class TrackingRoutes <<Routes>> {
-      +dashboard: TelemetryDashboardComponent
-      +analysis: TelemetryChartComponent
-      +history: TelemetryHistoryComponent
+      +dashboard: EnvironmentalMonitoring
+      +history: TelemetryHistory
+      +profiles: EnvironmentalProfiles
+      +analysis: redirect to history
     }
 
-    class TelemetryDashboardComponent {
-      -store: TrackingStore
-      -equipmentStore: EquipmentStore
-      -iamStore: IamStore
-      -selectedEquipmentId: Signal<number>
-      -equipmentPollingId: interval
-      +chartOptions: ChartOptions
-      +chartData: Signal<LineChartData>
-      +ngOnInit(): void
-      +ngOnDestroy(): void
-      +onEquipmentChange(): void
-      -waitForEquipmentAndLoadDashboard(): void
-      -loadDashboardData(): void
+    class EnvironmentalMonitoring <<component>> {
+      #refresh(): void
+      #snapshotOf(deviceId): DeviceSnapshot | undefined
+      #reading(snapshot, metric): Measurement | undefined
     }
 
-    class TelemetryChartComponent {
-      -store: TrackingStore
-      -equipmentStore: EquipmentStore
-      -iamStore: IamStore
-      -filters: TelemetryHistoryFilters
-      -equipmentPollingId: interval
-      +chartOptions: ChartOptions
-      +chartData: Signal<LineChartData>
-      +ngOnInit(): void
-      +ngOnDestroy(): void
-      +loadChartData(): void
-      +clearFilters(): void
-      -waitForEquipmentAndLoadChart(): void
+    class TelemetryHistory <<component>> {
+      #chartMetric: Signal<MonitoredMetric | null>
+      #chartData: Signal<ChartData>
+      #chartOptions: Signal<ChartOptions>
+      #changeEnvironment(environmentId, preferredDeviceId?): Promise<void>
+      #changeDevice(): void
     }
 
-    class TelemetryHistoryComponent {
-      -store: TrackingStore
-      -equipmentStore: EquipmentStore
-      -iamStore: IamStore
-      -displayedColumns: string[]
-      -filters: TelemetryHistoryFilters
-      -equipmentPollingId: interval
-      +ngOnInit(): void
-      +ngOnDestroy(): void
-      +loadHistoryData(): void
-      +clearFilters(): void
-      -waitForEquipmentAndLoadHistory(): void
+    class EnvironmentalProfiles <<component>> {
+      #saveEnvironment(thresholds): void
+      #saveContainer(deviceId, thresholds): void
+      #saveRules(deviceId, rules): void
     }
 
-    class EquipmentStatusCardComponent {
-      +statusRecord: EquipmentStatus | null
-      +equipmentName: string
+    class ThresholdEditor <<component>> {
+      +metrics: input<MetricDefinition[]>
+      +thresholds: input<EnvironmentalThreshold[]>
+      +readonly: input<boolean>
+      +saving: input<boolean>
+      +save: output<ThresholdInput[]>
+    }
+
+    class ActuationRulesEditor <<component>> {
+      +metrics: input<MonitoredMetric[]>
+      +rules: input<ActuationRule[]>
+      +readonly: input<boolean>
+      +saving: input<boolean>
+      +save: output<ActuationRule[]>
     }
   }
 }
 
 Measurement --|> BaseEntity
-EquipmentStatus --|> BaseEntity
-TelemetryHistoryPoint --|> BaseEntity
+ActuationEvent --|> BaseEntity
+EnvironmentalProfile --|> BaseEntity
+DeviceConnection --|> BaseEntity
+Measurement --> MonitoredMetric
+Measurement --> EnvironmentalState
+ActuationEvent --> ActuationAction
+EnvironmentalProfile *-- EnvironmentalThreshold
+EnvironmentalProfile *-- ActuationRule
+ActuationRule --> ActuationAction
+DeviceConnection --> DeviceConnectionStatus
+MonitoredMetrics ..> MetricDefinition
+MetricDefinition --> IotDeviceType
 
 MeasurementResource --|> BaseResource
-EquipmentStatusResource --|> BaseResource
-TelemetryHistoryPointResource --|> BaseResource
+ActuationEventResource --|> BaseResource
+EnvironmentalProfileResource --|> BaseResource
+DeviceConnectionResource --|> BaseResource
 MeasurementsResponse --|> BaseResponse
-EquipmentStatusesResponse --|> BaseResponse
-TelemetryHistoryResponse --|> BaseResponse
+ActuationEventsResponse --|> BaseResponse
+EnvironmentalProfilesResponse --|> BaseResponse
+DeviceConnectionsResponse --|> BaseResponse
 
 MeasurementAssembler ..|> BaseAssembler
-EquipmentStatusAssembler ..|> BaseAssembler
-TelemetryHistoryAssembler ..|> BaseAssembler
+ActuationEventAssembler ..|> BaseAssembler
+EnvironmentalProfileAssembler ..|> BaseAssembler
+DeviceConnectionAssembler ..|> BaseAssembler
 
 MeasurementApiEndpoint --|> BaseApiEndpoint
-EquipmentStatusApiEndpoint --|> BaseApiEndpoint
-TelemetryHistoryApiEndpoint --|> BaseApiEndpoint
+ActuationEventApiEndpoint --|> BaseApiEndpoint
+EnvironmentalProfileApiEndpoint --|> BaseApiEndpoint
+DeviceConnectionApiEndpoint --|> BaseApiEndpoint
 
 MeasurementApiEndpoint --> MeasurementAssembler
-EquipmentStatusApiEndpoint --> EquipmentStatusAssembler
-TelemetryHistoryApiEndpoint --> TelemetryHistoryAssembler
-
-MeasurementAssembler ..> Measurement
-MeasurementAssembler ..> MeasurementResource
-EquipmentStatusAssembler ..> EquipmentStatus
-EquipmentStatusAssembler ..> EquipmentStatusResource
-TelemetryHistoryAssembler ..> TelemetryHistoryPoint
-TelemetryHistoryAssembler ..> TelemetryHistoryPointResource
+ActuationEventApiEndpoint --> ActuationEventAssembler
+EnvironmentalProfileApiEndpoint --> EnvironmentalProfileAssembler
+DeviceConnectionApiEndpoint --> DeviceConnectionAssembler
+MeasurementApiEndpoint ..> DeviceTarget
+MeasurementApiEndpoint ..> TelemetryPeriod
+ActuationEventApiEndpoint ..> DeviceTarget
+EnvironmentalProfileApiEndpoint ..> DeviceTarget
 
 TrackingApi *-- MeasurementApiEndpoint
-TrackingApi *-- EquipmentStatusApiEndpoint
-TrackingApi *-- TelemetryHistoryApiEndpoint
+TrackingApi *-- ActuationEventApiEndpoint
+TrackingApi *-- EnvironmentalProfileApiEndpoint
+TrackingApi *-- DeviceConnectionApiEndpoint
 
 TrackingStore --> TrackingApi
-TrackingStore ..> Measurement
-TrackingStore ..> EquipmentStatus
-TrackingStore ..> TelemetryHistoryPoint
-TrackingStore ..> TelemetryHistoryFilters
+TrackingStore --> EquipmentApi
+TrackingStore --> IamStore
+TrackingStore *-- DeviceSnapshot
+TrackingStore *-- DeviceHistory
 
-TelemetryDashboardComponent --> TrackingStore
-TelemetryDashboardComponent --> EquipmentStore
-TelemetryDashboardComponent --> IamStore
-TelemetryDashboardComponent --> EquipmentStatusCardComponent
+EnvironmentalMonitoring --> TrackingStore
+EnvironmentalMonitoring --> EnvironmentStore
+EnvironmentalMonitoring ..> EnvironmentSelector
+TelemetryHistory --> TrackingStore
+TelemetryHistory --> EnvironmentStore
+TelemetryHistory ..> EnvironmentSelector
+EnvironmentalProfiles --> TrackingStore
+EnvironmentalProfiles --> EnvironmentStore
+EnvironmentalProfiles ..> EnvironmentSelector
+EnvironmentalProfiles ..> ThresholdEditor
+EnvironmentalProfiles ..> ActuationRulesEditor
 
-TelemetryChartComponent --> TrackingStore
-TelemetryChartComponent --> EquipmentStore
-TelemetryChartComponent --> IamStore
+TrackingRoutes ..> EnvironmentalMonitoring
+TrackingRoutes ..> TelemetryHistory
+TrackingRoutes ..> EnvironmentalProfiles
 
-TelemetryHistoryComponent --> TrackingStore
-TelemetryHistoryComponent --> EquipmentStore
-TelemetryHistoryComponent --> IamStore
-
-EquipmentStatusCardComponent ..> EquipmentStatus
-
-TrackingRoutes ..> TelemetryDashboardComponent
-TrackingRoutes ..> TelemetryChartComponent
-TrackingRoutes ..> TelemetryHistoryComponent
+note right of DeviceTarget
+  deviceId null: /laboratories/{lab}/environments/{env}/...
+  (environmental device of the environment)
+  deviceId set:  .../environments/{env}/container-monitors/{deviceId}/...
+end note
+note right of EnvironmentalProfileApiEndpoint
+  GET .../environmental-profile (404 -> null: not configured yet)
+  PUT .../environmental-profile/thresholds
+  PUT .../container-monitors/{deviceId}/environmental-profile/actuation-rules
+end note
+note right of DeviceConnectionApiEndpoint
+  GET /laboratories/{laboratoryId}/environments/{environmentId}
+      /devices/{deviceId}/telemetry-status (TS41)
+end note
+note bottom of EnvironmentalProfiles
+  Quality managers and administrators edit thresholds and rules
+  (US56-US59); the other roles see them read-only.
+end note
+note bottom of TelemetryHistory
+  /tracking/history?environmentId=&deviceId= opens the history of the
+  container where a raw material lot or product batch is stored.
+end note
+note bottom of EnvironmentalMonitoring
+  Current conditions of the last 24 hours per device: latest reading per
+  metric with its state, last motion, RFID tag, last action and connection.
+end note
 
 @enduml

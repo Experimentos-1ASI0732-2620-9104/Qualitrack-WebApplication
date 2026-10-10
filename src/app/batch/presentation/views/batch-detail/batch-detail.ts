@@ -1,116 +1,124 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  inject
+} from '@angular/core';
+import {
+  DatePipe,
+  DecimalPipe
+} from '@angular/common';
+import {
+  ActivatedRoute,
+  RouterLink
+} from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
-
 import { BatchStore } from '../../../application/batch.store';
-import { Batch } from '../../../domain/model/batch.entity';
+import { IamStore } from '../../../../iam/application/iam.store';
+import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
 import { RawMaterialUsageComponent } from '../raw-material-usage/raw-material-usage';
+import { BatchParticipants } from '../batch-participants/batch-participants';
+import { BatchTraceabilityView } from '../batch-traceability/batch-traceability';
+import { BatchStorage } from '../batch-storage/batch-storage';
 
 /**
- * Component responsible for displaying production batch details.
+ * Detail of a product batch: its data, the raw materials it consumed, the equipment and
+ * staff that took part, the container where it is stored, its traceability and
+ * the release or rejection.
  *
  * @remarks
- * This standalone presentation component loads a specific batch using the
- * identifier provided by the route. It displays the selected batch information
- * and embeds the raw material usage component to manage material traceability.
+ * The batch is identified by the route (environment, product and batch). The component reloads it whenever
+ * the route parameters change.
  *
- * The component also exposes helpers for normalizing backend status enum values
- * into CSS-friendly and i18n-friendly strings.
+ * @author Qualitrack
  */
 @Component({
   selector: 'app-batch-detail',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
+    DecimalPipe,
     RouterLink,
     MatTabsModule,
     MatButtonModule,
     MatIconModule,
-    MatCardModule,
-    MatDividerModule,
-    MatProgressSpinnerModule,
     TranslateModule,
     RawMaterialUsageComponent,
+    BatchParticipants,
+    BatchTraceabilityView,
+    BatchStorage,
   ],
   templateUrl: './batch-detail.html',
-  styleUrl: './batch-detail.css',
+  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
 })
 export class BatchDetail implements OnInit {
-  /**
-   * Activated route used to read the batch identifier from the URL.
-   */
-  private readonly route = inject(ActivatedRoute);
-
-  /**
-   * Store responsible for batch detail and raw material usage state.
-   */
   protected readonly store = inject(BatchStore);
+  private readonly iam = inject(IamStore);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroy = inject(DestroyRef);
 
   /**
-   * Unique numeric identifier of the batch currently being viewed.
+   * Laboratory, environment and product of the batch, taken from the route.
    */
-  protected batchId: number = 0;
+  protected path: BatchPath | null = null;
 
   /**
-   * Lifecycle hook that loads batch detail and raw material usage data.
+   * Identifier of the batch, taken from the route.
+   */
+  protected batchId = 0;
+
+  /**
+   * Lifecycle hook that reads the route parameters and loads the batch with its traceability.
    */
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.batchId = idParam ? Number(idParam) : 0;
-
-    if (this.batchId) {
-      this.store.loadBatchById(this.batchId);
-      this.store.loadBatchUsage(this.batchId);
-    }
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
+      this.path = {
+        laboratoryId: this.iam.requireLaboratoryId(),
+        environmentId: Number(params.get('environmentId')),
+        productId: Number(params.get('productId')),
+      };
+      this.batchId = Number(params.get('batchId'));
+      this.store.clearMessages();
+      void this.store.loadBatch(this.path, this.batchId);
+    });
   }
 
   /**
-   * Gets the current batch entity from selected state or the loaded collection.
+   * Route of the product the batch belongs to.
    *
-   * @returns The matching Batch domain entity, or undefined when it is not loaded yet
+   * @returns The router link segments of the product.
    */
-  protected get currentBatch(): Batch | undefined {
-    const selected = this.store.selectedBatch();
-
-    return selected?.id === this.batchId
-      ? selected
-      : this.store.batches().find((batch) => batch.id === this.batchId);
+  protected get productLink(): (string | number)[] {
+    return [
+      '/batches/environments',
+      this.path?.environmentId ?? 0,
+      'products',
+      this.path?.productId ?? 0,
+    ];
   }
 
   /**
-   * Maps a batch status value to the CSS class used by the detail view.
+   * Route of the release or rejection form of a batch.
    *
-   * @param status - Current lifecycle status of the batch
-   * @returns CSS-friendly status value
+   * @param batchId - The batch identifier.
+   * @param decision - The decision to take: `release` or `reject`.
+   * @returns The router link segments of the form.
    */
-  protected getStatusClass(status?: string): string {
-    return this.normalizeStatus(status);
+  protected decisionLink(batchId: number, decision: 'release' | 'reject'): (string | number)[] {
+    return [...this.productLink, 'batches', batchId, decision];
   }
 
   /**
-   * Maps a batch status value to the translation key suffix.
+   * Builds the translation key suffix of a batch status (e.g., `IN_PROGRESS` becomes `in-progress`).
    *
-   * @param status - Current lifecycle status of the batch
-   * @returns Translation-key-friendly status value
+   * @param status - The batch status.
+   * @returns The key suffix, or `unknown` when there is no status.
    */
-  protected getStatusKey(status?: string): string {
-    return this.normalizeStatus(status);
-  }
-
-  /**
-   * Normalizes backend enum values for CSS classes and i18n keys.
-   *
-   * @param status - Raw backend status value
-   * @returns Lowercase status with underscores replaced by hyphens
-   */
-  private normalizeStatus(status?: string): string {
+  protected statusKey(status?: string): string {
     return status ? status.toLowerCase().replace(/_/g, '-') : 'unknown';
   }
 }

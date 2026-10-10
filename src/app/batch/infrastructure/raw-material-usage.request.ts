@@ -1,32 +1,41 @@
 /**
- * Represents the incoming payload required to link a raw material to a batch.
+ * Body of POST .../batches/{batchId}/raw-material-usages.
  *
  * @remarks
- * In a Domain-Driven Design (DDD) architecture, this interface acts as a strict
- * data contract for the external presentation or infrastructure layer. It captures
- * the necessary input from the client to record the consumption of a specific
- * material, before being mapped into a domain-level structure.
+ * Infrastructure-level contract sent to the API to consume a released raw material lot in a batch. The
+ * operation id makes the request idempotent: a retry with the same id returns the original usage instead
+ * of consuming twice.
  *
  * @example
  * ```typescript
- * const requestPayload: LinkRawMaterialRequest = {
- * rawMaterialId: 45,
- * quantityUsed: 150.5
+ * const request: RegisterRawMaterialUsageRequest = {
+ *   rawMaterialBatchId: 45,
+ *   amountUsed: 150.5,
+ *   unit: 'kg',
+ *   operationId: crypto.randomUUID()
  * };
- *
  * ```
  *
  * @author Qualitrack
  */
-export interface LinkRawMaterialRequest {
+export interface RegisterRawMaterialUsageRequest {
   /**
-   * The numeric identifier of the specific raw material to be linked or consumed.
+   * The numeric identifier of the raw material lot to consume.
    */
-  rawMaterialId: number;
+  rawMaterialBatchId: number;
 
   /**
-   * The exact amount of the raw material utilized in the production process.
+   * The amount to consume from the lot.
    */
-  quantityUsed: number;
+  amountUsed: number;
+
+  /**
+   * The unit of measurement of the amount.
+   */
   unit: string;
+
+  /**
+   * Unique id of the operation; reuse it when retrying so the consumption is not duplicated.
+   */
+  operationId: string;
 }

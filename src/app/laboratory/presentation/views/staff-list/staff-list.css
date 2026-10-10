@@ -117,3 +117,29 @@
     min-width: 720px;
   }
 }
+
+.hint,
+.muted {
+  color: #5f6368;
+}
+
+.hint {
+  margin: -12px 0 16px;
+}
+
+.name-cell a {
+  color: #006e76;
+  font-weight: 600;
+}
+
+.error-box {
+  background: #fff5f5;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #fc8181;
+}

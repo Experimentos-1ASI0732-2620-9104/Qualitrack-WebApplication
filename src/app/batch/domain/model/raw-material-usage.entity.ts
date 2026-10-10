@@ -12,14 +12,14 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  * @example
  * ```typescript
  * const usageRecord = new RawMaterialUsage({
- * id: 1,
- * batchId: 101,
- * rawMaterialId: 45,
- * rawMaterialName: 'Purified Water',
- * quantityUsed: 150.5,
- * unit: 'liters',
- * usageDate: '2026-05-12T09:30:00Z',
- * createdAt: '2026-05-12T09:35:00Z'
+ *  id: 1,
+ *  batchId: 101,
+ *  rawMaterialId: 45,
+ *  rawMaterialName: 'Purified Water',
+ *  quantityUsed: 150.5,
+ *  unit: 'liters',
+ *  usageDate: '2026-10-05T09:30:00Z',
+ *  createdAt: '2026-10-05T09:35:00Z'
  * });
  *
  * console.log(`Consumed ${usageRecord.quantityUsed} ${usageRecord.unit} of ${usageRecord.rawMaterialName}`);
