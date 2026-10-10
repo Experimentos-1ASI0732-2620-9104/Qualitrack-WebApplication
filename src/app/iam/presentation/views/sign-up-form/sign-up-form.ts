@@ -8,7 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
@@ -53,28 +53,15 @@ export class SignUpForm {
   private readonly router = inject(Router);
 
   /**
-   * Activated route used to read the desired registration role.
+   * Public registration only creates quality manager accounts. Operators and auditors receive the
+   * account their quality manager creates when registering them as staff.
    */
-  private readonly route = inject(ActivatedRoute);
+  protected readonly selectedRole = 'ROLE_QA_MANAGER';
 
   /**
-   * Current registration mode passed through the route.
+   * Translation key suffix used to display the registered role.
    */
-  protected role: string = 'lab-operator';
-
-  /**
-   * Backend role selected for the new account.
-   */
-  protected selectedRole: string = 'ROLE_LAB_OPERATOR';
-
-  /**
-   * Translation key suffix used to display the selected role.
-   */
-  protected selectedRoleKey: 'manager' | 'operator' = 'operator';
-
-  /**
-   * Temporary laboratory identifier used while the laboratory ownership flow is completed.
-   */
+  protected readonly selectedRoleKey = 'manager';
 
   /**
    * Reactive form used to capture sign-up data.
@@ -85,9 +72,13 @@ export class SignUpForm {
         nonNullable: true,
         validators: [Validators.required, Validators.minLength(3)],
       }),
+      email: new FormControl<string>('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.email, Validators.maxLength(120)],
+      }),
       password: new FormControl<string>('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(6), this.passwordStrengthValidator],
+        validators: [Validators.required, Validators.minLength(8), Validators.maxLength(72), this.passwordStrengthValidator],
       }),
       confirmPassword: new FormControl<string>('', {
         nonNullable: true,
@@ -108,24 +99,6 @@ export class SignUpForm {
   protected hideConfirmPassword = true;
 
   /**
-   * Creates the sign-up component and resolves the registration role from query params.
-   */
-  constructor() {
-    this.route.queryParams.subscribe((params) => {
-      if (params['role'] === 'qa-manager') {
-        this.role = 'qa-manager';
-        this.selectedRole = 'ROLE_QA_MANAGER';
-        this.selectedRoleKey = 'manager';
-        return;
-      }
-
-      this.role = 'lab-operator';
-      this.selectedRole = 'ROLE_LAB_OPERATOR';
-      this.selectedRoleKey = 'operator';
-    });
-  }
-
-  /**
    * Submits the sign-up form.
    */
   protected onSubmit(): void {
@@ -138,6 +111,7 @@ export class SignUpForm {
 
     const command: SignUpCommand = {
       username: this.form.controls.username.value,
+      email: this.form.controls.email.value,
       password: this.form.controls.password.value,
       roles: [this.selectedRole],
       laboratoryId: null,
@@ -175,6 +149,20 @@ export class SignUpForm {
   }
 
   /**
+   * Resolves the translation key for e-mail validation errors.
+   *
+   * @returns Translation key for the current e-mail validation error
+   */
+  protected getEmailErrorKey(): string {
+    const control = this.form.controls.email;
+
+    if (control.hasError('required')) return 'iam.sign-up.errors.email-required';
+    if (control.hasError('email') || control.hasError('maxlength')) return 'iam.sign-up.errors.email-invalid';
+
+    return '';
+  }
+
+  /**
    * Resolves the translation key for password validation errors.
    *
    * @returns Translation key for the current password validation error
@@ -183,7 +171,7 @@ export class SignUpForm {
     const control = this.form.controls.password;
 
     if (control.hasError('required')) return 'iam.sign-up.errors.password-required';
-    if (control.hasError('minlength')) return 'iam.sign-up.errors.password-minlength';
+    if (control.hasError('minlength') || control.hasError('maxlength')) return 'iam.sign-up.errors.password-minlength';
     if (control.hasError('passwordStrength')) return 'iam.sign-up.errors.password-strength';
 
     return '';
