@@ -1,6 +1,6 @@
 @startuml batch-frontend-diagram
 
-title QualiTrack - Batch Frontend Class Diagram
+title QualiTrack - Product Batch Management Frontend Class Diagram
 
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
@@ -11,324 +11,274 @@ package "shared" {
   class BaseApi
   class BaseApiEndpoint
   interface BaseAssembler
-  interface BaseResource
-  interface BaseResponse
+  class "operations-page.css" as OperationsPage <<stylesheet>>
+  class localIsoDate <<function>>
 }
 
 package "iam.application" {
   class IamStore {
-    +currentUserId()
-    +currentLaboratoryId()
-    +isSignedIn()
+    +requireLaboratoryId(): number
+    +canManageQuality: Signal<boolean>
   }
 }
 
-package "laboratory.application" {
-  class LaboratoryStore {
-    +products
-    +rawMaterials
-    +loadProducts(laboratoryId: number): void
-    +loadRawMaterials(laboratoryId: number): void
+package "laboratory" {
+  class EnvironmentStore {
+    +preferredEnvironment(usage?, scope?): Environment
+    +rememberEnvironment(id, scope?): void
+  }
+  class EnvironmentSelector <<component>>
+  class LaboratoryApi {
+    +getStaff(laboratoryId)
+  }
+}
+
+package "inventory.infrastructure" {
+  class InventoryApi {
+    +materials(lab, environmentId, stockStatus?)
+    +receipts(lab, environmentId, material, usable?)
+  }
+}
+
+package "equipment.infrastructure" {
+  class EquipmentApi {
+    +getEquipment(labId)
   }
 }
 
 package "batch.domain.model" {
+  class PharmaceuticalProduct {
+    +id: number
+    +laboratoryId: number
+    +environmentId: number | null
+    +code: string
+    +name: string
+    +description: string | null
+    +specifications: string
+    +active: boolean
+  }
   class Batch {
     +id: number
     +labId: number
+    +environmentId: number | null
     +productId: number
     +productName: string
     +batchNumber: string
     +quantity: number
     +unit: string
-    +status: "PENDING | IN_PROGRESS | RELEASED | REJECTED"
+    +status: BatchStatus
     +startDate: string
     +endDate?: string
     +notes?: string
-    +createdAt: string
+    +containerMonitorId: number | null
+    +isOpen: boolean
+    +detailLink: route | null
   }
-
-  class RawMaterialUsage {
-    +id: number
+  class RawMaterialUsage
+  interface EquipmentUsage
+  interface StaffParticipation
+  interface BatchTraceability {
+    +batch: Batch
+    +product
+    +rawMaterials: TracedRawMaterialUsage[]
+    +equipment: EquipmentUsage[]
+    +staff: StaffParticipation[]
+    +release: ReleaseEvidence | null
+    +rejection: RejectionEvidence | null
+    +container: BatchContainer | null
+  }
+  interface BatchContainer {
     +batchId: number
-    +rawMaterialId: number
-    +rawMaterialName: string
-    +inventoryReceiptId: number | null
-    +stockBefore: number | null
-    +stockAfter: number | null
-    +quantityUsed: number
-    +unit: string
-    +usageDate: string
-    +createdAt: string
+    +containerMonitorId: number
+    +containerName: string | null
+    +environmentId: number
+    +assignedBy: number
+    +assignedAt: string
   }
-
-  interface CreateBatchCommand {
-    +labId: number
-    +productId: number
-    +batchNumber: string
-    +quantity: number
-    +unit: string
-    +startDate: string
-    +notes?: string
-  }
-
-  interface ReleaseBatchCommand {
-    +releaseDate: string
-    +notes: string
-  }
-
-  interface RejectBatchCommand {
-    +rejectionDate: string
-    +reason: string
-  }
-
-  interface LinkRawMaterialCommand {
-    +rawMaterialId: number
-    +quantityUsed: number
-  }
+  interface CreateProductCommand
+  interface CreateBatchCommand
+  interface ReleaseBatchCommand
+  interface RejectBatchCommand
+  interface RegisterRawMaterialUsageCommand
 }
 
-package "batch.application" {
-  class BatchStore {
-    -api: BatchApi
-    -_batches
-    -_currentBatchUsage
-    -_selectedBatch
-    -_isLoading
-    -_error
-    -_successMsg
-
-    +batches
-    +currentBatchUsage
-    +selectedBatch
-    +isLoading
-    +error
-    +successMsg
-    +pendingBatches
-    +finishedBatches
-
-    +loadBatchById(batchId: number): void
-    +loadBatches(labId: number): void
-    +createBatch(command: CreateBatchCommand): void
-    +releaseBatch(batchId: number, command: ReleaseBatchCommand): void
-    +rejectBatch(batchId: number, command: RejectBatchCommand): void
-    +loadBatchUsage(batchId: number): void
-    +linkMaterial(batchId: number, command: LinkRawMaterialCommand): void
-    +clearMessages(): void
-  }
-}
+PharmaceuticalProduct ..|> BaseEntity
+Batch ..|> BaseEntity
+BatchTraceability --> Batch
+BatchTraceability --> EquipmentUsage
+BatchTraceability --> StaffParticipation
+BatchTraceability --> "0..1" BatchContainer
 
 package "batch.infrastructure" {
   class BatchApi {
-    -_batchEndpoint: BatchApiEndpoint
-    -_usageEndpoint: RawMaterialUsageApiEndpoint
-
-    +getBatchById(batchId: number)
-    +getBatches(labId: number)
-    +createBatch(request: CreateBatchRequest)
-    +releaseBatch(batchId: number, request: ReleaseBatchRequest)
-    +rejectBatch(batchId: number, request: RejectBatchRequest)
-    +getRawMaterialUsage(batchId: number)
-    +linkRawMaterial(batchId: number, request: LinkRawMaterialRequest)
+    +getProducts(lab, environmentId)
+    +getProduct(lab, environmentId, productId)
+    +createProduct(lab, environmentId, request)
+    +getBatches(lab)
+    +getProductBatches(path)
+    +getBatch(path, batchId)
+    +createBatch(path, request)
+    +releaseBatch(path, batchId, request)
+    +rejectBatch(path, batchId, request)
+    +registerRawMaterialUsage(path, batchId, request)
+    +registerEquipmentUsage(path, batchId, equipmentId)
+    +registerStaffParticipation(path, batchId, staffId)
+    +getTraceability(path, batchId)
+    +assignContainer(path, batchId, containerMonitorId)
+    +getRawMaterialUsages(lab, environmentId, rawMaterialId)
+    +getMaterialHistory(laboratoryId, legacyRawMaterialId)
   }
-
-  class BatchApiEndpoint {
-    +getBatchById(batchId: number)
-    +getBatchesByLab(labId: number)
-    +createBatch(request: CreateBatchRequest)
-    +releaseBatch(batchId: number, request: ReleaseBatchRequest)
-    +rejectBatch(batchId: number, request: RejectBatchRequest)
+  interface BatchPath {
+    +laboratoryId: number
+    +environmentId: number
+    +productId: number
   }
-
-  class RawMaterialUsageApiEndpoint {
-    +getUsageByBatch(batchId: number)
-    +linkRawMaterial(batchId: number, request: LinkRawMaterialRequest)
-  }
-
+  class ProductApiEndpoint
+  class BatchApiEndpoint
+  class RawMaterialUsageApiEndpoint
+  class ProductAssembler
   class BatchAssembler
   class RawMaterialUsageAssembler
-
-  interface BatchResource {
-    +id: number
-    +labId: number
-    +productId: number
-    +productName: string
-    +batchNumber: string
-    +quantity: number
-    +unit: string
-    +status: string
-    +startDate: string
-    +endDate?: string
-    +notes?: string
-    +createdAt?: string
-  }
-
-  interface BatchesResponse {
-    +batches: BatchResource[]
-  }
-
-  interface RawMaterialUsageResource {
-    +id: number
-    +batchId: number
-    +rawMaterialId: number
-    +rawMaterialName: string
-    +quantityUsed: number
-    +unit: string
-    +usageDate: string
-    +createdAt?: string
-  }
-
-  interface RawMaterialUsagesResponse {
-    +rawMaterialUsages: RawMaterialUsageResource[]
-  }
-
-  interface CreateBatchRequest {
-    +labId: number
-    +productId: number
-    +batchNumber: string
-    +quantity: number
-    +unit: string
-    +startDate: string
-    +notes?: string
-  }
-
-  interface ReleaseBatchRequest {
-    +releaseDate: string
-    +notes: string
-  }
-
-  interface RejectBatchRequest {
-    +rejectionDate: string
-    +reason: string
-  }
-
-  interface LinkRawMaterialRequest {
-    +rawMaterialId: number
-    +quantityUsed: number
-  }
 }
-
-package "batch.presentation" {
-  class BatchRoutes
-
-  class BatchList {
-    +displayedColumns: string[]
-    +ngOnInit(): void
-    +onRefresh(): void
-    +getStatusClass(status: string): string
-    +getStatusKey(status: string): string
-  }
-
-  class BatchForm {
-    +units: string[]
-    +batchForm
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class BatchDetail {
-    +batchId: number
-    +ngOnInit(): void
-    +currentBatch
-    +getStatusClass(status?: string): string
-    +getStatusKey(status?: string): string
-  }
-
-  class BatchReleaseForm {
-    +releaseForm
-    +batchId: number
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class BatchRejectForm {
-    +rejectForm
-    +batchId: number
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class RawMaterialUsageComponent {
-    +batchId: number
-    +usageForm
-    +displayedColumns: string[]
-    +ngOnInit(): void
-    +onAddMaterial(): void
-  }
-}
-
-Batch ..|> BaseEntity
-RawMaterialUsage ..|> BaseEntity
 
 BatchApi --|> BaseApi
-BatchApiEndpoint --|> BaseApiEndpoint
-RawMaterialUsageApiEndpoint --|> BaseApiEndpoint
-
-BatchAssembler ..|> BaseAssembler
-RawMaterialUsageAssembler ..|> BaseAssembler
-
-BatchResource ..|> BaseResource
-BatchesResponse ..|> BaseResponse
-RawMaterialUsageResource ..|> BaseResource
-RawMaterialUsagesResponse ..|> BaseResponse
-
-BatchStore --> BatchApi
-
-BatchStore ..> Batch
-BatchStore ..> RawMaterialUsage
-BatchStore ..> CreateBatchCommand
-BatchStore ..> ReleaseBatchCommand
-BatchStore ..> RejectBatchCommand
-BatchStore ..> LinkRawMaterialCommand
-
+BatchApi --> ProductApiEndpoint
 BatchApi --> BatchApiEndpoint
 BatchApi --> RawMaterialUsageApiEndpoint
-
+ProductApiEndpoint --|> BaseApiEndpoint
+BatchApiEndpoint --|> BaseApiEndpoint
+RawMaterialUsageApiEndpoint --|> BaseApiEndpoint
+ProductApiEndpoint --> ProductAssembler
 BatchApiEndpoint --> BatchAssembler
 RawMaterialUsageApiEndpoint --> RawMaterialUsageAssembler
+ProductAssembler ..|> BaseAssembler
+BatchAssembler ..|> BaseAssembler
+RawMaterialUsageAssembler ..|> BaseAssembler
+BatchApiEndpoint ..> BatchPath
+note right of BatchApiEndpoint
+  /laboratories/{laboratoryId}/environments/{environmentId}
+  /products/{productId}/batches[/{batchId}[/releases|/rejections|
+  /equipment-usages|/staff-participations|/traceability|
+  /container-assignment (PUT)]]
+end note
 
-BatchApiEndpoint ..> CreateBatchRequest
-BatchApiEndpoint ..> ReleaseBatchRequest
-BatchApiEndpoint ..> RejectBatchRequest
-RawMaterialUsageApiEndpoint ..> LinkRawMaterialRequest
+package "batch.application" {
+  class BatchStore <<root>> {
+    +batches: Signal<Batch[]>
+    +productBatches: Signal<Batch[]>
+    +selectedBatch: Signal<Batch>
+    +traceability: Signal<BatchTraceability>
+    +canDecide: Signal<boolean>
+    +loadBatches(labId)
+    +loadProductBatches(path)
+    +loadBatch(path, batchId)
+    +createBatch(path, command)
+    +releaseBatch(path, batchId, command)
+    +rejectBatch(path, batchId, command)
+    +registerEquipment(path, batchId, equipmentId)
+    +registerStaff(path, batchId, staffId)
+    +assignContainer(path, batchId, containerMonitorId)
+  }
+  class ProductStore <<component scoped>> {
+    +products: Signal<PharmaceuticalProduct[]>
+    +product: Signal<PharmaceuticalProduct>
+    +canManage: Signal<boolean>
+    +load(environmentId)
+    +loadProduct(environmentId, productId)
+    +create(environmentId, command)
+  }
+  class RawMaterialConsumptionStore <<component scoped>> {
+    +materials
+    +lots
+    +selectedLot
+    +selectEnvironment(environmentId)
+    +selectMaterial(materialId)
+    +consume(path, batchId, amount): Promise<boolean>
+  }
+  class batchError <<function>>
+}
 
-BatchAssembler ..> Batch
-BatchAssembler ..> BatchResource
-RawMaterialUsageAssembler ..> RawMaterialUsage
-RawMaterialUsageAssembler ..> RawMaterialUsageResource
+BatchStore --> BatchApi
+BatchStore --> IamStore
+ProductStore --> BatchApi
+ProductStore --> IamStore
+RawMaterialConsumptionStore --> InventoryApi
+RawMaterialConsumptionStore --> BatchApi
+note bottom of RawMaterialConsumptionStore
+  Reuses the operationId while retrying the same consumption;
+  Inventory decides lot eligibility and available stock.
+end note
 
+package "batch.presentation" {
+  class BatchHome
+  class ProductCatalog
+  class ProductForm
+  class ProductDetail
+  class BatchList
+  class BatchForm
+  class BatchDetail
+  class BatchReleaseForm
+  class BatchRejectForm
+  class RawMaterialUsageComponent
+  class BatchParticipants
+  class BatchTraceabilityView
+  class BatchStorage <<component>> {
+    #storageAreas: Signal<StorageArea[]>
+    #container: Signal<BatchContainer | null>
+    #storeBatch(): Promise<void>
+  }
+  class BatchRedirect
+  class BatchRoutes
+}
+
+BatchHome --> EnvironmentStore
+ProductCatalog --> ProductStore
+ProductCatalog --> EnvironmentSelector
+ProductForm --> ProductStore
+ProductDetail --> ProductStore
+ProductDetail --> BatchStore
 BatchList --> BatchStore
-BatchList --> IamStore
-
 BatchForm --> BatchStore
-BatchForm --> LaboratoryStore
-BatchForm --> IamStore
-
 BatchDetail --> BatchStore
-BatchDetail --> RawMaterialUsageComponent
-
+BatchDetail *-- RawMaterialUsageComponent
+BatchDetail *-- BatchParticipants
+BatchDetail *-- BatchTraceabilityView
+BatchDetail *-- BatchStorage
 BatchReleaseForm --> BatchStore
 BatchRejectForm --> BatchStore
-
-RawMaterialUsageComponent --> BatchStore
-RawMaterialUsageComponent --> ReceiptConsumptionStore
-
-BatchRoutes ..> BatchList
-BatchRoutes ..> BatchForm
-BatchRoutes ..> BatchDetail
-BatchRoutes ..> BatchReleaseForm
-BatchRoutes ..> BatchRejectForm
-
-package "inventory.application" <<External>> {
-  class ReceiptConsumptionStore {
-    +loadMaterials()
-    +selectMaterial(material)
-    +consume(batchId, amount): Promise<boolean>
-  }
-}
-note bottom of RawMaterialUsageComponent
-  Reads usage history through BatchStore.
-  Writes consumption through Inventory ReceiptConsumptionStore.
-  The legacy linkMaterial API is retained but its backend POST returns 410.
+RawMaterialUsageComponent --> RawMaterialConsumptionStore
+RawMaterialUsageComponent --> EnvironmentSelector
+BatchParticipants --> BatchStore
+BatchParticipants --> EquipmentApi
+BatchParticipants --> LaboratoryApi
+BatchParticipants --> IamStore
+note bottom of BatchParticipants
+  Quality managers add any active operator; an operator can only assign themselves.
+  Auditors only consult the batch (no usage or participation forms).
 end note
+BatchTraceabilityView --> BatchStore
+BatchStorage --> BatchStore
+BatchStorage --> EquipmentApi
+BatchStorage --> EnvironmentStore
+BatchStorage --> IamStore
+note bottom of BatchStorage
+  Storage tab (US78, US79): operational container monitors grouped by
+  PRODUCT_STORAGE environment; auditors only see the current container.
+  "View container conditions" -> /tracking/history?environmentId=&deviceId=.
+end note
+BatchRedirect --> BatchApi
+BatchForm ..> localIsoDate
+BatchReleaseForm ..> localIsoDate
+BatchRejectForm ..> localIsoDate
+ProductCatalog ..> OperationsPage
+BatchDetail ..> OperationsPage
+
+note bottom of BatchRoutes
+  /batches -> preferred production environment
+  /batches/environments/:environmentId/products[/new|/:productId]
+  .../products/:productId/batches/new
+  .../batches/:batchId[/release|/reject]
+  /batches/batch-list and /batches/batch-detail/:id (resolves the full path)
+end note
+
 @enduml
