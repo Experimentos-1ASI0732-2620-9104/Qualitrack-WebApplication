@@ -1,163 +1,148 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
-
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartData, ChartOptions } from 'chart.js';
 
 import { RaStore } from '../../../application/ra.store';
-import { TrendDirection } from '../../../domain/model/deviation-trend.entity';
-import { EquipmentStore } from '../../../../equipment/application/equipment.store';
-import { IamStore } from '../../../../iam/application/iam.store';
+import { DeviationTrend, ReadingState, TrendDirection } from '../../../domain/model/deviation-trend.entity';
+import { lastDays } from '../../../domain/model/indicator-period';
+import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
+import { EnvironmentSelector } from '../../../../laboratory/presentation/components/environment-selector/environment-selector';
+
+/** Lengths of the period offered, in days; the platform accepts up to 31. */
+const PERIOD_DAYS = [1, 7, 31] as const;
+
+const STATE_COLORS: Record<ReadingState, string> = { NORMAL: '#158378', WARNING: '#c08a00', CRITICAL: '#c62828' };
 
 /**
- * Component responsible for visualizing historical deviation trends for specific equipment.
- *
- * @remarks
- * In the presentation layer, this component subscribes to the reactive state managed
- * by {@link RaStore} to display tabular trend analysis for equipment process parameters.
- * It highlights measurements that breach their configured operational thresholds.
- *
- * When used directly as a routed view, it loads the laboratory equipment list and
- * allows the user to select the equipment to analyze.
+ * Deviation indicators of an environment (US94): for each device and variable, the time in range, the deviations and
+ * the critical deviations of the period, calculated by the platform from the evaluated readings, with their chart.
  */
 @Component({
   selector: 'app-deviation-trend-chart',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TranslateModule,
-    MatCardModule,
-    MatTableModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatSelectModule,
-  ],
+  imports: [DecimalPipe, TranslateModule, MatButtonModule, MatButtonToggleModule, MatIconModule,
+    MatProgressSpinnerModule, BaseChartDirective, EnvironmentSelector],
   templateUrl: './deviation-trend-chart.html',
-  styleUrl: './deviation-trend-chart.css',
+  styleUrls: ['../../../../shared/presentation/styles/operations-page.css', '../reporting-views.css'],
 })
 export class DeviationTrendChartComponent implements OnInit {
-  /**
-   * The application store managing the state for the Reporting and Analysis bounded context.
-   */
   protected readonly store = inject(RaStore);
+  protected readonly environments = inject(EnvironmentStore);
+  private readonly translate = inject(TranslateService);
+  private readonly language = toSignal(this.translate.onLangChange, { initialValue: null });
 
-  /**
-   * Store used to load equipment available for the current laboratory.
-   */
-  protected readonly equipmentStore = inject(EquipmentStore);
+  protected readonly periods = PERIOD_DAYS;
+  protected readonly days = signal<number>(7);
+  protected readonly environmentId = signal<number | null>(null);
+  private readonly selectedKey = signal<string | null>(null);
 
-  /**
-   * Store used to retrieve the authenticated laboratory context.
-   */
-  private readonly iamStore = inject(IamStore);
+  /** Indicator drawn in the chart: the selected one, or the first of the environment. */
+  protected readonly activeTrend = computed(() => {
+    const trends = this.store.deviationTrends();
+    return trends.find((trend) => this.key(trend) === this.selectedKey()) ?? trends[0] ?? null;
+  });
 
-  /**
-   * Column identifiers displayed in the trend data table.
-   */
-  protected readonly displayedColumns = [
-    'timestamp',
-    'recordedValue',
-    'lowerThreshold',
-    'upperThreshold',
-    'status',
-  ];
+  protected readonly chartData = computed<ChartData<'line'>>(() => {
+    this.language();
+    const trend = this.activeTrend();
+    if (!trend) return { datasets: [] };
+    const points = trend.dataPoints.map((point) => ({ x: Date.parse(point.timestamp), y: point.recordedValue }));
+    const colors = trend.dataPoints.map((point) => point.state ? STATE_COLORS[point.state] : '#7d8f96');
+    return {
+      datasets: [{
+        label: this.translate.instant('tracking.metrics.' + trend.parameterName),
+        data: points, borderColor: '#8fa7ae', borderWidth: 1.5, tension: 0,
+        pointRadius: 3, pointBackgroundColor: colors, pointBorderColor: colors,
+      }],
+    };
+  });
 
-  /**
-   * The unique numeric identifier of the equipment to analyze.
-   *
-   * @remarks
-   * This value may be provided by a parent component. If no input is provided,
-   * the user can select an equipment from the local selector.
-   */
-  @Input() equipmentId: number = 0;
+  protected readonly chartOptions = computed<ChartOptions<'line'>>(() => {
+    this.language();
+    const trend = this.activeTrend();
+    const unit = trend?.unit ?? '';
+    return {
+      responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: (items) => this.formatDate(items[0].parsed.x ?? 0),
+          label: (item) => {
+            const state = trend?.dataPoints[item.dataIndex]?.state;
+            const condition = state ? ` · ${this.translate.instant('tracking.states.' + state)}` : '';
+            return `${item.parsed.y} ${unit}${condition}`;
+          },
+        } },
+      },
+      scales: {
+        x: { type: 'linear', grid: { display: false },
+          ticks: { maxTicksLimit: 6, maxRotation: 0, callback: (value) => this.formatDate(Number(value)) } },
+        y: { title: { display: true, text: unit } },
+      },
+    };
+  });
 
-  /**
-   * Reactive signal holding the currently selected equipment numeric identifier.
-   */
-  protected readonly selectedEquipmentId = signal<number>(0);
-
-  /**
-   * Retrieves the current laboratory ID from the authenticated IAM session.
-   *
-   * @returns The numeric laboratory identifier used to load equipment options.
-   */
-  private get currentLaboratoryId(): number {
-    return this.iamStore.requireLaboratoryId();
+  async ngOnInit(): Promise<void> {
+    this.store.loadDevices();
+    if (!this.environments.loaded()) await this.environments.loadEnvironments();
+    const preferred = this.environments.preferredEnvironment(undefined, 'tracking');
+    if (preferred) this.changeEnvironment(preferred.id);
   }
 
-  /**
-   * Lifecycle hook that initializes the component and loads selectable equipment.
-   */
-  ngOnInit(): void {
-    this.equipmentStore.loadEquipment(this.currentLaboratoryId);
-
-    this.selectedEquipmentId.set(Number(this.equipmentId) || 0);
-
-    if (this.selectedEquipmentId()) {
-      this.loadTrends();
-    }
+  protected changeEnvironment(environmentId: number): void {
+    this.environments.rememberEnvironment(environmentId, 'tracking');
+    this.environmentId.set(environmentId);
+    this.reload();
   }
 
-  /**
-   * Handles equipment selection from the view selector.
-   *
-   * @param equipmentId The selected equipment identifier
-   */
-  protected onEquipmentSelected(equipmentId: number): void {
-    this.selectedEquipmentId.set(Number(equipmentId) || 0);
-    this.loadTrends();
+  protected changePeriod(days: number): void {
+    this.days.set(days);
+    this.reload();
   }
 
-  /**
-   * Loads trend data for the currently selected equipment.
-   *
-   * @remarks
-   * The method skips the request when no valid equipment ID is available.
-   */
-  protected loadTrends(): void {
-    const equipmentId = this.selectedEquipmentId();
-    if (!equipmentId) return;
-
-    this.store.loadDeviationTrends(equipmentId);
+  protected reload(): void {
+    const environmentId = this.environmentId();
+    if (environmentId === null) return;
+    this.store.loadDeviationTrends(environmentId, lastDays(this.days()));
   }
 
-  /**
-   * Resolves the Material icon name based on the detected trend direction.
-   *
-   * @param direction - The detected trend direction
-   * @returns The corresponding Material Design icon identifier
-   */
-  protected getTrendIcon(direction: TrendDirection): string {
+  protected select(trend: DeviationTrend): void {
+    this.selectedKey.set(this.key(trend));
+  }
+
+  protected isActive(trend: DeviationTrend): boolean {
+    const active = this.activeTrend();
+    return !!active && this.key(active) === this.key(trend);
+  }
+
+  protected deviceLabel(deviceId: number): string {
+    return this.store.deviceName(deviceId) ?? `#${deviceId}`;
+  }
+
+  protected trendIcon(direction: TrendDirection): string {
     switch (direction) {
       case 'INCREASING':
         return 'trending_up';
       case 'DECREASING':
         return 'trending_down';
-      case 'STABLE':
       default:
         return 'trending_flat';
     }
   }
 
-  /**
-   * Evaluates whether a specific measurement falls outside its acceptable thresholds.
-   *
-   * @param value - The recorded measurement value
-   * @param min - The lower acceptable threshold bound
-   * @param max - The upper acceptable threshold bound
-   * @returns `true` when the value is outside the accepted range; otherwise `false`
-   */
-  protected isDeviated(value: number, min: number, max: number): boolean {
-    return value < min || value > max;
+  private key(trend: DeviationTrend): string {
+    return `${trend.equipmentId}|${trend.parameterName}|${trend.unit ?? ''}`;
+  }
+
+  private formatDate(value: number): string {
+    return new Intl.DateTimeFormat(this.translate.currentLang || 'en', { dateStyle: 'short', timeStyle: 'short' })
+      .format(new Date(value));
   }
 }
