@@ -31,11 +31,6 @@ export interface NotificationPreferenceResource extends BaseResource {
   emailEnabled: boolean;
 
   /**
-   * Status of the SMS notification channel.
-   */
-  smsEnabled: boolean;
-
-  /**
    * Status of the in-app notification channel.
    */
   inAppEnabled: boolean;

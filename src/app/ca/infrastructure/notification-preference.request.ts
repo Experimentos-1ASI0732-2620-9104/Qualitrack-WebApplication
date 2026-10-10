@@ -13,7 +13,6 @@ import { AlertSeverity } from '../domain/model/deviation-alert.entity';
  * ```typescript
  * const updateRequest: UpdateNotificationPreferenceRequest = {
  *   emailEnabled: true,
- *   smsEnabled: false,
  *   inAppEnabled: true,
  *   minimumSeverity: 'CRITICAL'
  * };
@@ -24,11 +23,6 @@ export interface UpdateNotificationPreferenceRequest {
    * New status for email notification delivery.
    */
   emailEnabled: boolean;
-
-  /**
-   * New status for SMS notification delivery.
-   */
-  smsEnabled: boolean;
 
   /**
    * New status for in-app notification delivery.

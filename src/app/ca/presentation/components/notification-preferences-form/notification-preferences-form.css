@@ -1,0 +1,44 @@
+.preferences {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toggle .hint {
+  margin: 4px 0 0 52px;
+  color: #5c7079;
+  font-size: 13px;
+}
+
+.severity {
+  max-width: 420px;
+  margin-top: 4px;
+}
+
+.error,
+.success {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 4px solid;
+}
+
+.error {
+  background: #fff0f0;
+  color: #9d2424;
+}
+
+.success {
+  background: #e7f5ef;
+  color: #19664e;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 560px) {
+  .toggle .hint {
+    margin-left: 0;
+  }
+}

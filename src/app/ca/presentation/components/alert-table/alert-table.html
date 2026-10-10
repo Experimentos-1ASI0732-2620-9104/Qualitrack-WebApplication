@@ -1,0 +1,54 @@
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>{{ 'ca-alerts.fields.detected' | translate }}</th>
+      <th>{{ 'ca-alerts.fields.origin' | translate }}</th>
+      <th>{{ 'ca-alerts.fields.parameter' | translate }}</th>
+      <th>{{ 'ca-alerts.fields.severity' | translate }}</th>
+      <th>{{ 'common.status' | translate }}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (alert of alerts(); track alert.id) {
+      <tr>
+        <td>
+          <strong>{{ alert.timestamp | date: 'short' }}</strong>
+          @if (alert.deviationCount > 1 && alert.lastDetectedAt) {
+            <small>{{ 'ca-alerts.fields.last-deviation' | translate }}: {{ alert.lastDetectedAt | date: 'short' }}</small>
+          }
+        </td>
+        <td [attr.data-label]="'ca-alerts.fields.origin' | translate">
+          <strong>{{ (alert.origin ? 'ca-alerts.origin.' + alert.origin : 'ca-alerts.origin.EQUIPMENT') | translate }}</strong>
+          <small>{{ store.deviceName(alert.equipmentId) ?? '#' + alert.equipmentId }}</small>
+        </td>
+        <td [attr.data-label]="'ca-alerts.fields.parameter' | translate">
+          <strong>{{ variable(alert.parameterName) }}</strong>
+          <small>{{ alert.recordedValue | number: '1.0-2' }} {{ alert.unit }} · {{ 'ca-alerts.fields.threshold' | translate }}
+            {{ alert.thresholdValue | number: '1.0-2' }} {{ alert.unit }}</small>
+        </td>
+        <td [attr.data-label]="'ca-alerts.fields.severity' | translate">
+          <span class="status" [class.rejected]="alert.severity === 'CRITICAL'">{{ 'ca-alerts.severity.' + alert.severity.toLowerCase() | translate }}</span>
+        </td>
+        <td [attr.data-label]="'common.status' | translate">
+          <span class="status" [class.released]="alert.status === 'RESOLVED'">{{ 'ca-alerts.status.' + alert.status.toLowerCase() | translate }}</span>
+          @if (alert.deviationCount > 1) {
+            <small>{{ 'ca-alerts.fields.deviations' | translate: { count: alert.deviationCount } }}</small>
+          }
+          @if (alert.isNormalized) {
+            <small>{{ 'ca-alerts.normalized' | translate }}</small>
+          }
+        </td>
+        <td>
+          <a [routerLink]="['/alerts/deviation-detail', alert.id]">
+            <mat-icon aria-hidden="true">visibility</mat-icon>{{ 'ca-alerts.actions.view-details' | translate }}
+          </a>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6">{{ emptyKey() | translate }}</td>
+      </tr>
+    }
+  </tbody>
+</table>
