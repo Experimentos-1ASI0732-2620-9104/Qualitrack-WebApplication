@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { Layout } from '../../shared/presentation/components/layout/layout';
 
+const inventoryHome = () =>
+  import('./views/inventory-home/inventory-home').then((m) => m.InventoryHome);
+
 const inventoryCatalogue = () =>
   import('./views/inventory-catalogue/inventory-catalogue').then((m) => m.InventoryCatalogue);
 
@@ -10,17 +13,24 @@ const inventoryDetail = () =>
 const registerMaterial = () =>
   import('./views/register-material/register-material').then((m) => m.RegisterMaterial);
 
+/**
+ * Raw materials are addressed inside an environment, mirroring
+ * /api/v1/laboratories/{laboratoryId}/environments/{environmentId}/raw-materials.
+ */
 const inventoryRoutes: Routes = [
   {
     path: '',
     component: Layout,
     children: [
-      { path: 'inventory-catalogue', loadComponent: inventoryCatalogue },
-      { path: 'register-material', loadComponent: registerMaterial },
-      { path: 'inventory-detail/:id', loadComponent: inventoryDetail },
-      // Preserve links created before the route naming was aligned.
-      { path: 'materials/:id', redirectTo: 'inventory-detail/:id', pathMatch: 'full' },
-      { path: '', redirectTo: 'inventory-catalogue', pathMatch: 'full' },
+      { path: '', loadComponent: inventoryHome, pathMatch: 'full' },
+      { path: 'environments/:environmentId/raw-materials', loadComponent: inventoryCatalogue },
+      { path: 'environments/:environmentId/raw-materials/new', loadComponent: registerMaterial },
+      { path: 'environments/:environmentId/raw-materials/:rawMaterialId', loadComponent: inventoryDetail },
+      // Links created before raw materials were scoped to environments open the environment picker.
+      { path: 'inventory-catalogue', redirectTo: '', pathMatch: 'full' },
+      { path: 'register-material', redirectTo: '', pathMatch: 'full' },
+      { path: 'inventory-detail/:id', redirectTo: '', pathMatch: 'full' },
+      { path: 'materials/:id', redirectTo: '', pathMatch: 'full' },
     ],
   },
 ];

@@ -1,5 +1,5 @@
-<main class="inventory-page">
-  <a routerLink="/inventory">{{ 'inventory.title' | translate }}</a>
+<main class="operations-page">
+  <a [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials']">{{ 'inventory.title' | translate }}</a>
   @if (store.error()) {
     <p class="error" role="alert">{{ store.error() | translate }}</p>
   }
@@ -19,12 +19,16 @@
         <button mat-stroked-button (click)="load()" [disabled]="store.loading() || store.saving()">
           <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
         </button>
-        <button mat-stroked-button (click)="edit()" [disabled]="store.saving()">
-          <mat-icon>edit</mat-icon>{{ 'inventory.edit' | translate }}
-        </button>
-        <button mat-flat-button (click)="receiving.set(!receiving())" [disabled]="store.saving()">
-          <mat-icon>add</mat-icon>{{ 'inventory.newReceipt' | translate }}
-        </button>
+        @if (store.canReview()) {
+          <button mat-stroked-button (click)="edit()" [disabled]="store.saving()">
+            <mat-icon>edit</mat-icon>{{ 'inventory.edit' | translate }}
+          </button>
+        }
+        @if (store.canOperate()) {
+          <button mat-flat-button (click)="receiving.set(!receiving())" [disabled]="store.saving()">
+            <mat-icon>add</mat-icon>{{ 'inventory.newReceipt' | translate }}
+          </button>
+        }
       </div>
     </header>
     <section class="summary-strip">
@@ -41,10 +45,10 @@
         ><strong>{{ material.minimumStock | number: '1.0-3' }} {{ material.unit }}</strong>
       </div>
     </section>
-    @if (affectedBatches().length) {
+    @if (store.affectedBatches().length) {
       <section class="notice">
         <h2>{{ 'inventory.affectedBatches' | translate }}</h2>
-        @for (id of affectedBatches(); track id) {
+        @for (id of store.affectedBatches(); track id) {
           <p>
             <a [routerLink]="['/batches/batch-detail', id]"
               >{{ 'inventory.productBatch' | translate }} #{{ id }}</a
@@ -198,9 +202,58 @@
         </form>
       </section>
     }
+    @if (storing(); as receipt) {
+      <section class="review" role="region" [attr.aria-label]="'inventory.storeInContainer' | translate">
+        <h2>{{ 'inventory.storeInContainer' | translate }} · {{ receipt.batchNumber }}</h2>
+        @if (store.availableContainers().length) {
+          <form [formGroup]="containerForm" (ngSubmit)="storeInContainer()">
+            <div class="form-grid">
+              <mat-form-field appearance="outline"
+                ><mat-label>{{ 'inventory.container' | translate }}</mat-label
+                ><mat-select formControlName="containerMonitorId">
+                  @for (container of store.availableContainers(); track container.id) {
+                    <mat-option [value]="container.id"
+                      >{{ container.name }} · {{ container.serialNumber }}</mat-option
+                    >
+                  }
+                </mat-select
+                ><mat-error>{{ 'inventory.required' | translate }}</mat-error></mat-form-field
+              >
+            </div>
+            <p class="muted">{{ 'inventory.containerNotice' | translate }}</p>
+            <div class="actions">
+              <button mat-flat-button [disabled]="store.saving()">
+                <mat-icon>inventory</mat-icon>{{ 'inventory.confirmStorage' | translate }}</button
+              ><button
+                mat-button
+                type="button"
+                (click)="storing.set(null)"
+                [disabled]="store.saving()"
+              >
+                {{ 'inventory.cancel' | translate }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <p class="notice">{{ 'inventory.noContainers' | translate }}</p>
+          <div class="actions">
+            <a mat-stroked-button routerLink="/equipments/equipment-list"
+              ><mat-icon>sensors</mat-icon>{{ 'inventory.manageContainers' | translate }}</a
+            ><button mat-button type="button" (click)="storing.set(null)">
+              {{ 'inventory.cancel' | translate }}
+            </button>
+          </div>
+        }
+      </section>
+    }
     <mat-tab-group>
       <mat-tab [label]="'inventory.receipts' | translate"
         ><div class="tab-content">
+          @if (store.storageError()) {
+            <p class="error" role="alert">{{ store.storageError() | translate }}</p>
+          } @else if (store.environmentUsage() !== null && !store.storesInContainers()) {
+            <p class="notice">{{ 'inventory.containerUsageNotice' | translate }}</p>
+          }
           <table class="data-table">
             <thead>
               <tr>
@@ -208,6 +261,7 @@
                 <th>{{ 'inventory.amount' | translate }}</th>
                 <th>{{ 'inventory.available' | translate }}</th>
                 <th>{{ 'inventory.expiresOn' | translate }}</th>
+                <th>{{ 'inventory.container' | translate }}</th>
                 <th>{{ 'inventory.state' | translate }}</th>
               </tr>
             </thead>
@@ -227,6 +281,40 @@
                   </td>
                   <td [attr.data-label]="'inventory.expiresOn' | translate">
                     {{ receipt.expiresOn }}
+                  </td>
+                  <td [attr.data-label]="'inventory.container' | translate">
+                    @if (receipt.containerMonitorId !== null) {
+                      <strong>{{
+                        store.containerName(receipt.containerMonitorId) ?? '#' + receipt.containerMonitorId
+                      }}</strong>
+                      <a
+                        [routerLink]="['/tracking/history']"
+                        [queryParams]="{
+                          environmentId: store.environmentId(),
+                          deviceId: receipt.containerMonitorId,
+                        }"
+                        ><small>{{ 'inventory.viewConditions' | translate }}</small></a
+                      >
+                    } @else {
+                      <small>{{ 'inventory.noContainer' | translate }}</small>
+                    }
+                    @if (store.canOperate() && store.storesInContainers()) {
+                      <div>
+                        <button
+                          mat-button
+                          (click)="startStoring(receipt)"
+                          [disabled]="store.saving()"
+                        >
+                          <mat-icon>inventory</mat-icon
+                          >{{
+                            (receipt.containerMonitorId === null
+                              ? 'inventory.storeInContainer'
+                              : 'inventory.changeContainer'
+                            ) | translate
+                          }}
+                        </button>
+                      </div>
+                    }
                   </td>
                   <td>
                     <span
@@ -253,7 +341,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5">{{ 'inventory.noReceipts' | translate }}</td>
+                  <td colspan="6">{{ 'inventory.noReceipts' | translate }}</td>
                 </tr>
               }
             </tbody>
