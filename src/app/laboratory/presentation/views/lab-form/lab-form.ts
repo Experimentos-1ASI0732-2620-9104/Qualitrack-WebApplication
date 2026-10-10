@@ -57,6 +57,10 @@ export class LabForm {
    * Router used to navigate after user actions.
    */
   private readonly router = inject(Router);
+
+  /**
+   * Store that exposes the authenticated session and its onboarding state.
+   */
   private readonly iam = inject(IamStore);
 
   /**
@@ -77,6 +81,10 @@ export class LabForm {
 
   /**
    * Submits the laboratory form and dispatches a create laboratory command.
+   *
+   * @remarks
+   * Once the laboratory is created, the onboarding state is refreshed and the user
+   * continues the onboarding flow.
    */
   protected onSubmit(): void {
     if (this.form.invalid || this.store.isLoading()) {
@@ -92,7 +100,7 @@ export class LabForm {
   }
 
   /**
-   * Cancels laboratory registration and returns to the laboratory profile.
+   * Cancels laboratory registration and signs the user out.
    */
   protected onCancel(): void {
     this.iam.signOut(this.router);
