@@ -1,5 +1,5 @@
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ErrorHandlingEnabledBaseType } from '../../shared/infrastructure/error-handling-enabled-base-type';
 import { SignUpAssembler } from './sign-up-assembler';
@@ -41,7 +41,9 @@ export class SignUpApiEndpoint extends ErrorHandlingEnabledBaseType {
   signUp(request: SignUpRequest): Observable<SignUpResource> {
     return this.http.post<SignUpResponse>(signUpApiEndpointUrl, request).pipe(
       map((response) => this.assembler.toResourceFromResponse(response)),
-      catchError(this.handleError('Failed to sign up')),
+      // A conflict keeps its status: the username or the e-mail is already registered.
+      catchError((error: HttpErrorResponse) => error.status === 409
+        ? throwError(() => error) : this.handleError('Failed to sign up')(error)),
     );
   }
 }

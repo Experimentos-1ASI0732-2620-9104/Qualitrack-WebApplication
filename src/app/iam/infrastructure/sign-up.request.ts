@@ -24,6 +24,11 @@ export interface SignUpRequest {
   username: string;
 
   /**
+   * The e-mail of the new account, used for the password recovery.
+   */
+  email: string;
+
+  /**
    * The password assigned to the new account.
    */
   password: string;
