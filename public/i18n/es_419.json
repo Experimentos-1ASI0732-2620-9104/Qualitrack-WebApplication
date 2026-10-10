@@ -69,8 +69,26 @@
       "RECEIPT": "Recepción",
       "REVIEW": "Revisión de calidad",
       "CONSUMPTION": "Consumo",
-      "OPENING_BALANCE": "Saldo inicial"
-    }
+      "OPENING_BALANCE": "Saldo inicial",
+      "STORAGE": "Almacenamiento en contenedor"
+    },
+    "noEnvironments": "Aún no hay ambientes registrados",
+    "noEnvironmentsNotice": "Las materias primas se guardan en un ambiente del laboratorio o almacén. Registra un ambiente para empezar el inventario.",
+    "nearExpiry": "Próximos a vencer",
+    "nearExpiryNotice": "Lotes con stock disponible que vencen dentro del periodo de próximo vencimiento de la plataforma (30 días salvo otra configuración).",
+    "nearExpiryEmpty": "No hay lotes próximos a vencer en este ambiente.",
+    "notFound": "La materia prima no está registrada en este ambiente.",
+    "noEnvironment": "Selecciona un ambiente para continuar.",
+    "container": "Contenedor",
+    "noContainer": "Sin contenedor asignado",
+    "storeInContainer": "Guardar en contenedor",
+    "changeContainer": "Cambiar contenedor",
+    "confirmStorage": "Guardar lote",
+    "viewConditions": "Ver condiciones",
+    "containerNotice": "El lote queda guardado en el contenedor monitoreado seleccionado; el cambio se registra como un movimiento de almacenamiento.",
+    "noContainers": "No hay monitores de contenedor operativos ubicados en este ambiente. Registra un monitor de contenedor y ubícalo aquí primero.",
+    "manageContainers": "Ir a equipos",
+    "containerUsageNotice": "Solo los ambientes de almacenamiento de materia prima guardan lotes en contenedores monitoreados. Clasifica el ambiente como almacenamiento de materia prima para usar contenedores."
   },
   "onboarding.no-plans": "Todavía no hay planes de suscripción disponibles. Contacta al administrador del servicio.",
   "operational-metrics": {
@@ -96,13 +114,18 @@
     "loading-data": "Cargando datos…",
     "load-error": "No se pudieron cargar los datos.",
     "system": "Sistema",
-    "batch-telemetry-unavailable": "La telemetría del lote requiere una asociación con equipos que aún no está disponible.",
     "no-status": "Todavía no se ha registrado el estado del equipo.",
-    "no-plans": "Todavía no hay planes de suscripción disponibles."
+    "no-plans": "Todavía no hay planes de suscripción disponibles.",
+    "subscription-paused-title": "Acceso al laboratorio en pausa",
+    "subscription-paused": "Tu laboratorio no tiene una suscripción activa. Pide a tu QA Manager que la renueve e inténtalo nuevamente."
   },
   "home": {
-    "title": "Nos preocupamos por la precisión, aseguramos la calidad.",
-    "content": "Gestión avanzada de datos para entornos operativos de alto riesgo. Asegure el cumplimiento normativo total y la precisión a nivel de laboratorio."
+  "title": "Nos preocupamos por la precisión, aseguramos la calidad.",
+  "content": "Gestión avanzada de datos para entornos operativos de alto riesgo. Asegure el cumplimiento normativo total y la precisión a nivel de laboratorio.",
+  "heroImageAlt": "Dos profesionales farmacéuticas revisando el inventario"
+  },
+  "language-switcher": {
+    "aria-label": "Idioma preferido"
   },
   "auth": {
     "already-have-account": "¿Ya tienes una cuenta?",
@@ -113,7 +136,8 @@
     "auth": {
       "already-have-account": "¿Ya tienes una cuenta?",
       "sign-in": "Iniciar Sesión",
-      "or-create-account": "O crea una cuenta"
+      "or-create-account": "O crea una cuenta",
+      "staff-hint": "Los operarios y auditores inician sesión con la cuenta que les creó su QA Manager."
     },
     "sign-in": {
       "title": "Iniciar Sesión",
@@ -131,7 +155,9 @@
         "username-minlength": "El usuario debe tener al menos 3 caracteres",
         "password-required": "La contraseña es obligatoria",
         "password-minlength": "La contraseña debe tener al menos 6 caracteres"
-      }
+      },
+      "forgot-password": "¿Olvidaste tu contraseña?",
+      "password-reset": "Tu contraseña se cambió. Inicia sesión con la nueva contraseña."
     },
     "sign-up": {
       "title": "Crear Cuenta",
@@ -148,18 +174,135 @@
       "show-password": "Mostrar contraseña",
       "hide-password": "Ocultar contraseña",
       "roles": {
-        "manager": "QA Manager / Supervisor",
-        "operator": "Operador de Laboratorio"
+        "manager": "QA Manager / Supervisor"
       },
       "errors": {
         "username-required": "El usuario es obligatorio",
         "username-minlength": "El usuario debe tener al menos 3 caracteres",
         "password-required": "La contraseña es obligatoria",
-        "password-minlength": "La contraseña debe tener al menos 6 caracteres",
+        "password-minlength": "Usa entre 8 y 72 caracteres",
         "password-strength": "La contraseña debe contener letras y números",
         "confirm-password-required": "La confirmación de contraseña es obligatoria",
-        "password-mismatch": "Las contraseñas no coinciden"
+        "password-mismatch": "Las contraseñas no coinciden",
+        "email-required": "El correo es obligatorio",
+        "email-invalid": "Ingresa un correo válido",
+        "already-registered": "El usuario o el correo ya están registrados."
+      },
+      "email": "Correo electrónico",
+      "email-placeholder": "nombre@laboratorio.com",
+      "email-hint": "Enviaremos a este correo el código de verificación si olvidas tu contraseña."
+    },
+    "change-password": {
+      "title": "Cambia tu contraseña",
+      "subtitle": "Tu cuenta se creó con una contraseña temporal. Elige tu propia contraseña para continuar.",
+      "current": "Contraseña temporal o actual",
+      "new": "Nueva contraseña",
+      "confirm": "Confirma la nueva contraseña",
+      "button": "Cambiar contraseña",
+      "errors": {
+        "required": "Este campo es obligatorio",
+        "length": "Usa entre 8 y 72 caracteres",
+        "strength": "Usa letras y números",
+        "same-password": "La nueva contraseña debe ser distinta de la actual",
+        "mismatch": "Las contraseñas no coinciden",
+        "current-password": "La contraseña actual no es correcta.",
+        "unavailable": "No se pudo cambiar la contraseña. Inténtalo nuevamente."
       }
+    },
+    "password-recovery": {
+      "title": "Recupera tu contraseña",
+      "subtitle": "Ingresa el usuario o el correo de tu cuenta. Enviaremos un código de 6 dígitos al correo de la cuenta.",
+      "code-sent": "Si la cuenta existe y tiene correo, le enviamos un código de 6 dígitos. Vence en {{minutes}} minutos.",
+      "account": "Usuario o correo",
+      "account-placeholder": "Ingresa tu usuario o correo",
+      "send-code": "Enviar código",
+      "code": "Código de verificación",
+      "resend": "Enviar un nuevo código",
+      "change-account": "Usar otra cuenta",
+      "code-resent": "Si la cuenta puede recibir códigos, se envió uno nuevo. Se envía como máximo un código por minuto.",
+      "back": "Volver a iniciar sesión",
+      "errors": {
+        "request": "No se pudo enviar la solicitud. Vuelve a intentarlo.",
+        "invalid-code": "El código no es válido o ya venció. Solicita un nuevo código.",
+        "reset": "No se pudo cambiar la contraseña. Vuelve a intentarlo.",
+        "code-format": "El código tiene 6 dígitos"
+      }
+    }
+  },
+  "profile": {
+    "open": "Mi perfil",
+    "open-named": "Abrir el perfil de {{name}}",
+    "sign-out": "Cerrar sesión",
+    "title": "Mi perfil",
+    "subtitle": "Tus datos personales, tu cuenta y cómo recibes los avisos.",
+    "incomplete": "Agrega tu nombre completo para que tu equipo te reconozca en alertas y lotes.",
+    "updated-at": "Actualizado el {{date}}",
+    "roles": {
+      "ROLE_QA_MANAGER": "Responsable de calidad",
+      "ROLE_LAB_OPERATOR": "Operario",
+      "ROLE_AUDITOR": "Auditor",
+      "ROLE_ADMIN": "Administrador"
+    },
+    "photo": {
+      "alt": "Foto de {{name}}",
+      "add": "Agregar foto",
+      "change": "Cambiar foto",
+      "remove": "Quitar",
+      "remove-confirm": "¿Quitar tu foto de perfil?",
+      "hint": "JPG, PNG o WebP de hasta 2 MB.",
+      "errors": {
+        "type": "Elige una imagen JPG, PNG o WebP.",
+        "size": "La foto no puede superar los 2 MB.",
+        "failed": "No se pudo guardar la foto. Inténtalo de nuevo."
+      }
+    },
+    "personal": {
+      "title": "Datos personales",
+      "full-name": "Nombre completo",
+      "dni": "DNI",
+      "dni-hint": "8 dígitos",
+      "phone": "Teléfono",
+      "location": "Ubicación",
+      "location-hint": "Distrito y ciudad, por ejemplo Miraflores, Lima",
+      "save": "Guardar datos",
+      "saved": "Datos personales guardados.",
+      "errors": {
+        "full-name": "Escribe tu nombre completo (de 2 a 120 caracteres).",
+        "dni": "El DNI tiene 8 dígitos.",
+        "phone": "Usa de 6 a 15 dígitos; puede empezar con +.",
+        "location": "Usa de 2 a 120 caracteres.",
+        "invalid": "Algún dato no es válido. Revísalo."
+      }
+    },
+    "account": {
+      "title": "Cuenta",
+      "subtitle": "El usuario con el que inicias sesión y el correo para recuperar tu contraseña y recibir avisos.",
+      "username": "Usuario",
+      "email": "Correo",
+      "current-password": "Contraseña actual",
+      "current-password-hint": "Confirma el cambio con tu contraseña. Si cambias el usuario, úsalo la próxima vez que inicies sesión.",
+      "save": "Guardar cuenta",
+      "saved": "Cuenta actualizada. Usa tu nuevo usuario la próxima vez que inicies sesión.",
+      "errors": {
+        "username": "Usa de 3 a 80 caracteres.",
+        "email": "Escribe un correo válido.",
+        "taken": "Ese usuario o correo ya lo usa otra cuenta.",
+        "invalid": "La contraseña actual no es correcta o algún dato no es válido."
+      }
+    },
+    "password": {
+      "title": "Contraseña",
+      "current": "Contraseña actual",
+      "hint": "De 8 a 72 caracteres con letras y números",
+      "saved": "Contraseña cambiada."
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "subtitle": "Elige dónde recibir los avisos de alertas y lotes."
+    },
+    "errors": {
+      "load": "No se pudo cargar tu perfil.",
+      "failed": "No se pudo guardar el cambio. Inténtalo de nuevo."
     }
   },
   "common": {
@@ -210,39 +353,41 @@
     "DECREASING": "En Disminución",
     "STABLE": "Estable"
   },
+  "brand": {
+    "go-home": "Ir al inicio",
+    "go-dashboard": "Ir al panel de control"
+  },
   "nav": {
-    "quality-management": "Gestión de Calidad",
-    "home": "Inicio",
-    "dashboard": "Panel de Control",
-    "batches": "Gestión de Lotes",
-    "batch-list": "Lotes de Producción",
-    "batch-form": "Crear Lote",
+    "dashboard": "Panel de control",
+    "batches": "Productos y lotes",
+    "products": "Productos",
+    "batch-list": "Lotes de producción",
     "equipment": "Equipos",
-    "equipment-list": "Catálogo de Equipos",
-    "register-equipment": "Registrar Equipo",
-    "alerts": "Alertas de Cumplimiento",
-    "alert-dashboard": "Panel de Alertas",
-    "alert-history": "Historial de Alertas",
-    "notification-settings": "Configuración de Notificaciones",
+    "equipment-list": "Catálogo de equipos",
+    "register-equipment": "Registrar equipo",
+    "register-device": "Registrar dispositivo IoT",
+    "alerts": "Alertas de cumplimiento",
+    "alert-dashboard": "Alertas activas",
+    "alert-history": "Historial de alertas",
     "reports": "Reportes y KPIs",
-    "kpi-dashboard": "Panel de KPIs",
-    "deviation-trends": "Tendencias de Desviación",
-    "report-generator": "Generador de Reportes",
-    "audit-log": "Registro de Auditoría",
+    "kpi-dashboard": "Resumen ambiental",
+    "deviation-trends": "Indicadores de desviación",
+    "report-generator": "Generador de reportes",
+    "audit-log": "Registro de auditoría",
     "laboratory": "Laboratorio",
-    "lab-profile": "Perfil del Laboratorio",
-    "lab-form": "Crear Laboratorio",
-    "staff-list": "Gestión de Personal",
-    "staff-form": "Registrar Personal",
-    "product-catalog": "Catálogo de Productos Farmacéuticos",
-    "product-form": "Registrar Producto",
-    "raw-material-list": "Inventario de Materias Primas",
-    "raw-material-form": "Registrar Materia Prima",
-    "tracking": "Tracking y Telemetría",
-    "tracking-dashboard": "Panel de Telemetría",
-    "tracking-history": "Historial de Telemetría",
-    "tracking-analysis": "Análisis de Telemetría",
-    "subscription": "Suscripción y Facturación"
+    "lab-profile": "Perfil del laboratorio",
+    "environments": "Ambientes",
+    "staff-list": "Personal",
+    "register-staff": "Registrar personal",
+    "inventory": "Inventario",
+    "raw-material-catalog": "Catálogo de materias primas",
+    "tracking": "Monitoreo y telemetría",
+    "tracking-monitoring": "Monitoreo ambiental",
+    "tracking-history": "Historial de telemetría",
+    "tracking-profiles": "Perfiles ambientales",
+    "subscription": "Suscripción y facturación",
+    "billing-summary": "Resumen de facturación",
+    "subscription-plans": "Planes de suscripción"
   },
   "dashboard": {
     "overview": {
@@ -256,7 +401,6 @@
       "telemetry": "Telemetría de equipos",
       "parameter": "Parámetro",
       "latest": "Última lectura registrada",
-      "no-equipment": "No hay equipos registrados.",
       "no-readings": "No hay lecturas registradas para este equipo.",
       "reading-summary": "{{count}} lecturas recientes · Mín {{min}} {{unit}} · Máx {{max}} {{unit}}",
       "cycle": "Ciclo de facturación",
@@ -285,7 +429,8 @@
         "IN_PROGRESS": "En proceso",
         "RELEASED": "Liberado",
         "REJECTED": "Rechazado"
-      }
+      },
+      "no-devices": "No hay dispositivos IoT registrados."
     },
     "command-center": "Centro de Control QualiTrack",
     "fallback-title": "Operaciones del Laboratorio",
@@ -425,7 +570,6 @@
       "title": "Resumen de Facturación",
       "subtitle": "Revisa tu suscripción activa y el historial de pagos.",
       "current-subscription": "Suscripción Actual",
-      "cancel-subscription": "Cancelar Suscripción",
       "no-active-subscription": "No hay una suscripción activa",
       "no-active-subscription-desc": "Elige un plan para activar la facturación de tu laboratorio.",
       "choose-plan": "Elegir Plan",
@@ -436,7 +580,6 @@
       "start-date": "Fecha de Inicio",
       "started-at": "Inició El",
       "end-date": "Fecha de Fin",
-      "period-ends": "Fin del Periodo",
       "payments-title": "Historial de Pagos",
       "payment-history": "Historial de Pagos",
       "empty-payments": "Aún no se han registrado pagos.",
@@ -448,6 +591,15 @@
         "status": "Estado",
         "provider": "Proveedor",
         "reference": "Referencia"
+      },
+      "cancel-renewal": "Cancelar renovación",
+      "cancel-renewal-confirm": "La suscripción no se renovará: seguirá activa hasta el {{end}} y no se harán nuevos cobros. ¿Cancelar la renovación?",
+      "renewal-cancelled": "La renovación está cancelada. La suscripción sigue activa hasta el {{date}} y no se volverá a cobrar.",
+      "renewal-cancelled-notice": "Se canceló la renovación.",
+      "renews-on": "Se renueva el",
+      "access-until": "Activa hasta",
+      "errors": {
+        "cancel-renewal": "No se pudo cancelar la renovación. Vuelve a intentarlo."
       }
     },
     "status": {
@@ -501,24 +653,30 @@
     }
   },
   "ca-alerts": {
-    "subtitle": "Monitoreo en tiempo real de desviaciones BPM",
     "empty": "No se encontraron alertas de cumplimiento. Todo está dentro de los parámetros BPM.",
     "not-found": "Alerta no encontrada.",
     "kpi": {
-      "unresolved": "Alertas Activas (No Resueltas)",
-      "critical": "Desviaciones Críticas"
+      "critical": "Críticas",
+      "open": "Alertas abiertas",
+      "attending": "En atención"
     },
     "fields": {
-      "timestamp": "Fecha y Hora",
-      "parameter": "Parámetro",
+      "parameter": "Variable",
       "severity": "Severidad",
       "minimum-severity": "Severidad Mínima",
       "recorded": "Valor Registrado",
-      "threshold": "Valor Límite",
-      "equipment": "Equipo",
-      "batch": "Lote",
+      "threshold": "Límite",
       "resolution-notes": "Notas de Resolución",
-      "description": "Descripción"
+      "description": "Descripción",
+      "detected": "Detectada",
+      "origin": "Origen",
+      "last-deviation": "Última desviación",
+      "deviations": "{{count}} desviaciones",
+      "deviations-label": "Desviaciones",
+      "action": "Acción",
+      "trigger": "Condición",
+      "result": "Resultado",
+      "occurred-at": "Ejecutada el"
     },
     "severity": {
       "low": "Baja",
@@ -527,35 +685,105 @@
       "critical": "Crítico"
     },
     "status": {
-      "unresolved": "No Resuelto",
-      "acknowledged": "Reconocida",
-      "resolved": "Resuelto",
+      "unresolved": "Abierta",
+      "acknowledged": "En atención",
+      "resolved": "Resuelta",
       "ignored": "Ignorado"
     },
     "actions": {
-      "settings": "Configurar Alertas",
-      "view-details": "Ver Detalles y Resolver",
-      "resolve": "Marcar como Resuelto"
+      "view-details": "Ver detalle",
+      "resolve": "Resolver alerta",
+      "acknowledge": "Registrar atención",
+      "view-conditions": "Ver condiciones",
+      "email": "Avisar por correo"
     },
     "history": {
-      "title": "Historial de Alertas",
-      "subtitle": "Registro de auditoría completo de todas las desviaciones de calidad"
+      "title": "Historial de alertas",
+      "subtitle": "Todas las alertas del ambiente, incluidas las resueltas.",
+      "empty": "No hay alertas con estos filtros."
     },
     "detail": {
-      "title": "Detalles de la Desviación",
-      "subtitle": "Inspección técnica de la alerta"
+      "alert": "Alerta",
+      "no-environment": "Sin ambiente",
+      "normalized": "La condición volvió a la normalidad el {{date}}; la alerta sigue abierta hasta que alguien la resuelva.",
+      "timeline": "Seguimiento",
+      "detected": "Detectada el {{date}}.",
+      "last-deviation": "Última desviación el {{date}} ({{count}} desviaciones en el incidente).",
+      "acknowledged": "Atendida por el usuario #{{user}} el {{date}}.",
+      "resolved": "Resuelta por el usuario #{{user}} el {{date}}:",
+      "actions-title": "Actuaciones relacionadas",
+      "no-actions": "El monitor del contenedor no registró actuaciones para esta variable durante el incidente.",
+      "no-actions-environment": "Las actuaciones las informan los monitores de contenedor; el dispositivo ambiental no ejecuta acciones.",
+      "resolution-hint": "Describe la acción correctiva (mínimo 10 caracteres).",
+      "resolution-required": "Escribe entre 10 y 500 caracteres."
     },
     "settings": {
-      "title": "Preferencias de Notificación",
-      "subtitle": "Configura cómo y cuándo recibir las alertas del sistema",
-      "channels-title": "Canales de Comunicación",
-      "channels-subtitle": "Selecciona dónde deseas recibir las notificaciones",
-      "in-app": "Notificaciones en la App",
-      "email": "Notificaciones por Correo",
-      "sms": "Alertas por SMS",
-      "threshold-title": "Umbral de Alerta",
-      "threshold-subtitle": "Nivel de severidad mínimo requerido para enviar una notificación",
-      "severity-hint": "Solo se enviarán alertas con esta severidad o superior"
+      "in-app": "Avisos en la campanita",
+      "email": "Avisos por correo",
+      "threshold-title": "Alertas que se avisan",
+      "severity-hint": "Las decisiones sobre los lotes siempre llegan a la campanita.",
+      "in-app-hint": "Lo que pasa con las alertas y los lotes del laboratorio llega a la campanita de la barra superior.",
+      "email-hint": "Un correo cuando una alerta se abre como crítica o pasa a crítica.",
+      "from-warning": "Advertencias y alertas críticas",
+      "only-critical": "Solo alertas críticas",
+      "save": "Guardar preferencias",
+      "saved": "Preferencias de notificación guardadas."
+    },
+    "no-environments": "Las alertas se consultan por ambiente. Registra primero un ambiente y sus dispositivos IoT.",
+    "normalized": "Condición normalizada",
+    "acknowledged": "Se registró la atención de la alerta.",
+    "resolved": "La alerta quedó resuelta.",
+    "errors": {
+      "connection": "No se pudieron cargar las alertas. Revisa tu conexión e inténtalo de nuevo.",
+      "forbidden": "Esta alerta no pertenece a tu laboratorio o tu acceso no permite esta acción.",
+      "failed": "No se pudo completar la solicitud. Inténtalo de nuevo."
+    },
+    "active": {
+      "title": "Alertas activas",
+      "subtitle": "Alertas abiertas del ambiente y de sus contenedores monitoreados, con su origen y severidad.",
+      "empty": "No hay alertas activas en este ambiente."
+    },
+    "origin": {
+      "ENVIRONMENT": "Ambiente",
+      "CONTAINER": "Contenedor",
+      "EQUIPMENT": "Equipo"
+    },
+    "email": {
+      "sent": "Se avisó por correo a {{count}} persona(s).",
+      "no-recipients": "Nadie más del laboratorio tiene activados los avisos por correo.",
+      "failed": "No se pudo enviar el correo. Revisa que el envío de correos esté configurado en la plataforma."
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "open": "Abrir notificaciones",
+    "open-unread": "Abrir notificaciones, {{count}} sin leer",
+    "mark-all": "Marcar todas como leídas",
+    "loading": "Cargando notificaciones",
+    "load-error": "No se pudieron cargar las notificaciones.",
+    "empty": "Aún no tienes notificaciones.",
+    "unread": "Sin leer",
+    "preferences": "Preferencias de notificación",
+    "just-now": "Hace un momento",
+    "someone": "Alguien",
+    "unknown-environment": "un ambiente",
+    "severity": {
+      "LOW": "leve",
+      "WARNING": "de advertencia",
+      "CRITICAL": "crítica"
+    },
+    "level": {
+      "LOW": "leve",
+      "WARNING": "advertencia",
+      "CRITICAL": "crítica"
+    },
+    "types": {
+      "ALERT_OPENED": "Nueva alerta {{severity}} en {{environment}}: {{variable}} en {{value}} {{unit}}.",
+      "ALERT_ESCALATED": "La alerta de {{variable}} en {{environment}} pasó a {{level}}: {{value}} {{unit}}.",
+      "ALERT_ACKNOWLEDGED": "{{actor}} está atendiendo la alerta de {{variable}} en {{environment}}.",
+      "ALERT_RESOLVED": "{{actor}} resolvió la alerta de {{variable}} en {{environment}}.",
+      "BATCH_RELEASED": "{{actor}} liberó el lote {{batch}}.",
+      "BATCH_REJECTED": "{{actor}} rechazó el lote {{batch}}: {{note}}"
     }
   },
   "batches": {
@@ -583,11 +811,19 @@
       "reject": "Rechazar Lote",
       "view": "Ver Trazabilidad",
       "view-detail": "Ver Detalle del Lote"
+    },
+    "all-statuses": "Todos los estados",
+    "no-environment": "Registrado antes de los ambientes; asígnale un ambiente para abrirlo.",
+    "errors": {
+      "connection": "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+      "forbidden": "Tu cuenta no puede realizar esta acción.",
+      "not-found": "No se encontró el lote o el producto en este laboratorio.",
+      "failed": "No se pudo completar la operación."
     }
   },
   "batch-form": {
     "title": "Crear Lote de Producción",
-    "subtitle": "Registra un nuevo ciclo de fabricación para un producto farmacéutico.",
+    "subtitle": "Registra una fabricación del producto. El lote empieza como pendiente.",
     "fields": {
       "product": "Producto Farmacéutico",
       "batch-number": "Número de Lote",
@@ -597,25 +833,30 @@
       "notes": "Notas BPM"
     },
     "placeholders": {
-      "batch-number": "LOT-2026-001",
+      "batch-number": "PB-2026-001",
       "notes": "Agrega observaciones de producción, calidad o instrucciones BPM."
     },
     "hints": {
-      "batch-number": "Formato: LOT-YYYY-NNN"
+      "batch-number": "Único en el laboratorio, por ejemplo PB-2026-001."
     },
     "errors": {
-      "batch-number-format": "El número de lote debe seguir el formato LOT-YYYY-NNN.",
       "quantity-min": "La cantidad debe ser mayor que 0."
-    }
+    },
+    "saved": "Lote registrado."
   },
   "batch-detail": {
     "title": "Detalle del Lote",
     "tabs": {
       "general": "Información General",
-      "materials": "Materias Primas Usadas"
+      "materials": "Materias Primas Usadas",
+      "participants": "Equipos y personal",
+      "traceability": "Trazabilidad",
+      "storage": "Almacenamiento"
     },
     "notes": "Notas BPM",
-    "no-notes": "No hay notas registradas para este lote."
+    "no-notes": "No hay notas registradas para este lote.",
+    "closed-on": "Cerrado el",
+    "closed-notice": "Este lote está cerrado: ya no se pueden agregar materias primas, equipos ni personal."
   },
   "batch-release": {
     "title": "Liberar Lote",
@@ -632,7 +873,10 @@
     },
     "actions": {
       "submit": "Liberar Lote"
-    }
+    },
+    "notice": "La liberación se firma con tu usuario y el lote ya no se podrá modificar.",
+    "quality-only": "Solo los responsables de calidad y los administradores pueden liberar o rechazar lotes.",
+    "saved": "Lote liberado y firmado."
   },
   "batch-reject": {
     "title": "Rechazar Lote",
@@ -649,7 +893,9 @@
     },
     "actions": {
       "submit": "Rechazar Lote"
-    }
+    },
+    "notice": "El motivo se conserva con el lote para la trazabilidad y las auditorías.",
+    "saved": "Lote rechazado."
   },
   "batch-usage": {
     "title": "Registrar Uso de Materia Prima",
@@ -659,7 +905,8 @@
       "raw-material": "Materia Prima",
       "stock": "Stock",
       "quantity-used": "Cantidad Usada",
-      "usage-date": "Fecha de Uso"
+      "usage-date": "Fecha de Uso",
+      "lot": "Lote"
     },
     "actions": {
       "add": "Agregar Material"
@@ -674,11 +921,13 @@
       "failed": "No se pudo confirmar el consumo. Revisa el historial antes de reintentarlo."
     },
     "available": "Disponible: {{stock}} {{unit}}",
-    "saved": "Consumo registrado y stock actualizado."
+    "saved": "Consumo registrado y stock actualizado.",
+    "notice": "Elige el ambiente donde se guarda la materia prima y un lote liberado. Inventario descuenta la cantidad de ese lote.",
+    "no-usable": "Esta materia prima no tiene lotes liberados con stock.",
+    "legacy": "Registrado antes de Inventario"
   },
   "equipment-list": {
-    "title": "Catálogo de Equipos",
-    "subtitle": "Gestión y monitoreo de activos industriales del laboratorio",
+    "title": "Equipos",
     "add-button": "Registrar Equipo",
     "empty": "No se encontraron equipos en este laboratorio",
     "fields": {
@@ -686,10 +935,24 @@
       "type": "Tipo",
       "model": "Modelo",
       "serial": "Número de Serie",
-      "status": "Estado"
+      "status": "Estado",
+      "environment": "Ambiente"
     },
     "actions": {
       "view-detail": "Ver detalle del equipo"
+    },
+    "not-located": "Sin ubicar",
+    "filter": {
+      "label": "Mostrar",
+      "all": "Todos",
+      "equipment": "Equipos",
+      "devices": "Dispositivos IoT"
+    },
+    "search": "Buscar por nombre, modelo, serie o identificador",
+    "summary": {
+      "equipment": "Equipos de proceso",
+      "devices": "Dispositivos IoT",
+      "attention": "En mantenimiento o fuera de servicio"
     }
   },
   "equipment-form": {
@@ -703,7 +966,8 @@
     "errors": {
       "name-minlength": "El nombre del equipo debe tener al menos 3 caracteres",
       "serial-pattern": "Solo se permiten letras, números y guiones"
-    }
+    },
+    "quality-only": "Solo los responsables de calidad y administradores pueden registrar equipos y dispositivos IoT."
   },
   "equipment-detail": {
     "title": "Ficha Técnica",
@@ -712,9 +976,21 @@
       "bpm": "Configuración BPM",
       "maintenance": "Mantenimiento"
     },
-    "fields": {
-      "sensor": "ID Externo del Sensor",
-      "created-at": "Creado En"
+    "requires-location": "Asocia el equipo con un ambiente para registrar cambios de estado y mantenimientos.",
+    "location": {
+      "title": "Ubicación",
+      "hint": "Asocia el equipo con el ambiente donde está instalado.",
+      "move-hint": "Elige otro ambiente si el equipo fue trasladado.",
+      "associate": "Asociar",
+      "move": "Trasladar",
+      "not-recorded": "El dispositivo se registró, pero no se guardó su ambiente."
+    },
+    "status-change": {
+      "title": "Estado operativo",
+      "hint": "El cambio queda registrado en el historial del equipo.",
+      "new-status": "Nuevo estado",
+      "reason": "Motivo (opcional)",
+      "register": "Registrar cambio"
     }
   },
   "bpm-config": {
@@ -730,7 +1006,8 @@
     "placeholders": {
       "parameter": "Ej. Temperatura Interna",
       "unit": "Ej. °C, %, bar, RPM"
-    }
+    },
+    "saved": "Parámetro BPM guardado."
   },
   "maintenance-history": {
     "title": "Historial de Mantenimiento",
@@ -747,34 +1024,30 @@
       "preventive": "Preventivo",
       "corrective": "Correctivo",
       "calibration": "Calibración",
-      "inspection": "Inspección"
+      "inspection": "Inspección",
+      "other": "Otro"
     }
   },
   "maintenance-form": {
     "title": "Registro de Actividad Técnica",
     "subtitle": "Completa los detalles de la intervención realizada",
     "placeholders": {
-      "technician": "Nombre del técnico",
       "description": "Describe la actividad de mantenimiento"
     },
     "errors": {
-      "technician-minlength": "El nombre del técnico debe tener al menos 3 caracteres",
-      "description-maxlength": "La descripción no puede exceder los 500 caracteres"
-    }
-  },
-  "equipment-alert": {
-    "title": "Alertas de Calibración",
-    "subtitle": "Equipos que requieren intervención técnica inmediata",
-    "action-tooltip": "Registrar Calibración",
-    "view-all": "VER TODOS LOS EQUIPOS"
+      "description-maxlength": "La descripción no puede exceder los 1000 caracteres",
+      "future-date": "La fecha del mantenimiento no puede ser futura"
+    },
+    "technician-hint": "Los operarios solo pueden registrar los mantenimientos que realizaron.",
+    "no-technicians": "No hay operarios activos para elegir. Registra primero al personal del laboratorio."
   },
   "equipment-status": {
     "operational": "Operativo",
     "maintenance": "Mantenimiento",
     "out_of_service": "Fuera de Servicio",
-    "calibration_required": "Calibración Requerida",
     "unknown": "Estado Desconocido",
-    "loading": "Cargando equipo..."
+    "loading": "Cargando equipo...",
+    "inactive": "Inactivo"
   },
   "lab-profile": {
     "title": "Perfil del Laboratorio",
@@ -799,34 +1072,63 @@
     "title": "Gestión de Personal",
     "register": "Añadir Personal",
     "name": "Nombre Completo",
-    "role": "Cargo / Rol",
+    "role": "Cargo",
     "email": "Correo Corporativo",
     "status": "Estado Laboral",
-    "empty": "No hay personal registrado aún."
+    "empty": "No hay personal registrado aún.",
+    "access-role": "Acceso",
+    "activity-hint": "Selecciona un nombre para ver lo que esa persona ha registrado.",
+    "deactivate": "Desactivar",
+    "deactivate-confirm": "¿Desactivar a {{name}}? Ya no podrá iniciar sesión.",
+    "deactivate-error": "No se pudo desactivar al miembro del personal. Inténtalo nuevamente."
   },
   "staff-form": {
     "title": "Registrar Miembro del Staff",
-    "subtitle": "Crea un perfil de personal y asigna su rol operativo.",
+    "subtitle": "La plataforma crea su cuenta con el correo como usuario y le envía las credenciales.",
     "fullName": "Nombre Completo",
-    "role": "Rol Asignado",
-    "email": "Correo Electrónico"
+    "role": "Cargo",
+    "email": "Correo corporativo",
+    "role-placeholder": "Por ejemplo: Operario de producción",
+    "email-hint": "Será su usuario.",
+    "access-role": "¿Qué podrá hacer?",
+    "register-another": "Registrar otro",
+    "back-to-list": "Volver al personal",
+    "credentials": {
+      "registered": "Se registró a {{name}}.",
+      "emailed": "El usuario y una contraseña temporal se enviaron a {{email}}.",
+      "shown-once": "No se pudo enviar el correo. Entrega estas credenciales al trabajador: la contraseña no se volverá a mostrar.",
+      "username": "Usuario",
+      "temporary-password": "Contraseña temporal",
+      "copy": "Copiar",
+      "first-sign-in": "La primera vez que inicie sesión se le pedirá elegir su propia contraseña."
+    },
+    "errors": {
+      "email-taken": "Ya existe una cuenta con este correo.",
+      "invalid": "Revisa los datos del trabajador.",
+      "forbidden": "Solo los QA Manager registran personal.",
+      "unavailable": "No se pudo registrar al trabajador. Inténtalo nuevamente."
+    }
   },
   "product-catalog": {
-    "title": "Catálogo de Productos Farmacéuticos",
+    "title": "Productos farmacéuticos",
     "add": "Nuevo Producto",
     "code": "SKU / Código",
     "name": "Nombre del Producto",
     "specifications": "Especificaciones BPM",
-    "empty": "No se encontraron productos farmacéuticos."
+    "empty": "No se encontraron productos farmacéuticos.",
+    "no-environments": "Aún no hay ambientes registrados",
+    "no-environments-notice": "Los productos se fabrican en un ambiente del laboratorio. Registra un ambiente de producción para empezar."
   },
   "product-form": {
-    "title": "Registrar Nuevo Producto / Lote",
-    "subtitle": "Define un producto farmacéutico y sus especificaciones de calidad BPM.",
+    "title": "Registrar producto",
+    "subtitle": "El producto se registra en el ambiente seleccionado. Su código y nombre deben ser únicos en el laboratorio.",
     "code": "Código Interno de Producto",
     "name": "Nombre Comercial",
     "description": "Descripción Terapéutica",
     "specifications": "Especificaciones de Calidad (BPM)",
-    "specifications-hint": "Incluye criterios de aceptación, límites y controles requeridos."
+    "specifications-hint": "Incluye criterios de aceptación, límites y controles requeridos.",
+    "description-hint": "Opcional.",
+    "quality-only": "Solo los responsables de calidad y los administradores pueden registrar productos."
   },
   "raw-material-list": {
     "title": "Inventario de Materias Primas",
@@ -869,40 +1171,51 @@
       "details": "Detalles"
     }
   },
-  "deviation-trend": {
-    "title": "Análisis de Tendencias",
-    "select-equipment": "Seleccionar Equipo",
-    "parameter": "Parámetro",
-    "equipment": "Equipo",
-    "direction": "Dirección de Tendencia",
-    "empty": "No hay tendencias de desviación disponibles para este equipo.",
-    "table": {
-      "timestamp": "Fecha y Hora",
-      "value": "Valor Registrado",
-      "min": "Límite Inferior",
-      "max": "Límite Superior"
+  "reporting": {
+    "all-environments": "Todos los ambientes",
+    "no-environments": "Registra un ambiente del laboratorio para calcular sus indicadores.",
+    "errors": {
+      "load": "No se pudieron cargar los indicadores. Vuelve a intentarlo."
     },
-    "status": {
-      "deviated": "Desviado",
-      "normal": "Normal"
-    }
-  },
-  "kpi-dashboard": {
-    "title": "Panel de Rendimiento y KPIs",
-    "chart-title": "Tendencia de Rendimiento KPI",
-    "overall-health": "Puntuación de Salud",
-    "last-updated": "Última actualización",
-    "at-risk-params": "Parámetros en Riesgo",
-    "requires-attention": "Requiere atención pronto",
-    "critical-deviations": "Desviaciones Críticas",
-    "immediate-action": "Acción inmediata requerida",
-    "detailed-parameters": "Parámetros Detallados",
-    "empty": "No hay métricas KPI registradas para este laboratorio.",
-    "table": {
-      "metric": "Métrica de Calidad",
-      "current": "Valor Actual",
-      "target": "Objetivo",
-      "recorded": "Registrado En"
+    "period": {
+      "label": "Periodo",
+      "days-1": "Últimas 24 horas",
+      "days-7": "Últimos 7 días",
+      "days-31": "Últimos 31 días",
+      "range": "Periodo: {{from}} – {{to}}"
+    },
+    "fields": {
+      "device": "Dispositivo",
+      "variable": "Variable",
+      "readings": "Lecturas",
+      "average": "Promedio",
+      "minimum": "Mínimo",
+      "maximum": "Máximo",
+      "last-reading": "Última lectura",
+      "evaluated": "Lecturas evaluadas",
+      "time-in-range": "Tiempo en rango",
+      "deviations": "Desviaciones",
+      "critical": "Críticas",
+      "trend": "Tendencia"
+    },
+    "summary": {
+      "title": "Resumen ambiental",
+      "subtitle": "Promedio, mínimo y máximo de las lecturas de cada dispositivo en el periodo, calculados a partir de las lecturas registradas.",
+      "readings-title": "Lecturas del periodo",
+      "no-readings": "No hay lecturas en el periodo, por lo que no se calcula ningún valor.",
+      "formula": "Solo se resumen las lecturas numéricas; el promedio se redondea a dos decimales.",
+      "records-title": "Registros del laboratorio",
+      "records-note": "Conteos actuales de los registros del laboratorio; no dependen del periodo ni del ambiente.",
+      "no-records": "El laboratorio aún no tiene equipos ni lotes registrados."
+    },
+    "deviations": {
+      "title": "Indicadores de desviación",
+      "subtitle": "Tiempo en rango y desviaciones de cada variable del ambiente en el periodo, calculados a partir de la condición de las lecturas.",
+      "not-enough": "Lecturas insuficientes",
+      "formula": "Cada lectura evaluada mantiene su condición hasta la siguiente; el tiempo en rango es el tiempo en condición normal sobre el tiempo entre la primera y la última lectura evaluada. Una desviación es una lectura cuya condición es peor que la anterior; es crítica cuando entra en condición crítica. Las lecturas de variables sin umbrales no se evalúan.",
+      "chart": "Lecturas del periodo",
+      "unevaluated": "Sin evaluar",
+      "empty": "No hay lecturas numéricas de este ambiente en el periodo, por lo que no se calcula ningún indicador."
     }
   },
   "report-generator": {
@@ -917,29 +1230,44 @@
       "invalid-request": "Los parámetros del reporte no son válidos. Revisa el registro seleccionado y las fechas.",
       "batch": "No se pudo generar el reporte de lote. Vuelve a intentarlo.",
       "compliance": "No se pudo generar el reporte de cumplimiento. Vuelve a intentarlo.",
-      "equipment": "No se pudo exportar la bitácora del equipo. Vuelve a intentarlo."
+      "equipment": "No se pudo exportar la bitácora del equipo. Vuelve a intentarlo.",
+      "inventory": "No se pudo generar el reporte de inventario. Vuelve a intentarlo."
     },
     "batch": {
       "select-label": "Lote",
       "empty": "No hay lotes disponibles",
       "load-error": "No se pudo cargar la lista de lotes.",
       "title": "Reporte de Lote",
-      "desc": "Documento completo de calidad y trazabilidad.",
-      "id-label": "ID de Lote",
-      "include-telemetry": "Incluir registros de telemetría",
-      "include-deviations": "Incluir alertas de desviación"
+      "desc": "Materiales y lotes, equipos, personal, contenedor y decisión de calidad del lote.",
+      "include-deviations": "Incluir alertas de desviación",
+      "scope": "Las condiciones ambientales forman parte del reporte ambiental del periodo."
     },
     "compliance": {
-      "title": "Reporte de Cumplimiento",
-      "desc": "Resumen periódico del rendimiento del laboratorio."
+      "title": "Reporte ambiental",
+      "desc": "Lecturas, desviaciones, alertas y acciones automáticas de cada ambiente en los días seleccionados."
     },
     "equipment": {
       "title": "Bitácora de Equipo",
       "select-label": "Equipo",
-      "empty": "No hay equipos disponibles",
+      "empty": "No hay equipos ubicados en un ambiente",
       "load-error": "No se pudo cargar la lista de equipos.",
-      "desc": "Exportar historial técnico y de mantenimiento.",
-      "id-label": "ID de Equipo"
+      "desc": "Exportar historial técnico y de mantenimiento."
+    },
+    "start-date": "Fecha de inicio",
+    "end-date": "Fecha de fin",
+    "formats": {
+      "pdf": "Documento PDF (.pdf)",
+      "csv": "Exportación de datos (.csv)"
+    },
+    "success": {
+      "batch": "Se descargó el reporte del lote.",
+      "compliance": "Se descargó el reporte ambiental.",
+      "inventory": "Se descargó el reporte de inventario.",
+      "equipment": "Se descargó la bitácora del equipo."
+    },
+    "inventory": {
+      "title": "Reporte de inventario",
+      "desc": "Materias primas, lotes, cantidades y vencimientos del laboratorio o de un ambiente."
     }
   },
   "page-not-found": {
@@ -1016,49 +1344,130 @@
     }
   },
   "tracking": {
-    "status": {
-      "OPERATIONAL": "Operativo",
+    "refresh": "Actualizar",
+    "no-environments": "Registra un ambiente del laboratorio para monitorearlo.",
+    "no-devices": "Este ambiente no tiene dispositivos IoT. Asóciale un dispositivo ambiental o un monitor de contenedor para ver sus lecturas.",
+    "errors": {
+      "load": "No se pudieron cargar los datos de monitoreo. Inténtalo nuevamente.",
+      "device": "No se pudieron cargar las lecturas de este dispositivo.",
+      "period": "Elige un periodo válido de hasta 31 días.",
+      "save": "No se pudo guardar la configuración. Revisa los valores e inténtalo nuevamente."
+    },
+    "metrics": {
+      "AIR_QUALITY": "Calidad de aire",
+      "MOTION": "Movimiento",
+      "TEMPERATURE": "Temperatura",
+      "HUMIDITY": "Humedad",
+      "LUMINOSITY": "Luminosidad",
+      "RFID_TAG": "Identificación RFID"
+    },
+    "states": {
+      "NORMAL": "Normal",
       "WARNING": "Advertencia",
-      "CRITICAL": "Crítico",
-      "OFFLINE": "Desconectado",
-      "operational": "Operativo",
-      "warning": "Advertencia",
-      "critical": "Crítico",
-      "offline": "Desconectado",
-      "unknown-equipment": "Equipo desconocido",
-      "waiting-telemetry": "Esperando telemetría..."
+      "CRITICAL": "Crítico"
     },
-    "dashboard": {
-      "title": "Panel de Telemetría",
-      "select-equipment": "Seleccionar Equipo",
-      "connection-status": "Estado de Conexión",
-      "anomalies": "Anomalías Detectadas",
-      "events": "Eventos",
-      "live-stream": "Telemetría Registrada",
-      "stream-desc": "Historial de mediciones del equipo",
-      "empty-chart": "No hay datos de telemetría disponibles para este equipo.",
-      "current-readings": "Lecturas Actuales de Sensores",
-      "updated": "Actualizado",
-      "empty-sensors": "Esperando datos del sensor...",
-      "chart-label": "Rastreo de Parámetro en Vivo"
+    "actions": {
+      "VENTILATION_ON": "Ventilación encendida",
+      "VENTILATION_OFF": "Ventilación apagada",
+      "COOLING_ON": "Refrigeración encendida",
+      "COOLING_OFF": "Refrigeración apagada",
+      "SERVO_OPEN": "Servo abierto",
+      "SERVO_CLOSE": "Servo cerrado"
     },
-    "analysis": {
-      "title": "Análisis Histórico de Telemetría",
-      "analyze-btn": "Analizar Datos",
-      "chart-title": "Gráfico Analítico",
-      "displaying": "Mostrando",
-      "points-for": "puntos de datos para",
-      "value": "Valor"
+    "results": {
+      "EXECUTED": "Ejecutada",
+      "FAILED": "Fallida"
+    },
+    "connection": {
+      "CONNECTED": "Conectado",
+      "REQUIRES_REVIEW": "Requiere revisión",
+      "last": "Última comunicación:",
+      "never": "Aún no se recibe ninguna comunicación",
+      "not-located": "Asocia el dispositivo a un ambiente para conocer su estado de conexión."
+    },
+    "monitoring": {
+      "title": "Monitoreo ambiental",
+      "subtitle": "Últimas lecturas de las últimas 24 horas de los dispositivos IoT del ambiente y su condición.",
+      "environment": "Ambiente",
+      "containers": "Contenedores monitoreados",
+      "no-recent-reading": "Sin lectura reciente",
+      "motion-detected": "Movimiento detectado",
+      "no-motion": "Sin detecciones recientes",
+      "see-history": "Ver historial",
+      "no-rfid": "Identificación no disponible",
+      "last-action": "Última acción automática",
+      "no-action": "Sin actuación registrada"
     },
     "history": {
-      "title": "Registro de Datos Crudos (Telemetría)",
-      "timestamp": "Fecha y Hora",
-      "parameter": "Parámetro",
-      "value": "Valor Registrado",
-      "empty": "No se encontraron registros telemétricos para los criterios seleccionados.",
-      "status": {
-        "deviated": "Desviación BPM",
-        "normal": "Normal"
+      "title": "Historial de telemetría",
+      "subtitle": "Lecturas y acciones de un dispositivo en un periodo, en orden temporal.",
+      "device": "Dispositivo",
+      "metric": "Métrica",
+      "all-metrics": "Todas las métricas",
+      "from": "Desde",
+      "to": "Hasta",
+      "search": "Buscar",
+      "empty": "No hay registros para el periodo.",
+      "chart": "Gráfico de lecturas",
+      "normal-max": "Máximo normal",
+      "normal-min": "Mínimo normal",
+      "critical-max": "Máximo crítico",
+      "critical-min": "Mínimo crítico",
+      "no-thresholds": "Esta métrica no tiene umbrales configurados, por eso sus lecturas no se clasifican.",
+      "readings": "Lecturas",
+      "moment": "Fecha y hora",
+      "value": "Valor",
+      "state": "Condición",
+      "motion-detected": "Detectado",
+      "motion-clear": "Sin movimiento",
+      "limit": "límite {{value}} {{unit}}",
+      "no-readings": "No hay lecturas para el periodo.",
+      "actions": "Acciones automáticas",
+      "action": "Acción",
+      "cause": "Causa",
+      "result": "Resultado",
+      "no-actions": "El monitor de contenedor no ejecutó acciones en el periodo."
+    },
+    "profiles": {
+      "title": "Perfiles ambientales",
+      "subtitle": "Límites que clasifican cada lectura como normal, advertencia o crítica, y las acciones automáticas de los contenedores. Cada cambio crea una nueva versión que aplican los dispositivos.",
+      "read-only": "Solo los QA Manager cambian los perfiles; puedes consultarlos.",
+      "environment": "Calidad de aire del ambiente",
+      "version": "Versión {{version}}",
+      "not-configured": "Sin configurar",
+      "no-environmental-device": "El ambiente necesita un dispositivo ambiental para configurar su calidad de aire.",
+      "register-device": "Registrar un dispositivo",
+      "containers": "Contenedores",
+      "thresholds": "Umbrales",
+      "rules": "Acciones automáticas",
+      "rules-hint": "Cuando la métrica llega a la condición, el monitor de contenedor ejecuta la acción localmente.",
+      "no-containers": "Este ambiente no tiene monitores de contenedor.",
+      "metric": "Métrica",
+      "critical-min": "Mínimo crítico",
+      "normal-min": "Mínimo normal",
+      "normal-max": "Máximo normal",
+      "critical-max": "Máximo crítico",
+      "thresholds-hint": "Dentro del rango normal la condición es normal; entre los límites normales y críticos es advertencia; más allá de los críticos es crítica. Deja vacíos ambos mínimos para limitar solo por arriba.",
+      "save-thresholds": "Guardar umbrales",
+      "thresholds-saved": "Umbrales guardados. Los dispositivos aplicarán la nueva versión.",
+      "rules-saved": "Acciones automáticas guardadas. El monitor de contenedor aplicará la nueva versión.",
+      "condition": "Condición",
+      "action": "Acción",
+      "choose-action": "Elige una acción",
+      "remove-rule": "Quitar acción",
+      "no-rules": "No hay acciones automáticas configuradas.",
+      "add-rule": "Agregar acción",
+      "save-rules": "Guardar acciones",
+      "rules-need-thresholds": "Guarda primero los umbrales del contenedor; una acción reacciona a la condición de una métrica con umbrales.",
+      "errors": {
+        "incomplete": "Cada límite necesita su valor normal y su valor crítico.",
+        "no-limits": "Ingresa al menos los máximos o los mínimos de la métrica.",
+        "critical-min": "El mínimo crítico debe ser menor que el mínimo normal.",
+        "critical-max": "El máximo crítico debe ser mayor que el máximo normal.",
+        "normal-range": "El mínimo normal debe ser menor que el máximo normal.",
+        "incomplete-rule": "Cada acción necesita una métrica, una condición y una acción.",
+        "rule-without-threshold": "Una acción solo puede usar una métrica con umbrales guardados.",
+        "repeated-rule": "La misma acción está repetida."
       }
     }
   },
@@ -1084,5 +1493,179 @@
     "after": "Stock restante",
     "legacy": "Uso anterior",
     "unrecorded": "No registrado"
+  },
+  "environments": {
+    "title": "Ambientes",
+    "subtitle": "Áreas físicas del laboratorio o almacén donde se ubican materiales, productos y dispositivos.",
+    "register": "Registrar ambiente",
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "usage": "Uso",
+    "usage-not-assigned": "Sin asignar",
+    "assign-usage": "Asignar uso",
+    "empty": "Aún no hay ambientes registrados.",
+    "form": {
+      "create-title": "Registrar ambiente",
+      "edit-title": "Editar ambiente",
+      "subtitle": "Identifica la zona que QualiTrack organizará y monitoreará.",
+      "code-hint": "Único dentro del laboratorio, por ejemplo WH-RM-01.",
+      "usage-hint": "Uso principal de la zona. Puedes asignarlo después.",
+      "usage-edit-hint": "Cambia el uso desde la lista de ambientes.",
+      "max-length": "Usa como máximo {{max}} caracteres."
+    },
+    "selector": "Ambiente"
+  },
+  "environment-usage": {
+    "LABORATORY": "Laboratorio",
+    "PRODUCTION": "Producción",
+    "RAW_MATERIAL_STORAGE": "Almacén de materias primas",
+    "PRODUCT_STORAGE": "Almacén de productos",
+    "OTHER": "Otro"
+  },
+  "product-detail": {
+    "no-batches": "No hay lotes registrados para este producto."
+  },
+  "batch-participants": {
+    "equipment-title": "Equipos utilizados",
+    "staff-title": "Personal que participó",
+    "equipment": "Equipo",
+    "staff": "Persona",
+    "role": "Rol",
+    "registered-at": "Registrado el",
+    "equipment-hint": "Solo se pueden usar equipos operativos.",
+    "add-equipment": "Agregar equipo",
+    "add-staff": "Agregar persona",
+    "no-equipment": "No hay equipos asociados a este lote.",
+    "no-staff": "No hay personal asociado a este lote.",
+    "equipment-saved": "Equipo asociado al lote.",
+    "staff-saved": "Persona asociada al lote.",
+    "staff-hint": "Operarios activos del laboratorio.",
+    "assign-myself": "Asignarme",
+    "already-joined": "Ya participas en este lote.",
+    "no-staff-record": "Tu cuenta no está vinculada a un operario activo del laboratorio."
+  },
+  "batch-traceability": {
+    "title": "Resumen de trazabilidad",
+    "raw-materials": "Materias primas",
+    "equipment": "Equipos",
+    "staff": "Personal",
+    "decision": "Decisión de calidad",
+    "released": "Liberado el {{date}} y firmado por el usuario #{{user}}.",
+    "rejected": "Rechazado el {{date}}:",
+    "pending": "El lote aún no ha sido liberado ni rechazado.",
+    "container": "Contenedor"
+  },
+  "equipment": {
+    "errors": {
+      "connection": "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+      "forbidden": "Tu cuenta no puede realizar esta acción.",
+      "not-found": "No se encontró el equipo o el ambiente en este laboratorio.",
+      "failed": "No se pudo completar la operación."
+    }
+  },
+  "device-form": {
+    "add-button": "Registrar dispositivo IoT",
+    "title": "Nuevo Dispositivo IoT",
+    "subtitle": "Dispositivo ambiental o monitor de contenedor ESP32 y la identidad con la que Edge lo reconoce",
+    "save": "Registrar dispositivo",
+    "fields": {
+      "device-type": "Tipo de dispositivo",
+      "identifier": "Identificador del dispositivo",
+      "serial": "Dirección MAC o número de serie",
+      "firmware": "Versión de firmware",
+      "environment": "Ambiente donde está instalado"
+    },
+    "placeholders": {
+      "name": "Ej. Monitor de espacio - Almacén de materias primas",
+      "identifier": "Ej. ENV-001",
+      "serial": "Ej. 24:6F:28:AA:10:01",
+      "firmware": "Ej. 1.0.3"
+    },
+    "hints": {
+      "identifier": "Único en QualiTrack; Edge lo usa para reconocer el dispositivo.",
+      "environment": "Opcional; también se puede asociar después desde el detalle del dispositivo."
+    },
+    "no-environment": "Asociar después",
+    "occupied": "ya tiene un dispositivo ambiental"
+  },
+  "device-types": {
+    "ENVIRONMENTAL_DEVICE": "Dispositivo ambiental",
+    "CONTAINER_MONITOR": "Monitor de contenedor",
+    "hints": {
+      "ENVIRONMENTAL_DEVICE": "Supervisa todo el ambiente (monitor de espacio); uno por ambiente.",
+      "CONTAINER_MONITOR": "Supervisa un contenedor donde se guardan materias primas o productos."
+    }
+  },
+  "staff": {
+    "access-roles": {
+      "operator": "Operario",
+      "operator-hint": "Registra las operaciones que se le asignan: mantenimientos, recepciones, lotes y consumos.",
+      "auditor": "Auditor",
+      "auditor-hint": "Consulta los registros y reportes sin modificarlos."
+    },
+    "no-account": "Sin cuenta",
+    "detail": {
+      "load-error": "No se pudo cargar al miembro del personal.",
+      "activities": "Actividades registradas",
+      "last-activity": "Última actividad",
+      "history": "Historial de actividad",
+      "filter": "Tipo de registro",
+      "all-activity": "Toda la actividad",
+      "no-activity": "Esta persona aún no ha registrado actividad."
+    },
+    "activity": {
+      "entities": {
+        "batch": "Lote de producto",
+        "bpm_parameter_config": "Límites de parámetro BPM",
+        "deviation_alert": "Alerta de desviación",
+        "environment": "Ambiente",
+        "equipment": "Equipo",
+        "equipment_telemetry_status": "Estado de telemetría del equipo",
+        "laboratory": "Laboratorio",
+        "maintenance_record": "Mantenimiento",
+        "notification_preference": "Preferencias de notificación",
+        "pharmaceutical_product": "Producto",
+        "raw_material": "Materia prima",
+        "raw_material_batch": "Recepción de materia prima",
+        "raw_material_usage": "Uso de materia prima",
+        "staff_member": "Miembro del personal",
+        "telemetry_anomaly": "Anomalía de telemetría",
+        "telemetry_history_point": "Historial de telemetría",
+        "telemetry_measurement": "Medición de telemetría",
+        "environmental_profile": "Perfil ambiental"
+      },
+      "actions": {
+        "create": "Creó",
+        "update": "Actualizó",
+        "delete": "Eliminó",
+        "release": "Liberó",
+        "reject": "Rechazó",
+        "approve": "Aprobó",
+        "register": "Registró",
+        "remove": "Retiró",
+        "export": "Exportó",
+        "generate": "Generó"
+      }
+    },
+    "profile": {
+      "title": "Perfil",
+      "not-completed": "Esta persona aún no completa su perfil.",
+      "unavailable": "No se pudo cargar el perfil de esta persona."
+    }
+  },
+  "batch-storage": {
+    "title": "Contenedor donde se guarda el lote",
+    "container": "Contenedor",
+    "environment": "Ambiente",
+    "assigned-at": "Guardado el",
+    "assigned-by": "Por el usuario #{{user}}",
+    "view-conditions": "Ver condiciones del contenedor",
+    "empty": "Aún no se guarda en un contenedor",
+    "hint": "Monitores de contenedor operativos de ambientes de almacenamiento de productos",
+    "store": "Guardar lote",
+    "change": "Cambiar contenedor",
+    "saved": "El lote se guardó en el contenedor.",
+    "no-containers": "No hay monitores de contenedor operativos en ambientes de almacenamiento de productos. Clasifica un ambiente como almacenamiento de productos y ubica allí un monitor de contenedor."
   }
 }
