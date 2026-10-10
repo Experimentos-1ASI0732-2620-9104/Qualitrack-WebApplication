@@ -13,7 +13,6 @@ import { AlertSeverity } from './deviation-alert.entity';
  * ```typescript
  * const command: UpdateNotificationPreferenceCommand = {
  *   emailEnabled: true,
- *   smsEnabled: false,
  *   inAppEnabled: true,
  *   minimumSeverity: 'WARNING'
  * };
@@ -24,11 +23,6 @@ export interface UpdateNotificationPreferenceCommand {
    * Indicates whether email notifications should be enabled.
    */
   emailEnabled: boolean;
-
-  /**
-   * Indicates whether SMS notifications should be enabled.
-   */
-  smsEnabled: boolean;
 
   /**
    * Indicates whether in-app notifications should be enabled.
