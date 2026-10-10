@@ -72,6 +72,11 @@ export interface SubscriptionResource extends BaseResource {
    * Numeric identifier of the user who cancelled the subscription.
    */
   cancelledBy?: number;
+
+  /**
+   * True when the renewal was cancelled and the subscription ends with the current period.
+   */
+  cancelAtPeriodEnd?: boolean;
 }
 
 /**

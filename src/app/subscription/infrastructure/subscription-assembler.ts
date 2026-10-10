@@ -55,6 +55,7 @@ export class SubscriptionAssembler implements BaseAssembler<
       currentPeriodEnd: resource.currentPeriodEnd,
       cancelledAt: resource.cancelledAt,
       cancelledBy: resource.cancelledBy,
+      cancelAtPeriodEnd: resource.cancelAtPeriodEnd ?? false,
     });
   }
 
@@ -79,6 +80,7 @@ export class SubscriptionAssembler implements BaseAssembler<
       currentPeriodEnd: entity.currentPeriodEnd,
       cancelledAt: entity.cancelledAt,
       cancelledBy: entity.cancelledBy,
+      cancelAtPeriodEnd: entity.cancelAtPeriodEnd,
     };
   }
 }
