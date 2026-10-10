@@ -76,3 +76,20 @@ button[mat-raised-button] mat-spinner {
     width: 100%;
   }
 }
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 4px solid #f9a825;
+  background: #fff8e1;
+  color: #5d4037;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: #60727a;
+}
