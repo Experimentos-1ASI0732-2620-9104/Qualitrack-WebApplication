@@ -56,7 +56,7 @@ src/app/<context>/
 
 ## Documentation
 - **Class Diagrams**: The frontend class diagram of every bounded context is available in [docs/diagrams](docs/diagrams), one folder per context.
-- **Project Report**: Requirements, domain model, architecture and design decisions are documented in the [QualiTrack report](https://github.com/IoTech-2620-8741/qualitrack-report).
+- **Project Report**: Requirements, domain model, architecture and design decisions are documented in the [QualiTrack report](https://github.com/Experimentos-1ASI0732-2620-9104/report-).
 
 ## Environment Variables
 The API endpoints are configured in `src/environments`:
