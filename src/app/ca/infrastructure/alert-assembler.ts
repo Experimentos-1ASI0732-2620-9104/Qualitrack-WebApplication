@@ -1,28 +1,18 @@
 import { BaseAssembler } from '../../shared/infrastructure/base-assembler';
 import { DeviationAlert } from '../domain/model/deviation-alert.entity';
-import { AlertResource, AlertsResponse } from './alert-response';
+import { AlertDetailResource, AlertResource, AlertsResponse } from './alert-response';
 
 /**
- * Assembler for converting between DeviationAlert domain entities and infrastructure resources.
+ * Converts deviation alerts between the resources of the API and {@link DeviationAlert} entities.
  *
  * @remarks
- * In DDD, this assembler is responsible for transforming between:
- * - {@link DeviationAlert} - Domain entity with manufacturing/quality logic
- * - {@link AlertResource} - Infrastructure resource for API communication
- * - {@link AlertsResponse} - Response envelope from collection operations
- *
- * This ensures the domain layer remains decoupled from infrastructure concerns
- * like API response formats, field naming conventions, and serialization details.
+ * The list of alerts and the alert detail share most fields. Only the detail ({@link AlertDetailResource}) carries
+ * the actions related to the incident, so the entities built from a list have no related actuations.
  *
  * @example
  * ```typescript
  * const assembler = new AlertAssembler();
- *
- * // From API response to domain entities
- * const alerts = assembler.toEntitiesFromResponse(apiResponse);
- *
- * // From domain entity to API resource
- * const resource = assembler.toResourceFromEntity(deviationAlert);
+ * const alerts = assembler.toEntitiesFromResources(resources);
  * ```
  */
 export class AlertAssembler implements BaseAssembler<
@@ -31,44 +21,41 @@ export class AlertAssembler implements BaseAssembler<
   AlertsResponse
 > {
   /**
-   * Converts a collection response into an array of domain entities.
+   * Converts a response envelope into entities.
    *
-   * @param response - The API response containing alert resources
-   * @returns Array of DeviationAlert domain entities
-   *
-   * @remarks
-   * Extracts the alerts array from the response envelope and converts
-   * each resource into a domain DeviationAlert entity using the individual mapper.
+   * @param response - The envelope with the alert resources
+   * @returns The deviation alerts, in the order they were received
    */
   toEntitiesFromResponse(response: AlertsResponse): DeviationAlert[] {
     return response.alerts.map((alert) => this.toEntityFromResource(alert));
   }
 
   /**
-   * Converts an array of resources into an array of domain entities.
+   * Converts a list of alert resources into entities.
    *
-   * @param resources - Array of alert resources
-   * @returns Array of DeviationAlert domain entities
+   * @param resources - The alerts as the API sends them
+   * @returns The deviation alerts, in the order they were received
    */
   toEntitiesFromResources(resources: AlertResource[]): DeviationAlert[] {
     return resources.map((alert) => this.toEntityFromResource(alert));
   }
 
   /**
-   * Converts an infrastructure resource into a domain entity.
+   * Converts an alert resource, from the list or from the detail, into an entity.
    *
-   * @param resource - The AlertResource to convert
-   * @returns A new DeviationAlert domain entity
-   *
-   * @remarks
-   * Maps resource properties directly to entity properties, ensuring the
-   * returned entity is instantiated with the correct domain state.
+   * @param resource - The alert as the API sends it
+   * @returns The deviation alert; its related actuations are empty unless the resource is an alert detail
    */
-  toEntityFromResource(resource: AlertResource): DeviationAlert {
+  toEntityFromResource(resource: AlertResource | AlertDetailResource): DeviationAlert {
     return new DeviationAlert({
       id: resource.id,
+      laboratoryId: resource.laboratoryId,
+      environmentId: resource.environmentId,
+      origin: resource.origin,
       equipmentId: resource.equipmentId,
       batchId: resource.batchId,
+      measurementId: resource.measurementId,
+      lastMeasurementId: resource.lastMeasurementId,
       parameterName: resource.parameterName,
       recordedValue: resource.recordedValue,
       thresholdValue: resource.thresholdValue,
@@ -76,25 +63,34 @@ export class AlertAssembler implements BaseAssembler<
       timestamp: resource.timestamp,
       severity: resource.severity,
       status: resource.status,
-      createdAt: resource.createdAt,
+      deviationCount: resource.deviationCount,
+      lastDetectedAt: resource.lastDetectedAt,
+      normalizedAt: resource.normalizedAt,
+      acknowledgedBy: resource.acknowledgedBy,
+      acknowledgedAt: resource.acknowledgedAt,
+      resolvedBy: resource.resolvedBy,
+      resolvedAt: resource.resolvedAt,
+      resolutionNotes: resource.resolutionNotes,
+      relatedActuations: 'relatedActuations' in resource ? resource.relatedActuations : [],
     });
   }
 
   /**
-   * Converts a domain entity into an infrastructure resource.
+   * Converts an alert into the resource of the list.
    *
-   * @param entity - The DeviationAlert domain entity to convert
-   * @returns A new AlertResource suitable for API communication
-   *
-   * @remarks
-   * Extracts the necessary data for API serialization, ensuring the infrastructure
-   * layer receives a plain object (DTO) decoupled from domain logic.
+   * @param entity - The deviation alert
+   * @returns The alert resource, without the related actuations of the detail
    */
   toResourceFromEntity(entity: DeviationAlert): AlertResource {
     return {
       id: entity.id,
+      laboratoryId: entity.laboratoryId,
+      environmentId: entity.environmentId,
+      origin: entity.origin,
       equipmentId: entity.equipmentId,
       batchId: entity.batchId,
+      measurementId: entity.measurementId,
+      lastMeasurementId: entity.lastMeasurementId,
       parameterName: entity.parameterName,
       recordedValue: entity.recordedValue,
       thresholdValue: entity.thresholdValue,
@@ -102,7 +98,14 @@ export class AlertAssembler implements BaseAssembler<
       timestamp: entity.timestamp,
       severity: entity.severity,
       status: entity.status,
-      createdAt: entity.createdAt,
+      deviationCount: entity.deviationCount,
+      lastDetectedAt: entity.lastDetectedAt,
+      normalizedAt: entity.normalizedAt,
+      acknowledgedBy: entity.acknowledgedBy,
+      acknowledgedAt: entity.acknowledgedAt,
+      resolvedBy: entity.resolvedBy,
+      resolvedAt: entity.resolvedAt,
+      resolutionNotes: entity.resolutionNotes,
     };
   }
 }

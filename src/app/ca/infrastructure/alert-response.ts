@@ -1,84 +1,80 @@
 import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-response';
-import { AlertSeverity, AlertStatus } from '../domain/model/deviation-alert.entity';
+import { AlertOrigin, AlertSeverity, AlertStatus } from '../domain/model/deviation-alert.entity';
 
-/**
- * Resource representation of a deviation alert for API communication.
- *
- * @remarks
- * In DDD, this is an infrastructure-level resource contract that represents
- * the deviation alert as it appears in HTTP communication, without domain logic.
- * Resources are distinct from domain entities, serving as the bridge between
- * the domain layer and external systems (like a REST API).
- */
+/** Deviation alert as returned by /laboratories/{laboratoryId}/environments/{environmentId}/deviation-alerts. */
 export interface AlertResource extends BaseResource {
-  /**
-   * The unique numeric identifier for the alert resource.
-   */
+  /** Unique identifier of the alert. */
   id: number;
-
-  /**
-   * The numeric identifier of the equipment that generated the alert.
-   */
+  /** Laboratory the alert belongs to. */
+  laboratoryId: number | null;
+  /** Environment where the incident happened. */
+  environmentId: number | null;
+  /** Whether the incident came from the environment or from a monitored container. */
+  origin: AlertOrigin | null;
+  /** Environmental device, container monitor or equipment that detected the deviation. */
   equipmentId: number;
-
-  /**
-   * The numeric identifier of the production batch, if applicable.
-   */
-  batchId?: number;
-
-  /**
-   * The name of the monitored process parameter.
-   */
+  /** Batch stored in the monitored container, when the alert came from one. */
+  batchId: number | null;
+  /** Measurement that opened the incident. */
+  measurementId: number | null;
+  /** Latest measurement that confirmed the deviation. */
+  lastMeasurementId: number | null;
+  /** Variable that deviated, for example the temperature or the humidity. */
   parameterName: string;
-
-  /**
-   * The measured value that triggered the deviation.
-   */
+  /** Value of the deviation that set the current severity. */
   recordedValue: number;
-
-  /**
-   * The reference limit value for the parameter.
-   */
+  /** Limit that the recorded value went beyond. */
   thresholdValue: number;
-
-  /**
-   * The unit of measurement for the values.
-   */
+  /** Unit of the recorded and threshold values. */
   unit: string;
-
-  /**
-   * The timestamp of when the deviation occurred.
-   */
+  /** When the incident started, as an ISO 8601 date-time. */
   timestamp: string;
-
-  /**
-   * The urgency or impact level of the alert.
-   */
+  /** Highest severity reached by the incident. */
   severity: AlertSeverity;
-
-  /**
-   * The current status of the alert in the system.
-   */
+  /** Current step of the life cycle. */
   status: AlertStatus;
+  /** How many deviations were counted in the incident; the entity defaults it to 1 when missing. */
+  deviationCount: number | null;
+  /** When the latest deviation was detected. */
+  lastDetectedAt: string | null;
+  /** When the condition returned to normal. */
+  normalizedAt: string | null;
+  /** User who acknowledged the alert. */
+  acknowledgedBy: number | null;
+  /** When the alert was acknowledged. */
+  acknowledgedAt: string | null;
+  /** User who resolved the alert. */
+  resolvedBy: number | null;
+  /** When the alert was resolved. */
+  resolvedAt: string | null;
+  /** What the person did to resolve the incident. */
+  resolutionNotes: string | null;
+}
 
-  /**
-   * The timestamp of when the resource was created.
-   */
-  createdAt?: string;
+/** Action related to an alert, part of GET /deviation-alerts/{alertId}. */
+export interface RelatedActuationResource {
+  /** Unique identifier of the actuation. */
+  id: number;
+  /** What the monitor did, for example turning a device on or off. */
+  action: string;
+  /** State of the variable that triggered the action, when the monitor reported it. */
+  triggerState: string | null;
+  /** Outcome of the action. */
+  result: string;
+  /** When the action was executed, as an ISO 8601 date-time. */
+  occurredAt: string;
+}
+
+/** Alert detail: the alert and the actions related to its incident (US86). */
+export interface AlertDetailResource extends AlertResource {
+  /** Actions executed by the container monitor for the variable of the alert while the incident was open. */
+  relatedActuations: RelatedActuationResource[];
 }
 
 /**
- * Response envelope for alert collection queries.
- *
- * @remarks
- * This interface defines the structure of API responses that return multiple deviation alerts.
- * The envelope pattern allows for consistent metadata handling across all collection endpoints
- * in the manufacturing or quality domain.
+ * Envelope kept for the base assembler; the API answers the list of alerts with a plain array.
  */
 export interface AlertsResponse extends BaseResponse {
-  /**
-   * Array of alert resources included in the response.
-   * Contains zero or more AlertResource objects.
-   */
+  /** Alerts included in the response. */
   alerts: AlertResource[];
 }
