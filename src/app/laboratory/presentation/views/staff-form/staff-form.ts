@@ -1,26 +1,32 @@
-import { Component, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Clipboard } from '@angular/cdk/clipboard';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { LaboratoryStore } from '../../../application/laboratory.store';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { RegisterStaffCommand } from '../../../domain/model/register-staff.command';
+import { RegisteredStaff } from '../../../domain/model/register-staff.command';
+import { StaffAccessRole } from '../../../domain/model/staff-member.entity';
+import { ApiError } from '../../../../shared/infrastructure/api-error';
 
 /**
- * Component responsible for registering laboratory staff members.
+ * Form with which a quality manager registers an operator or an auditor of the laboratory.
  *
  * @remarks
- * This presentation component captures staff profile data through a reactive
- * form and dispatches a register staff command to the Laboratory store.
+ * The platform creates the account of the staff member with the e-mail as username and sends the
+ * credentials by e-mail. When they cannot be e-mailed, the temporary password is shown here once so
+ * the quality manager hands it over; the staff member changes it at the first sign in.
  */
 @Component({
   selector: 'app-staff-form',
@@ -33,7 +39,8 @@ import { RegisterStaffCommand } from '../../../domain/model/register-staff.comma
     MatIconModule,
     MatInputModule,
     MatButtonModule,
-    MatSelectModule,
+    MatRadioModule,
+    MatTooltipModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './staff-form.html',
@@ -46,14 +53,9 @@ export class StaffForm {
   protected readonly store = inject(LaboratoryStore);
 
   /**
-   * Store that exposes authenticated user context.
+   * Store that exposes the laboratory of the authenticated session.
    */
   protected readonly iamStore = inject(IamStore);
-
-  /**
-   * Form builder used to create the staff registration form.
-   */
-  private readonly fb = inject(FormBuilder);
 
   /**
    * Router used to navigate after user actions.
@@ -61,45 +63,106 @@ export class StaffForm {
   private readonly router = inject(Router);
 
   /**
-   * Available staff roles selectable in the form.
+   * Clipboard used to copy the credentials.
    */
-  protected readonly roles = ['QA_MANAGER', 'LAB_OPERATOR', 'AUDITOR'];
+  private readonly clipboard = inject(Clipboard);
 
   /**
-   * Reactive form used to capture staff registration data.
+   * Reference used to stop the registration request when the view is destroyed.
    */
-  protected readonly form: FormGroup = this.fb.group({
-    fullName: ['', [Validators.required, Validators.maxLength(150)]],
-    role: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * Access roles the quality manager can give.
+   */
+  protected readonly accessRoles: StaffAccessRole[] = ['OPERATOR', 'AUDITOR'];
+
+  /**
+   * Staff member just registered with the delivery of their credentials, or `null` before registering.
+   */
+  protected readonly registered = signal<RegisteredStaff | null>(null);
+
+  /**
+   * Translation key of the latest error, if any.
+   */
+  protected readonly error = signal<string | null>(null);
+
+  /**
+   * Credential field last copied to the clipboard, if any.
+   */
+  protected readonly copied = signal<'username' | 'password' | null>(null);
+
+  /**
+   * Reactive form used to capture the staff member data.
+   */
+  protected readonly form = new FormGroup({
+    fullName: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
+    role: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email, Validators.maxLength(150)],
+    }),
+    accessRole: new FormControl<StaffAccessRole>('OPERATOR', { nonNullable: true, validators: [Validators.required] }),
   });
 
   /**
-   * Retrieves the current laboratory ID from the authenticated context.
-   */
-  private get currentLaboratoryId(): number {
-    return this.iamStore.requireLaboratoryId();
-  }
-
-  /**
-   * Submits the staff form and dispatches a register staff command.
+   * Registers the staff member and shows the delivery of their credentials.
    */
   protected onSubmit(): void {
-    if (this.form.invalid) return;
-
-    const command: RegisterStaffCommand = {
-      laboratoryId: this.currentLaboratoryId,
-      ...this.form.getRawValue(),
-    };
-
-    this.store.registerStaff(this.currentLaboratoryId, command);
-    this.router.navigate(['/laboratories/staff-list']);
+    this.error.set(null);
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const value = this.form.getRawValue();
+    this.store.registerStaff(this.iamStore.requireLaboratoryId(), {
+      fullName: value.fullName.trim(),
+      role: value.role.trim(),
+      email: value.email.trim(),
+      accessRole: value.accessRole,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (registered) => this.registered.set(registered),
+      error: (error: unknown) => this.error.set(this.errorKey(error)),
+    });
   }
 
   /**
-   * Cancels staff registration and returns to the staff list.
+   * Copies a credential to the clipboard.
+   *
+   * @param field - Credential field being copied
+   * @param value - Value to copy; nothing is copied when it is `null`
+   */
+  protected copy(field: 'username' | 'password', value: string | null): void {
+    if (value && this.clipboard.copy(value)) this.copied.set(field);
+  }
+
+  /**
+   * Clears the result and the form to register another staff member.
+   */
+  protected registerAnother(): void {
+    this.registered.set(null);
+    this.copied.set(null);
+    this.form.reset({ fullName: '', role: '', email: '', accessRole: 'OPERATOR' });
+  }
+
+  /**
+   * Returns to the staff list.
    */
   protected onCancel(): void {
-    this.router.navigate(['/laboratories/staff-list']);
+    void this.router.navigate(['/laboratories/staff-list']);
+  }
+
+  /**
+   * Converts a registration error into a translation key.
+   *
+   * @param error - Error emitted by the registration request
+   * @returns Translation key that explains the error to the quality manager
+   */
+  private errorKey(error: unknown): string {
+    const status = error instanceof ApiError ? error.status : 0;
+    if (status === 409) return 'staff-form.errors.email-taken';
+    if (status === 400) return 'staff-form.errors.invalid';
+    if (status === 403) return 'staff-form.errors.forbidden';
+    return 'staff-form.errors.unavailable';
   }
 }

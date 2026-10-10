@@ -71,3 +71,73 @@ button mat-spinner {
     flex: 1;
   }
 }
+
+.access-role {
+  border: 0;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.access-role legend {
+  font-weight: 600;
+  color: #1a3a5c;
+  margin-bottom: 8px;
+}
+
+.access-role mat-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.access-role small {
+  display: block;
+  color: #5f6368;
+}
+
+.credentials h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #19664e;
+  overflow-wrap: anywhere;
+}
+
+.credentials .notice {
+  padding: 12px 16px;
+  border-left: 4px solid;
+  background: #fff6df;
+  color: #704f00;
+}
+
+.credentials dl {
+  margin: 16px 0;
+}
+
+.credential {
+  margin-bottom: 12px;
+}
+
+.credential dt {
+  font-size: 0.85rem;
+  color: #5f6368;
+}
+
+.credential dd {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.credential code {
+  background: #f0f2f5;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.credentials .hint {
+  color: #5f6368;
+}

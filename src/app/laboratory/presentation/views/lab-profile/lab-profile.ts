@@ -78,9 +78,7 @@ export class LabProfile implements OnInit {
   /**
    * Retrieves the current laboratory ID from the authenticated context.
    *
-   * @remarks
-   * Defaults to 1 when no context is available, matching the development flow
-   * used across the current frontend bounded contexts.
+   * @throws Error when the user has not set up a laboratory yet
    */
   private get currentLaboratoryId(): number {
     return this.iamStore.requireLaboratoryId();

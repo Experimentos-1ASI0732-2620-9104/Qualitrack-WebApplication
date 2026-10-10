@@ -1,12 +1,19 @@
 import { BaseEntity } from '../../../shared/domain/model/base-entity';
 
 /**
+ * What a staff member can do with the account their quality manager created: an operator
+ * registers the operations assigned to them and an auditor only consults.
+ */
+export type StaffAccessRole = 'OPERATOR' | 'AUDITOR';
+
+/**
  * Represents a staff member entity within the Laboratory domain.
  *
  * @remarks
  * In Domain-Driven Design, a StaffMember is an entity that models a human actor
  * assigned to a specific laboratory. The entity keeps professional identity,
- * role, contact information, and active status for traceability and operational use.
+ * role, contact information, active status and the account the staff member
+ * signs in with, for traceability and operational use.
  */
 export class StaffMember implements BaseEntity {
   /**
@@ -25,36 +32,34 @@ export class StaffMember implements BaseEntity {
   fullName: string;
 
   /**
-   * The professional role or position held by the staff member.
+   * The job title of the staff member in the laboratory.
    */
   role: string;
 
   /**
-   * The institutional or corporate email address of the staff member.
+   * The corporate email address, also the username of their account.
    */
   email: string;
 
   /**
-   * Indicates whether this staff member is currently active.
+   * Indicates whether the staff member is currently active.
    */
   active: boolean;
 
   /**
-   * The ISO 8601 timestamp indicating when this staff member was created.
+   * What the staff member can do; null for staff registered before accounts existed.
    */
-  createdAt: string;
+  accessRole: StaffAccessRole | null;
 
   /**
-   * Creates a new StaffMember entity.
+   * Account the staff member signs in with; null for staff registered before accounts existed.
+   */
+  userId: number | null;
+
+  /**
+   * Creates a new StaffMember instance.
    *
-   * @param params - Initialization properties
-   * @param params.id - Unique numeric identifier
-   * @param params.laboratoryId - Numeric identifier of the owning laboratory
-   * @param params.fullName - Staff member full legal name
-   * @param params.role - Staff member professional role
-   * @param params.email - Staff member institutional email
-   * @param params.active - Whether the staff member is active
-   * @param params.createdAt - Creation timestamp
+   * @param params - Object containing the staff member properties, one per field of the entity
    */
   constructor(params: {
     id: number;
@@ -63,7 +68,8 @@ export class StaffMember implements BaseEntity {
     role: string;
     email: string;
     active: boolean;
-    createdAt: string;
+    accessRole: StaffAccessRole | null;
+    userId: number | null;
   }) {
     this.id = params.id;
     this.laboratoryId = params.laboratoryId;
@@ -71,6 +77,17 @@ export class StaffMember implements BaseEntity {
     this.role = params.role;
     this.email = params.email;
     this.active = params.active;
-    this.createdAt = params.createdAt;
+    this.accessRole = params.accessRole;
+    this.userId = params.userId;
+  }
+
+  /**
+   * Indicates whether the staff member can be assigned to operations: active, with an account
+   * and not an auditor.
+   *
+   * @returns `true` when the staff member is active, has a user account and is not an auditor
+   */
+  get assignable(): boolean {
+    return this.active && this.userId !== null && this.accessRole !== 'AUDITOR';
   }
 }

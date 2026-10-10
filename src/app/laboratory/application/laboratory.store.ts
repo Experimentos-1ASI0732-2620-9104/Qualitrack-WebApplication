@@ -1,18 +1,14 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { firstValueFrom, retry } from 'rxjs';
+import { Observable, finalize, retry, tap } from 'rxjs';
 
 import { LaboratoryApi } from '../infrastructure/laboratory-api';
 
 import { Laboratory } from '../domain/model/laboratory.entity';
 import { StaffMember } from '../domain/model/staff-member.entity';
-import { PharmaceuticalProduct } from '../domain/model/pharmaceutical-product.entity';
-import { RawMaterial } from '../domain/model/raw-material.entity';
 
 import { CreateLaboratoryCommand } from '../domain/model/create-laboratory.command';
 import { UpdateLaboratoryCommand } from '../domain/model/update-laboratory.command';
-import { RegisterStaffCommand } from '../domain/model/register-staff.command';
-import { CreateProductCommand } from '../domain/model/create-product.command';
-import { CreateRawMaterialCommand } from '../domain/model/create-raw-material.command';
+import { RegisterStaffCommand, RegisteredStaff } from '../domain/model/register-staff.command';
 
 /**
  * Application store for managing Laboratory bounded context state.
@@ -20,7 +16,8 @@ import { CreateRawMaterialCommand } from '../domain/model/create-raw-material.co
  * @remarks
  * This store coordinates the presentation layer with the Laboratory API facade.
  * It exposes readonly Angular signals for laboratory profile data, staff,
- * pharmaceutical products, raw materials, loading state, and user-facing messages.
+ * loading state, and user-facing messages. Products belong to Product Batch Management and
+ * raw materials to Inventory Management.
  */
 @Injectable({ providedIn: 'root' })
 export class LaboratoryStore {
@@ -33,21 +30,6 @@ export class LaboratoryStore {
    * Internal signal containing staff members for the current laboratory.
    */
   private readonly _staffList = signal<StaffMember[]>([]);
-
-  /**
-   * Internal signal containing pharmaceutical products for the current laboratory.
-   */
-  private readonly _products = signal<PharmaceuticalProduct[]>([]);
-
-  /**
-   * Internal signal containing raw materials for the current laboratory.
-   */
-  private readonly _rawMaterials = signal<RawMaterial[]>([]);
-
-  /**
-   * Internal signal containing raw materials below or equal to their minimum stock threshold.
-   */
-  private readonly _lowStock = signal<RawMaterial[]>([]);
 
   /**
    * Internal signal indicating whether an API operation is running.
@@ -75,21 +57,6 @@ export class LaboratoryStore {
   readonly staffList = this._staffList.asReadonly();
 
   /**
-   * Readonly signal exposing pharmaceutical products.
-   */
-  readonly products = this._products.asReadonly();
-
-  /**
-   * Readonly signal exposing raw materials.
-   */
-  readonly rawMaterials = this._rawMaterials.asReadonly();
-
-  /**
-   * Readonly signal exposing low-stock raw materials.
-   */
-  readonly lowStock = this._lowStock.asReadonly();
-
-  /**
    * Readonly signal exposing loading state.
    */
   readonly isLoading = this._isLoading.asReadonly();
@@ -103,11 +70,6 @@ export class LaboratoryStore {
    * Readonly signal exposing the latest success message.
    */
   readonly successMsg = this._successMsg.asReadonly();
-
-  /**
-   * Computed signal indicating whether there are low-stock raw materials.
-   */
-  readonly hasLowStock = computed(() => this._lowStock().length > 0);
 
   /**
    * Computed signal exposing only active staff members.
@@ -124,7 +86,11 @@ export class LaboratoryStore {
   /**
    * Creates a new laboratory and stores the created profile.
    *
+   * @remarks
+   * The request is not retried, so the same laboratory is never registered twice.
+   *
    * @param command - Command containing laboratory registration data
+   * @param onCreated - Optional callback invoked with the created laboratory after it is stored
    */
   createLaboratory(command: CreateLaboratoryCommand, onCreated?: (laboratory: Laboratory) => void): void {
     this.startOperation();
@@ -213,142 +179,41 @@ export class LaboratoryStore {
   }
 
   /**
-   * Registers a new staff member under a laboratory.
+   * Registers a new staff member under a laboratory; the platform creates their account.
+   *
+   * @remarks
+   * The request is not retried: a repeated POST would try to register the same e-mail again.
+   * The caller shows the delivery of the credentials, which the platform returns only once.
    *
    * @param laboratoryId - Numeric identifier of the laboratory
    * @param command - Command containing staff registration data
+   * @returns Observable emitting the registered staff member and the delivery of their credentials
    */
-  registerStaff(laboratoryId: number, command: RegisterStaffCommand): void {
+  registerStaff(laboratoryId: number, command: RegisterStaffCommand): Observable<RegisteredStaff> {
     this.startOperation();
-
-    this.api
-      .registerStaff(laboratoryId, { ...command, laboratoryId })
-      .pipe(retry(2))
-      .subscribe({
-        next: () => {
-          this._successMsg.set('Staff member registered successfully');
-          this.finishOperation();
-          this.loadStaff(laboratoryId);
-        },
-        error: (error: unknown) => {
-          this.failOperation(error, 'Failed to register staff');
-        },
-      });
+    return this.api.registerStaff(laboratoryId, { ...command }).pipe(
+      tap((registered) => this._staffList.update((staffList) => [
+        ...staffList.filter((staff) => staff.id !== registered.staffMember.id), registered.staffMember,
+      ])),
+      finalize(() => this.finishOperation()),
+    );
   }
 
   /**
-   * Deactivates an existing staff member.
+   * Deactivates an existing staff member, who can no longer sign in.
    *
-   * @param laboratoryId - Numeric identifier of the laboratory used to update local state
+   * @param laboratoryId - Numeric identifier of the laboratory
    * @param staffId - Numeric identifier of the staff member to deactivate
+   * @returns Observable emitting the deactivated staff member
    */
-  deactivateStaff(laboratoryId: number, staffId: number): void {
+  deactivateStaff(laboratoryId: number, staffId: number): Observable<StaffMember> {
     this.startOperation();
-
-    this.api
-      .deactivateStaff(staffId)
-      .pipe(retry(2))
-      .subscribe({
-        next: () => {
-          this._staffList.update((staffList) =>
-            staffList.map((staff) => (staff.id === staffId ? { ...staff, active: false } : staff)),
-          );
-          this._successMsg.set('Staff member deactivated successfully');
-          this.finishOperation();
-          this.loadStaff(laboratoryId);
-        },
-        error: (error: unknown) => {
-          this.failOperation(error, 'Failed to deactivate staff');
-        },
-      });
-  }
-
-  /**
-   * Loads pharmaceutical products registered under a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   */
-  loadProducts(laboratoryId: number): void {
-    this.startOperation();
-
-    this.api
-      .getProducts(laboratoryId)
-      .pipe(retry(2))
-      .subscribe({
-        next: (products: PharmaceuticalProduct[]) => {
-          this._products.set(products);
-          this.finishOperation();
-        },
-        error: (error: unknown) => {
-          this.failOperation(error, 'Failed to load products');
-        },
-      });
-  }
-
-  /**
-   * Creates a new pharmaceutical product under a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   * @param command - Command containing product creation data
-   */
-  createProduct(laboratoryId: number, command: CreateProductCommand): void {
-    this.startOperation();
-
-    this.api
-      .createProduct(laboratoryId, { ...command, laboratoryId })
-      .pipe(retry(2))
-      .subscribe({
-        next: () => {
-          this._successMsg.set('Product created successfully');
-          this.finishOperation();
-          this.loadProducts(laboratoryId);
-        },
-        error: (error: unknown) => {
-          this.failOperation(error, 'Failed to create product');
-        },
-      });
-  }
-
-  /**
-   * Loads raw materials and low-stock materials for a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   */
-  loadRawMaterials(laboratoryId: number): void {
-    this.startOperation();
-
-    this.api
-      .getRawMaterials(laboratoryId)
-      .pipe(retry(2))
-      .subscribe({
-        next: (materials: RawMaterial[]) => {
-          this._rawMaterials.set(materials);
-          this._lowStock.set(materials.filter(material => material.quantityInStock <= material.minimumStock));
-          this.finishOperation();
-        },
-        error: (error: unknown) => {
-          this.failOperation(error, 'Failed to load raw materials');
-        },
-      });
-
-  }
-
-  /**
-   * Creates a new raw material under a laboratory.
-   *
-   * @param laboratoryId - Numeric identifier of the laboratory
-   * @param command - Command containing raw material registration data
-   */
-  async createRawMaterial(laboratoryId: number, command: CreateRawMaterialCommand): Promise<boolean> {
-    this.startOperation();
-    try {
-      await firstValueFrom(this.api.createRawMaterial(laboratoryId, { ...command, laboratoryId }));
-      this.finishOperation();
-      return true;
-    } catch (error) {
-      this.failOperation(error, 'Failed to register raw material');
-      return false;
-    }
+    return this.api.deactivateStaff(laboratoryId, staffId).pipe(
+      tap((deactivated) => this._staffList.update((staffList) =>
+        staffList.map((staff) => (staff.id === deactivated.id ? deactivated : staff)),
+      )),
+      finalize(() => this.finishOperation()),
+    );
   }
 
   /**

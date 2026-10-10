@@ -52,18 +52,20 @@
           </p>
         </mat-card-content>
 
-        <mat-card-actions align="end">
-          <button
-            mat-raised-button
-            color="primary"
-            type="button"
-            aria-label="Edit laboratory profile"
-            (click)="onEdit()"
-          >
-            <mat-icon>edit</mat-icon>
-            {{ 'lab-profile.edit' | translate }}
-          </button>
-        </mat-card-actions>
+        @if (iamStore.canManageQuality()) {
+          <mat-card-actions align="end">
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              [attr.aria-label]="'lab-profile.edit' | translate"
+              (click)="onEdit()"
+            >
+              <mat-icon>edit</mat-icon>
+              {{ 'lab-profile.edit' | translate }}
+            </button>
+          </mat-card-actions>
+        }
       </mat-card>
     } @else {
       <mat-card class="lab-card">
