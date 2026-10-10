@@ -1,0 +1,207 @@
+<section class="operations-page profile-page" [attr.aria-busy]="store.loading()">
+  <div class="page-heading">
+    <div>
+      <h1><mat-icon aria-hidden="true">account_circle</mat-icon>{{ 'profile.title' | translate }}</h1>
+      <p class="muted">{{ 'profile.subtitle' | translate }}</p>
+    </div>
+  </div>
+
+  @if (store.failed() && !store.profile()) {
+    <p class="error" role="alert">{{ 'profile.errors.load' | translate }}</p>
+  }
+
+  @if (store.profile(); as profile) {
+    @if (profile.isIncomplete) {
+      <p class="notice" role="status">{{ 'profile.incomplete' | translate }}</p>
+    }
+
+    <div class="profile-layout">
+      <aside class="identity">
+        <div class="avatar" [class.has-photo]="store.photoUrl()">
+          @if (store.photoUrl(); as photo) {
+            <img [src]="photo" [alt]="'profile.photo.alt' | translate: { name: profile.displayName }">
+          } @else {
+            <span aria-hidden="true">{{ profile.initials }}</span>
+          }
+          @if (photoBusy()) {
+            <div class="avatar-busy"><mat-spinner diameter="32"></mat-spinner></div>
+          }
+        </div>
+
+        <input #photoInput type="file" class="visually-hidden" [accept]="photoTypes" (change)="photoChosen($event)"
+          [attr.aria-label]="'profile.photo.change' | translate">
+        <div class="photo-actions">
+          <button mat-stroked-button type="button" [disabled]="photoBusy()" (click)="choosePhoto()">
+            <mat-icon>photo_camera</mat-icon>{{ (profile.hasPhoto ? 'profile.photo.change' : 'profile.photo.add') | translate }}
+          </button>
+          @if (profile.hasPhoto) {
+            <button mat-button type="button" class="danger" [disabled]="photoBusy()" (click)="removePhoto()">
+              <mat-icon>delete</mat-icon>{{ 'profile.photo.remove' | translate }}
+            </button>
+          }
+        </div>
+        <p class="hint">{{ 'profile.photo.hint' | translate }}</p>
+        @if (photoError(); as error) {
+          <p class="error compact" role="alert">{{ error | translate }}</p>
+        }
+
+        <h2 class="identity-name">{{ profile.displayName }}</h2>
+        <ul class="identity-facts">
+          <li>
+            @for (key of roleKeys(); track key) {
+              <span class="role">{{ key | translate }}</span>
+            }
+          </li>
+          @if (profile.position) {
+            <li><mat-icon aria-hidden="true">work</mat-icon>{{ profile.position }}</li>
+          }
+          <li><mat-icon aria-hidden="true">person</mat-icon>{{ profile.username }}</li>
+          @if (profile.email) {
+            <li><mat-icon aria-hidden="true">mail</mat-icon>{{ profile.email }}</li>
+          }
+          @if (profile.updatedAt) {
+            <li class="muted"><mat-icon aria-hidden="true">history</mat-icon>
+              {{ 'profile.updated-at' | translate: { date: (profile.updatedAt | date: 'medium') } }}</li>
+          }
+        </ul>
+      </aside>
+
+      <div class="sections">
+        <section class="card" aria-labelledby="personal-title">
+          <h2 id="personal-title">{{ 'profile.personal.title' | translate }}</h2>
+          <form [formGroup]="personalForm" (ngSubmit)="savePersonalData()" novalidate>
+            <div class="form-grid">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'profile.personal.full-name' | translate }}</mat-label>
+                <input matInput formControlName="fullName" autocomplete="name" maxlength="120" required>
+                @if (personalForm.controls.fullName.invalid) {
+                  <mat-error>{{ 'profile.personal.errors.full-name' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'profile.personal.dni' | translate }}</mat-label>
+                <input matInput formControlName="dni" inputmode="numeric" maxlength="8">
+                <mat-hint>{{ 'profile.personal.dni-hint' | translate }}</mat-hint>
+                @if (personalForm.controls.dni.invalid) {
+                  <mat-error>{{ 'profile.personal.errors.dni' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'profile.personal.phone' | translate }}</mat-label>
+                <input matInput formControlName="phoneNumber" type="tel" autocomplete="tel" maxlength="30">
+                @if (personalForm.controls.phoneNumber.invalid) {
+                  <mat-error>{{ 'profile.personal.errors.phone' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'profile.personal.location' | translate }}</mat-label>
+                <input matInput formControlName="location" autocomplete="address-level2" maxlength="120">
+                <mat-hint>{{ 'profile.personal.location-hint' | translate }}</mat-hint>
+                @if (personalForm.controls.location.invalid) {
+                  <mat-error>{{ 'profile.personal.errors.location' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            @if (personalMessage(); as message) {
+              <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
+            }
+            <div class="form-actions">
+              <button mat-flat-button color="primary" type="submit" [disabled]="personalSaving() || personalForm.pristine">
+                <mat-icon>save</mat-icon>{{ 'profile.personal.save' | translate }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="account-title">
+          <h2 id="account-title">{{ 'profile.account.title' | translate }}</h2>
+          <p class="muted">{{ 'profile.account.subtitle' | translate }}</p>
+          <form [formGroup]="accountForm" (ngSubmit)="saveAccount()" novalidate>
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'profile.account.username' | translate }}</mat-label>
+                <input matInput formControlName="username" autocomplete="username" maxlength="80" required>
+                @if (accountForm.controls.username.invalid) {
+                  <mat-error>{{ 'profile.account.errors.username' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'profile.account.email' | translate }}</mat-label>
+                <input matInput formControlName="email" type="email" autocomplete="email" maxlength="120" required>
+                @if (accountForm.controls.email.invalid) {
+                  <mat-error>{{ 'profile.account.errors.email' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'profile.account.current-password' | translate }}</mat-label>
+                <input matInput formControlName="currentPassword" type="password" autocomplete="current-password" required>
+                <mat-hint>{{ 'profile.account.current-password-hint' | translate }}</mat-hint>
+                @if (accountForm.controls.currentPassword.invalid) {
+                  <mat-error>{{ 'iam.change-password.errors.required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            @if (accountMessage(); as message) {
+              <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
+            }
+            <div class="form-actions">
+              <button mat-flat-button color="primary" type="submit" [disabled]="accountSaving() || accountForm.pristine">
+                <mat-icon>save</mat-icon>{{ 'profile.account.save' | translate }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="password-title">
+          <h2 id="password-title">{{ 'profile.password.title' | translate }}</h2>
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" novalidate>
+            <div class="form-grid">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'profile.password.current' | translate }}</mat-label>
+                <input matInput formControlName="currentPassword" type="password" autocomplete="current-password" required>
+                @if (passwordForm.controls.currentPassword.invalid) {
+                  <mat-error>{{ 'iam.change-password.errors.required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'iam.change-password.new' | translate }}</mat-label>
+                <input matInput formControlName="newPassword" type="password" autocomplete="new-password" maxlength="72" required>
+                <mat-hint>{{ 'profile.password.hint' | translate }}</mat-hint>
+                @if (passwordForm.controls.newPassword.hasError('strength')) {
+                  <mat-error>{{ 'iam.change-password.errors.strength' | translate }}</mat-error>
+                } @else if (passwordForm.controls.newPassword.invalid) {
+                  <mat-error>{{ 'iam.change-password.errors.length' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'iam.change-password.confirm' | translate }}</mat-label>
+                <input matInput formControlName="confirmPassword" type="password" autocomplete="new-password" maxlength="72" required>
+                @if (passwordForm.controls.confirmPassword.invalid) {
+                  <mat-error>{{ 'iam.change-password.errors.required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            @if (passwordMessage(); as message) {
+              <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
+            }
+            <div class="form-actions">
+              <button mat-flat-button color="primary" type="submit" [disabled]="passwordSaving()">
+                <mat-icon>lock_reset</mat-icon>{{ 'iam.change-password.button' | translate }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" id="notifications" aria-labelledby="notifications-title">
+          <h2 id="notifications-title">{{ 'profile.notifications.title' | translate }}</h2>
+          <p class="muted">{{ 'profile.notifications.subtitle' | translate }}</p>
+          <app-notification-preferences-form />
+        </section>
+      </div>
+    </div>
+  } @else if (store.loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate"></mat-spinner>
+    </div>
+  }
+</section>

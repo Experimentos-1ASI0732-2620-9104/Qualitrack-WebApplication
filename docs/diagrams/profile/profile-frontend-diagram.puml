@@ -1,0 +1,163 @@
+@startuml profile-frontend-diagram
+
+title QualiTrack - Profile Frontend Class Diagram
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "shared" <<External>> {
+  interface BaseEntity
+  class BaseApi
+  abstract class ErrorHandlingEnabledBaseType
+  class ApiError
+  class Layout
+  class "operations-page.css" as OperationsPage <<stylesheet>>
+}
+
+package "iam.application" <<External>> {
+  class IamStore {
+    +currentUserId: Signal<number | null>
+    +currentUsername: Signal<string | null>
+    +currentUserInitials: Signal<string>
+    +updateAccount(command: UpdateAccountCommand): Observable<void>
+    +changePassword(currentPassword: string, newPassword: string): Observable<void>
+  }
+}
+
+package "ca.presentation.components" <<External>> {
+  class NotificationPreferencesForm <<component>>
+}
+
+package "profile.domain.model" {
+  class Profile {
+    +id: number
+    +userId: number
+    +staffId: number | null
+    +username: string
+    +email: string | null
+    +roles: string[]
+    +fullName: string | null
+    +dni: string | null
+    +phoneNumber: string | null
+    +location: string | null
+    +position: string | null
+    +hasPhoto: boolean
+    +photoUpdatedAt: string | null
+    +updatedAt: string | null
+    +displayName: string
+    +initials: string
+    +isIncomplete: boolean
+  }
+
+  interface UpdateProfileCommand {
+    +fullName: string
+    +dni: string
+    +phoneNumber: string
+    +location: string
+  }
+}
+
+Profile ..|> BaseEntity
+
+package "profile.application" {
+  class ProfileStore <<root>> {
+    +profile: Signal<Profile | null>
+    +photoUrl: Signal<string | null>
+    +loading / failed
+    +displayName: Signal<string>
+    +initials: Signal<string>
+    +ensureLoaded(): void
+    +load(): void
+    +update(command: UpdateProfileCommand): Observable<Profile>
+    +replacePhoto(image: File): Observable<Profile>
+    +removePhoto(): Observable<void>
+    +staffProfile(laboratoryId, staffId): Observable<StaffProfile>
+  }
+
+  interface StaffProfile {
+    +profile: Profile
+    +photoUrl: string | null
+  }
+
+  class MAX_PHOTO_BYTES <<const>>
+  class PHOTO_TYPES <<const>>
+}
+
+ProfileStore --> IamStore : clears on another sign-in
+ProfileStore ..> UpdateProfileCommand
+ProfileStore ..> StaffProfile
+note right of ProfileStore
+  Provided in root: the toolbar and the profile page share it.
+  Photos are kept as object URLs and revoked when replaced.
+end note
+
+package "profile.infrastructure" {
+  class ProfileApi {
+    +getMyProfile(): Observable<Profile>
+    +updateMyProfile(request: UpdateProfileRequest): Observable<Profile>
+    +getMyPhoto(): Observable<Blob>
+    +replaceMyPhoto(image: File): Observable<Profile>
+    +removeMyPhoto(): Observable<void>
+    +getStaffProfile(laboratoryId, staffId): Observable<Profile>
+    +getStaffPhoto(laboratoryId, staffId): Observable<Blob>
+  }
+
+  class ProfileApiEndpoint
+  class ProfileAssembler {
+    +toEntityFromResource(resource: ProfileResource): Profile
+  }
+
+  interface ProfileResource
+  interface UpdateProfileRequest {
+    +fullName: string
+    +dni: string | null
+    +phoneNumber: string | null
+    +location: string | null
+  }
+}
+
+ProfileApi --|> BaseApi
+ProfileApiEndpoint --|> ErrorHandlingEnabledBaseType
+ProfileStore --> ProfileApi
+ProfileApi --> ProfileApiEndpoint
+ProfileApiEndpoint --> ProfileAssembler
+ProfileApiEndpoint ..> ProfileResource
+ProfileApiEndpoint ..> UpdateProfileRequest
+ProfileAssembler ..> Profile
+note bottom of ProfileApiEndpoint
+  GET/PUT    /users/me/profile
+  GET/PUT/DELETE /users/me/profile/photo (the image is the PUT body)
+  GET        /laboratories/{laboratoryId}/staff/{staffId}/profile[/photo]
+             (quality managers)
+end note
+
+package "profile.presentation" {
+  class ProfileRoutes <<Routes>>
+
+  class ProfilePage {
+    #personalForm
+    #accountForm
+    #passwordForm
+    #photoChosen(event): void
+    #removePhoto(): void
+    #savePersonalData(): void
+    #saveAccount(): void
+    #changePassword(): void
+  }
+}
+
+ProfileRoutes ..> Layout
+ProfileRoutes --> ProfilePage
+ProfilePage --> ProfileStore
+ProfilePage --> IamStore : account and password
+ProfilePage *-- NotificationPreferencesForm : #notifications
+ProfilePage ..> ApiError
+ProfilePage ..> OperationsPage
+note bottom of ProfilePage
+  /profile, opened from the name in the toolbar: photo (JPG, PNG or WebP
+  up to 2 MB), personal data, account (username and e-mail confirmed with
+  the current password), password and notification preferences.
+end note
+
+@enduml
