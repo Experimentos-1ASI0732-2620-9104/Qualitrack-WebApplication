@@ -1,0 +1,105 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**', 'hotfix/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Backend branch used by the system tests (it provides the isolated SystemTestServer).
+  PLATFORM_REF: develop
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Production build
+        run: npm run build
+
+  system-tests:
+    name: System Tests (web + API)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout web application
+        uses: actions/checkout@v7
+
+      - name: Checkout backend
+        uses: actions/checkout@v7
+        with:
+          repository: Experimentos-1ASI0732-2620-9104/Qualitrack-Platform
+          ref: ${{ env.PLATFORM_REF }}
+          path: platform
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: maven
+          cache-dependency-path: platform/pom.xml
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Start backend (isolated H2 system-test server)
+        working-directory: platform
+        run: |
+          nohup mvn -B -ntp spring-boot:test-run \
+            -Dspring-boot.run.main-class=com.iotech.qualitrack.systemtest.SystemTestServer > ../backend.log 2>&1 &
+
+      - name: Start web application
+        run: nohup npm start -- --port 4200 > web.log 2>&1 &
+
+      - name: Wait for both services
+        run: |
+          for i in $(seq 1 90); do
+            api=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/v1/authentication/sign-in \
+              -H 'Content-Type: application/json' -d '{"username":"system.qa.manager","password":"SystemTest123!"}' || true)
+            web=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4200 || true)
+            if [ "$api" = "200" ] && [ "$web" = "200" ]; then echo "Services ready"; exit 0; fi
+            sleep 5
+          done
+          echo "Services did not start"; tail -50 backend.log; tail -50 web.log; exit 1
+
+      - name: Run system tests
+        run: npm run test:system
+
+      - name: Publish screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: system-test-results
+          path: |
+            test-results/system/
+            backend.log
+            web.log
+          retention-days: 14
