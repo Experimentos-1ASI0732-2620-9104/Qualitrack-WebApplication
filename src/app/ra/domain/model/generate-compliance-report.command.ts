@@ -1,5 +1,5 @@
 /**
- * Command to trigger the generation of a regulatory compliance report for a laboratory.
+ * Command to generate the environmental report of a period (US95): indicators, alerts and actions per environment.
  *
  * @remarks
  * In Domain-Driven Design, this command represents the user's intent to generate
@@ -12,12 +12,17 @@ export interface GenerateComplianceReportCommand {
   laboratoryId: number;
 
   /**
-   * The start date and time of the reporting period.
+   * Optional environment; null covers every environment of the laboratory.
+   */
+  environmentId: number | null;
+
+  /**
+   * First calendar day of the period (yyyy-MM-dd).
    */
   startDate: string;
 
   /**
-   * The end date and time of the reporting period.
+   * Last calendar day of the period (yyyy-MM-dd).
    */
   endDate: string;
 
@@ -25,9 +30,4 @@ export interface GenerateComplianceReportCommand {
    * The requested output format for the generated document.
    */
   format: 'PDF' | 'CSV';
-
-  /**
-   * The numeric identifier of the user requesting the report.
-   */
-  requestedBy: number;
 }
