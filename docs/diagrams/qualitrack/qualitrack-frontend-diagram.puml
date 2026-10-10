@@ -38,7 +38,6 @@ package "qualitrack-frontend" {
       interface BaseResource
       interface BaseResponse
       interface BaseAssembler
-      interface MessageResource
       abstract class BaseApi
       abstract class BaseApiEndpoint
       abstract class ErrorHandlingEnabledBaseType
@@ -63,7 +62,8 @@ package "qualitrack-frontend" {
       class User
       interface SignInCommand
       interface SignUpCommand
-      interface RecoverPasswordCommand
+      interface ResetPasswordCommand
+      interface UpdateAccountCommand
     }
 
     package "application" {
@@ -74,10 +74,9 @@ package "qualitrack-frontend" {
       class IamApi
       class SignInApiEndpoint
       class SignUpApiEndpoint
-      class RecoverPasswordApiEndpoint
+      class PasswordRecoveryApiEndpoint
       class SignInAssembler
       class SignUpAssembler
-      class RecoverPasswordAssembler
       class authenticationInterceptor <<HttpInterceptorFn>>
     }
 
@@ -86,6 +85,29 @@ package "qualitrack-frontend" {
       class SignInForm
       class SignUpForm
       class AuthenticationSection
+      class UserSessionSection
+    }
+  }
+
+  package "profile" {
+    package "domain" {
+      class Profile
+      interface UpdateProfileCommand
+    }
+
+    package "application" {
+      class ProfileStore
+    }
+
+    package "infrastructure" {
+      class ProfileApi
+      class ProfileApiEndpoint
+      class ProfileAssembler
+    }
+
+    package "presentation" {
+      class ProfileRoutes <<Routes>>
+      class ProfilePage
     }
   }
 
@@ -159,6 +181,7 @@ package "qualitrack-frontend" {
   package "equipment" {
     package "domain" {
       class Equipment
+      enum IotDeviceType
       class BpmParameterConfig
       class MaintenanceRecord
     }
@@ -180,10 +203,11 @@ package "qualitrack-frontend" {
     package "presentation" {
       class EquipmentRoutes <<Routes>>
       class EquipmentList
-      class RegisterEquipment
+      class EquipmentForm
+      class DeviceForm
       class EquipmentDetail
+      class MaintenanceForm
       class BpmConfigForm
-      class MaintenanceHistory
     }
   }
 
@@ -225,10 +249,12 @@ package "qualitrack-frontend" {
       class DeviationAlert
       class ComplianceEvent
       class NotificationPreference
+      class Notification
     }
 
     package "application" {
       class CaStore
+      class NotificationStore
     }
 
     package "infrastructure" {
@@ -236,6 +262,7 @@ package "qualitrack-frontend" {
       class AlertApiEndpoint
       class ComplianceEventApiEndpoint
       class NotificationPreferenceApiEndpoint
+      class NotificationApiEndpoint
       class AlertAssembler
       class ComplianceEventAssembler
       class NotificationPreferenceAssembler
@@ -245,7 +272,8 @@ package "qualitrack-frontend" {
       class CaRoutes <<Routes>>
       class AlertDashboard
       class AlertHistory
-      class NotificationSettings
+      class NotificationBell
+      class NotificationPreferencesForm
     }
   }
 
@@ -285,8 +313,9 @@ package "qualitrack-frontend" {
   package "tracking" {
     package "domain" {
       class Measurement
-      class EquipmentStatus
-      class TelemetryHistoryPoint
+      class ActuationEvent
+      class EnvironmentalProfile
+      class DeviceConnection
     }
 
     package "application" {
@@ -296,19 +325,22 @@ package "qualitrack-frontend" {
     package "infrastructure" {
       class TrackingApi
       class MeasurementApiEndpoint
-      class EquipmentStatusApiEndpoint
-      class TelemetryHistoryApiEndpoint
+      class ActuationEventApiEndpoint
+      class EnvironmentalProfileApiEndpoint
+      class DeviceConnectionApiEndpoint
       class MeasurementAssembler
-      class EquipmentStatusAssembler
-      class TelemetryHistoryAssembler
+      class ActuationEventAssembler
+      class EnvironmentalProfileAssembler
+      class DeviceConnectionAssembler
     }
 
     package "presentation" {
       class TrackingRoutes <<Routes>>
-      class TelemetryDashboardComponent
-      class TelemetryChartComponent
-      class TelemetryHistoryComponent
-      class EquipmentStatusCardComponent
+      class EnvironmentalMonitoring
+      class TelemetryHistory
+      class EnvironmentalProfiles
+      class ThresholdEditor
+      class ActuationRulesEditor
     }
   }
 
@@ -360,9 +392,27 @@ AppRoutes --> CaRoutes
 AppRoutes --> RaRoutes
 AppRoutes --> TrackingRoutes
 AppRoutes --> SubscriptionRoutes
+AppRoutes --> ProfileRoutes
 AppRoutes --> PageNotFound
 
 Layout --> LanguageSwitcher
+Layout --> NotificationBell
+Layout --> UserSessionSection
+UserSessionSection --> ProfileStore
+NotificationBell --> NotificationStore
+NotificationStore --> CaApi
+CaApi --> NotificationApiEndpoint
+NotificationApiEndpoint --|> BaseApiEndpoint
+ProfileRoutes ..> Layout
+ProfileRoutes --> ProfilePage
+ProfilePage --> ProfileStore
+ProfilePage --> IamStore : account and password
+ProfilePage *-- NotificationPreferencesForm
+NotificationPreferencesForm --> CaStore
+ProfileStore --> ProfileApi
+ProfileApi --> ProfileApiEndpoint
+ProfileApiEndpoint --> ProfileAssembler
+ProfileAssembler ..> Profile
 Toolbar --> LanguageSwitcher
 Home --> Toolbar
 Home --> AuthenticationSection
@@ -382,10 +432,10 @@ IamStore --> IamApi
 IamApi --|> BaseApi
 IamApi --> SignInApiEndpoint
 IamApi --> SignUpApiEndpoint
-IamApi --> RecoverPasswordApiEndpoint
+IamApi --> PasswordRecoveryApiEndpoint
 SignInApiEndpoint --|> ErrorHandlingEnabledBaseType
 SignUpApiEndpoint --|> ErrorHandlingEnabledBaseType
-RecoverPasswordApiEndpoint --|> ErrorHandlingEnabledBaseType
+ProfileApiEndpoint --|> ErrorHandlingEnabledBaseType
 SignInForm --> IamStore
 SignUpForm --> IamStore
 AuthenticationSection ..> IamRoutes
@@ -438,11 +488,13 @@ AuditLogApiEndpoint --|> BaseApiEndpoint
 
 TrackingStore --> TrackingApi
 TrackingApi --> MeasurementApiEndpoint
-TrackingApi --> EquipmentStatusApiEndpoint
-TrackingApi --> TelemetryHistoryApiEndpoint
+TrackingApi --> ActuationEventApiEndpoint
+TrackingApi --> EnvironmentalProfileApiEndpoint
+TrackingApi --> DeviceConnectionApiEndpoint
 MeasurementApiEndpoint --|> BaseApiEndpoint
-EquipmentStatusApiEndpoint --|> BaseApiEndpoint
-TelemetryHistoryApiEndpoint --|> BaseApiEndpoint
+ActuationEventApiEndpoint --|> BaseApiEndpoint
+EnvironmentalProfileApiEndpoint --|> BaseApiEndpoint
+DeviceConnectionApiEndpoint --|> BaseApiEndpoint
 
 SubscriptionStore --> SubscriptionApi
 SubscriptionApi --|> BaseApi
