@@ -3,90 +3,70 @@ title QualiTrack - Inventory Frontend Class Diagram
 
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
-skinparam shadowing false
 hide empty members
 
-package "shared" <<External>> {
+package "shared" {
   interface BaseEntity
-  abstract class BaseApi
-  abstract class BaseApiEndpoint
-  abstract class ErrorHandlingEnabledBaseType
+  class BaseApi
+  class BaseApiEndpoint
   interface BaseAssembler
-  interface BaseResource
-  interface BaseResponse
-  class Layout
-  class stockQuantityValidator <<function>>
+  class "operations-page.css" as OperationsPage <<stylesheet>>
 }
-package "iam.application" <<External>> {
-  class IamStore
+
+package "iam.application" {
+  class IamStore {
+    +requireLaboratoryId(): number
+    +canManageQuality: Signal<boolean>
+    +canOperate: Signal<boolean>
+  }
 }
-package "batch" <<External>> {
-  class BatchApi
-  class RawMaterialUsage
-  class RawMaterialUsageComponent
+
+package "laboratory" {
+  class LaboratoryApi {
+    +getEnvironment(laboratoryId, environmentId)
+  }
+  class EnvironmentStore {
+    +preferredEnvironment(usage?, scope?): Environment
+    +rememberEnvironment(id, scope?): void
+  }
+  class EnvironmentSelector <<component>>
 }
-package "environments" <<Configuration>> {
-  class environment {
-    +serverBasePath
-    +laboratoryLabsEndpointPath
-    +inventoryEndpointPath
-    +inventoryMaterialsEndpointPath
-    +inventoryReceiptsEndpointPath
-    +inventoryUsableReceiptsEndpointPath
-    +inventoryReceiptReviewsEndpointPath
-    +inventoryConsumptionsEndpointPath
-    +inventoryMovementsEndpointPath
-    +inventoryLegacyMaterialsEndpointPath
-    +inventoryLegacyImportEndpointPath
+
+package "equipment" {
+  class EquipmentApi {
+    +getEquipment(labId)
+  }
+  class Equipment {
+    +deviceType: IotDeviceType | null
+    +environmentId: number | null
+    +status: EquipmentStatus
+  }
+}
+
+package "batch.infrastructure" {
+  class BatchApi {
+    +getRawMaterialUsages(lab, environmentId, rawMaterialId)
+    +getMaterialHistory(laboratoryId, legacyRawMaterialId)
   }
 }
 
 package "inventory.domain.model" {
-  interface AvailableReceipt {
+  class RawMaterial {
     +id: number
-    +rawMaterialId: number
-    +batchNumber: string
-    +unit: InventoryUnit
-    +availableAmount: number
-    +expiresOn: string
-  }
-  interface ConsumeRawMaterialBatchCommand {
     +laboratoryId: number
-    +rawMaterialBatchId: number
-    +productBatchId: number
-    +amountUsed: number
-    +unit: InventoryUnit
-    +operationId: string
-  }
-  class InventoryMovement {
-    +id: number
-    +materialId: number
-    +receiptId: number
-    +productBatchId: number | null
-    +type: InventoryMovementType
-    +amount: number
-    +unit: InventoryUnit
-    +stockBefore: number
-    +stockAfter: number
-    +statusBefore: string | null
-    +statusAfter: string
-    +reason: string
-    +actorId: number
-    +occurredAt: string
-  }
-  interface LegacyMaterial {
-    +id: number
+    +environmentId: number | null
     +code: string
     +name: string
-    +unit: string
-    +balance: number
-    +supplier: string
-    +batchNumber: string
-    +expiresOn: string
+    +unit: InventoryUnit
+    +minimumStock: number
+    +usableStock: number
+    +physicalStock: number
+    +stockStatus: StockStatus
+    +legacyId: number | null
+    +isLowStock: boolean
   }
   class RawMaterialBatch {
     +id: number
-    +laboratoryId: number
     +rawMaterialId: number
     +supplier: string
     +batchNumber: string
@@ -96,246 +76,131 @@ package "inventory.domain.model" {
     +receivedOn: string
     +expiresOn: string
     +status: RawMaterialBatchStatus
-    +usable?: boolean
-    +availability?: string
+    +expirationStatus?: ExpirationStatus
+    +containerMonitorId: number | null
   }
-  class RawMaterial {
-    +id: number
-    +laboratoryId: number
-    +code: string
-    +name: string
-    +unit: InventoryUnit
-    +minimumStock: number
-    +usableStock: number
-    +physicalStock: number
-    +legacyId: number | null
-  }
-  interface ReceiveRawMaterialBatchCommand {
-    +supplier: string
-    +batchNumber: string
-    +unit: InventoryUnit
-    +amount: number
-    +receivedOn: string
-    +expiresOn: string
-  }
-  interface ReviewRawMaterialBatchCommand {
-    +status: RawMaterialBatchStatus
-    +reason: string
-  }
-  interface SaveRawMaterialCommand {
-    +code: string
-    +name: string
-    +unit: InventoryUnit
-    +minimumStock: number
-  }
-  enum InventoryUnit <<union type>> {
-    kg
-    g
-    L
-    mL
-    units
-  }
-  enum RawMaterialBatchStatus <<union type>> {
-    QUARANTINED
-    RELEASED
-    OBSERVED
-    REJECTED
-  }
-  enum InventoryMovementType <<union type>> {
-    RECEIPT
-    REVIEW
-    CONSUMPTION
-    OPENING_BALANCE
-  }
+  class InventoryMovement
+  class LegacyMaterial
+  interface SaveRawMaterialCommand
+  interface ReceiveRawMaterialBatchCommand
+  interface ReviewRawMaterialBatchCommand
 }
 
-package "inventory.application" {
-  class InventoryStore {
-    +materials: Signal<RawMaterial[]>
-    +receipts: Signal<RawMaterialBatch[]>
-    +movements: Signal<InventoryMovement[]>
-    +selected
-    +canReview
-    +loading
-    +saving
-    +error
-    +load(id?): Promise<void>
-    +saveMaterial(command, id?)
-    +receive(material, command)
-    +review(receipt, command)
-    +loadLegacy(): Promise<void>
-    +importMaterial(id)
-  }
-  interface RawMaterialBatchConsumption {
-    +rawMaterialBatchId: number
-    +productBatchId: number
-    +amountUsed: number
-    +unit: InventoryUnit
-    +stockBefore: number
-    +stockAfter: number
-    +operationId: string
-  }
-  class ReceiptConsumptionStore {
-    +materials: Signal<RawMaterial[]>
-    +receipts: Signal<AvailableReceipt[]>
-    +selectedReceipt
-    +loading
-    +saving
-    +error
-    +loadMaterials()
-    +selectMaterial(material)
-    +consume(batchId, amount): Promise<boolean>
-  }
-}
+RawMaterial ..|> BaseEntity
+RawMaterialBatch ..|> BaseEntity
+InventoryMovement ..|> BaseEntity
 
 package "inventory.infrastructure" {
   class InventoryApi {
-    +materials(lab)
-    +save(lab, request, id?)
-    +receipts(lab, material)
-    +usable(lab, material)
-    +receive(lab, material, request)
-    +review(lab, receipt, status, reason)
-    +movements(lab, material)
-    +consume(lab, receiptId, productBatchId, amount, unit, operationId)
+    +materials(lab, environmentId, stockStatus?)
+    +material(lab, environmentId, id)
+    +save(lab, environmentId, request, id?)
+    +receipts(lab, environmentId, material, usable?)
+    +environmentReceipts(lab, environmentId, expirationStatus?, withinDays?)
+    +receive(lab, environmentId, material, request)
+    +review(lab, environmentId, material, receipt, status, reason)
+    +assignContainer(lab, environmentId, material, receipt, containerMonitorId)
+    +movements(lab, environmentId, material)
     +legacy(lab)
-    +import(lab, id)
+    +import(lab, environmentId, legacyId)
   }
-  class InventoryMovementApiEndpoint
-  class InventoryMovementAssembler
-  interface InventoryMovementResource
-  interface InventoryMovementsResponse
-  class LegacyInventoryApiEndpoint
-  interface LegacyMaterialResource
-  interface LegacyImportResponse
   class RawMaterialApiEndpoint
-  class RawMaterialAssembler
   class RawMaterialBatchApiEndpoint
+  class InventoryMovementApiEndpoint
+  class LegacyInventoryApiEndpoint
+  class RawMaterialAssembler
   class RawMaterialBatchAssembler
-  interface RawMaterialBatchResource
-  interface RawMaterialBatchesResponse
-  interface ReceiveRawMaterialBatchRequest
-  interface ReviewRawMaterialBatchRequest
-  interface ConsumeRawMaterialBatchRequest
-  interface RawMaterialResource
-  interface RawMaterialsResponse
-  interface SaveRawMaterialRequest
-  interface AvailableReceiptResource
-  interface ReceiptConsumptionResponse
+  class InventoryMovementAssembler
 }
 
-package "inventory.presentation" {
-  class InventoryCatalogue {
-    +search
-    +lowOnly
-    +filtered
-    +lowCount
-    +ngOnInit()
-    +showImports()
-    +import(id)
+InventoryApi --|> BaseApi
+InventoryApi --> RawMaterialApiEndpoint
+InventoryApi --> RawMaterialBatchApiEndpoint
+InventoryApi --> InventoryMovementApiEndpoint
+InventoryApi --> LegacyInventoryApiEndpoint
+RawMaterialApiEndpoint --|> BaseApiEndpoint
+RawMaterialBatchApiEndpoint --|> BaseApiEndpoint
+InventoryMovementApiEndpoint --|> BaseApiEndpoint
+RawMaterialApiEndpoint --> RawMaterialAssembler
+RawMaterialBatchApiEndpoint --> RawMaterialBatchAssembler
+InventoryMovementApiEndpoint --> InventoryMovementAssembler
+RawMaterialAssembler ..|> BaseAssembler
+RawMaterialBatchAssembler ..|> BaseAssembler
+InventoryMovementAssembler ..|> BaseAssembler
+note right of RawMaterialBatchApiEndpoint
+  /laboratories/{laboratoryId}/environments/{environmentId}
+  /raw-materials/{rawMaterialId}/batches[?usable=true]
+  PUT .../batches/{rawMaterialBatchId}/container-assignment
+  /raw-material-batches?expirationStatus=NEAR_EXPIRY
+end note
+
+package "inventory.application" {
+  class InventoryStore <<component scoped>> {
+    +environmentId: Signal<number>
+    +materials: Signal<RawMaterial[]>
+    +lowStockMaterials: Signal<RawMaterial[]>
+    +receipts: Signal<RawMaterialBatch[]>
+    +nearExpiry: Signal<RawMaterialBatch[]>
+    +movements: Signal<InventoryMovement[]>
+    +usages: Signal<RawMaterialUsage[]>
+    +affectedBatches: Signal<number[]>
+    +canReview: Signal<boolean>
+    +canOperate: Signal<boolean>
+    +containers: Signal<Equipment[]>
+    +environmentUsage: Signal<EnvironmentUsage | null>
+    +availableContainers: Signal<Equipment[]>
+    +storesInContainers: Signal<boolean>
+    +load(environmentId, id?): Promise<boolean>
+    +loadLowStock()
+    +loadNearExpiry(withinDays?)
+    +saveMaterial(command, id?)
+    +receive(material, command)
+    +review(receipt, command)
+    +assignContainer(receipt, containerMonitorId)
+    +containerName(containerMonitorId): string | null
+    +loadLegacy()
+    +importMaterial(legacyId)
   }
-  class InventoryDetail
-  class RegisterMaterial {
-    +form
-    +units: InventoryUnit[]
-    +save(): Promise<void>
-  }
-  class inventoryRoutes <<Routes>>
+  class inventoryError <<function>>
 }
 
 InventoryStore --> InventoryApi
+InventoryStore --> BatchApi
 InventoryStore --> IamStore
-InventoryStore --> BatchApi : legacy history
-InventoryStore ..> RawMaterialUsage
-ReceiptConsumptionStore --> InventoryApi
-ReceiptConsumptionStore --> IamStore
-ReceiptConsumptionStore ..> ConsumeRawMaterialBatchCommand
-ReceiptConsumptionStore ..> AvailableReceipt
-RawMaterialUsageComponent --> ReceiptConsumptionStore
-InventoryStore ..> SaveRawMaterialCommand
-InventoryStore ..> ReceiveRawMaterialBatchCommand
-InventoryStore ..> ReviewRawMaterialBatchCommand
-InventoryStore ..> RawMaterial
-InventoryStore ..> RawMaterialBatch
-InventoryStore ..> InventoryMovement
-RawMaterial "1" <-- "0..*" RawMaterialBatch : rawMaterialId
-RawMaterialBatch "1" <-- "0..*" InventoryMovement : receiptId
-RawMaterial ..> InventoryUnit
-RawMaterialBatch ..> RawMaterialBatchStatus
-InventoryMovement ..> InventoryMovementType
-InventoryApi --|> BaseApi
-LegacyInventoryApiEndpoint --|> ErrorHandlingEnabledBaseType
-RawMaterialBatchApiEndpoint ..> AvailableReceiptResource
-RawMaterialBatchApiEndpoint ..> AvailableReceipt
-RawMaterialBatchApiEndpoint ..> ReceiptConsumptionResponse
-RawMaterialBatchApiEndpoint ..> RawMaterialBatchConsumption
-LegacyInventoryApiEndpoint ..> LegacyMaterialResource
-LegacyInventoryApiEndpoint ..> LegacyMaterial
-LegacyInventoryApiEndpoint ..> LegacyImportResponse
-RawMaterialApiEndpoint ..> SaveRawMaterialRequest
-RawMaterialBatchApiEndpoint ..> ReceiveRawMaterialBatchRequest
-RawMaterialBatchApiEndpoint ..> ReviewRawMaterialBatchRequest
-RawMaterialBatchApiEndpoint ..> ConsumeRawMaterialBatchRequest
-inventoryRoutes ..> Layout
-inventoryRoutes ..> InventoryCatalogue
-inventoryRoutes ..> RegisterMaterial
-inventoryRoutes ..> InventoryDetail
+InventoryStore --> EquipmentApi : container monitors
+InventoryStore --> LaboratoryApi : environment usage
+InventoryStore ..> Equipment
+
+package "inventory.presentation" {
+  class InventoryHome
+  class InventoryCatalogue
+  class InventoryDetail
+  class RegisterMaterial
+  class InventoryRoutes
+}
+
+InventoryHome --> EnvironmentStore
 InventoryCatalogue --> InventoryStore
-RegisterMaterial --> InventoryStore
+InventoryCatalogue --> EnvironmentSelector
+InventoryCatalogue --> EnvironmentStore
 InventoryDetail --> InventoryStore
-RegisterMaterial ..> stockQuantityValidator
-InventoryDetail ..> stockQuantityValidator
-AvailableReceipt --|> BaseEntity
-InventoryMovement ..|> BaseEntity
-LegacyMaterial --|> BaseEntity
-RawMaterialBatch ..|> BaseEntity
-RawMaterial ..|> BaseEntity
-InventoryMovementApiEndpoint --|> BaseApiEndpoint
-InventoryMovementAssembler ..|> BaseAssembler
-InventoryMovementResource --|> BaseResource
-InventoryMovementsResponse --|> BaseResponse
-LegacyMaterialResource --|> BaseResource
-LegacyImportResponse --|> BaseResponse
-RawMaterialApiEndpoint --|> BaseApiEndpoint
-RawMaterialAssembler ..|> BaseAssembler
-RawMaterialBatchApiEndpoint --|> BaseApiEndpoint
-RawMaterialBatchAssembler ..|> BaseAssembler
-RawMaterialBatchResource --|> BaseResource
-RawMaterialBatchesResponse --|> BaseResponse
-RawMaterialResource --|> BaseResource
-RawMaterialsResponse --|> BaseResponse
-AvailableReceiptResource --|> BaseResource
-ReceiptConsumptionResponse --|> BaseResponse
-InventoryCatalogue ..|> OnInit
-InventoryDetail ..|> OnInit
-InventoryApi --> RawMaterialApiEndpoint
-RawMaterialApiEndpoint --> RawMaterialAssembler
-RawMaterialApiEndpoint ..> environment
-RawMaterialAssembler ..> RawMaterial
-RawMaterialAssembler ..> RawMaterialResource
-InventoryApi --> RawMaterialBatchApiEndpoint
-RawMaterialBatchApiEndpoint --> RawMaterialBatchAssembler
-RawMaterialBatchApiEndpoint ..> environment
-RawMaterialBatchAssembler ..> RawMaterialBatch
-RawMaterialBatchAssembler ..> RawMaterialBatchResource
-InventoryApi --> InventoryMovementApiEndpoint
-InventoryMovementApiEndpoint --> InventoryMovementAssembler
-InventoryMovementApiEndpoint ..> environment
-InventoryMovementAssembler ..> InventoryMovement
-InventoryMovementAssembler ..> InventoryMovementResource
-InventoryApi --> LegacyInventoryApiEndpoint
-LegacyInventoryApiEndpoint ..> environment
+RegisterMaterial --> InventoryStore
+InventoryCatalogue ..> OperationsPage
+InventoryDetail ..> OperationsPage
+note right of InventoryDetail
+  Lots tab: container of each lot, "Store in container" for operators
+  when the environment is RAW_MATERIAL_STORAGE (US43, US44) and
+  "View conditions" -> /tracking/history?environmentId=&deviceId=.
+end note
+
+note bottom of InventoryRoutes
+  /inventory -> preferred raw material storage environment
+  /inventory/environments/:environmentId/raw-materials[/new|/:rawMaterialId]
+  Raw material consumption is registered from the product batch detail.
+end note
 note bottom of RawMaterial
-  Stock is a server-derived projection, not a second local counter.
+  Stock is a server-derived projection, not a local counter.
   Laboratory legacy material and Inventory material have separate IDs.
-end note
-note bottom of RegisterMaterial
-  Dedicated registration view: no catalogue table.
-  Save and Cancel return to inventory-catalogue.
-end note
-note bottom of ReceiptConsumptionStore
-  Reuses operationId for retries of the same consumption.
-  The backend decides receipt eligibility and stock availability.
 end note
 
 @enduml
