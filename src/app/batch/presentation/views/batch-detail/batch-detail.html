@@ -1,74 +1,80 @@
-<div class="batch-detail-container">
-  @if (store.isLoading()) {
-    <div class="loading-shade">
-      <mat-spinner diameter="50"></mat-spinner>
-    </div>
-  }
-
-  <header class="page-header">
-    <div class="header-content">
-      <button mat-icon-button routerLink="../batch-list" color="primary">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-
-      <h1>
-        {{ 'batch-detail.title' | translate }}:
-        {{ currentBatch?.batchNumber || ('common.status-loading' | translate) }}
-      </h1>
-    </div>
-  </header>
-
+<main class="operations-page">
+  <!-- Back link to the product of the batch -->
+  <a [routerLink]="productLink">{{ store.traceability()?.product?.name || ('product-catalog.title' | translate) }}</a>
+  <!-- Error and success messages of the store -->
   @if (store.error()) {
-    <div class="error-container">
-      <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error()! | translate }}</p>
-    </div>
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
   }
-
-  <mat-tab-group dynamicHeight>
-    <mat-tab [label]="'batch-detail.tabs.general' | translate">
-      <div class="tab-content">
-        <mat-card class="info-card mat-elevation-z2">
-          <mat-card-header>
-            <mat-card-title>{{ 'batches.fields.product' | translate }}</mat-card-title>
-            <mat-card-subtitle>{{ currentBatch?.productName }}</mat-card-subtitle>
-          </mat-card-header>
-
-          <mat-card-content>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">{{ 'common.status' | translate }}</span>
-                <span class="value status-text" [ngClass]="getStatusClass(currentBatch?.status)">
-                  {{ 'batches.status.' + getStatusKey(currentBatch?.status) | translate }}
-                </span>
-              </div>
-
-              <div class="info-item">
-                <span class="label">{{ 'batches.fields.quantity' | translate }}</span>
-                <span class="value">{{ currentBatch?.quantity }} {{ currentBatch?.unit }}</span>
-              </div>
-
-              <div class="info-item">
-                <span class="label">{{ 'batches.fields.date' | translate }}</span>
-                <span class="value">{{ currentBatch?.startDate | date:'mediumDate' }}</span>
-              </div>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="notes-section">
-              <h3>{{ 'batch-detail.notes' | translate }}</h3>
-              <p>{{ currentBatch?.notes || ('batch-detail.no-notes' | translate) }}</p>
-            </div>
-          </mat-card-content>
-        </mat-card>
+  @if (store.successMsg()) {
+    <p class="success" role="status">{{ store.successMsg()! | translate }}</p>
+  }
+  @if (store.selectedBatch(); as batch) {
+    <!-- Heading with the release and reject actions, only for quality managers on open batches -->
+    <header class="page-heading">
+      <h1><mat-icon aria-hidden="true">science</mat-icon>{{ 'batch-detail.title' | translate }}: {{ batch.batchNumber }}</h1>
+      @if (batch.isOpen && store.canDecide()) {
+        <div class="actions">
+          <a mat-flat-button [routerLink]="decisionLink(batch.id, 'release')">
+            <mat-icon>verified</mat-icon>{{ 'batches.actions.release' | translate }}
+          </a>
+          <a mat-stroked-button [routerLink]="decisionLink(batch.id, 'reject')">
+            <mat-icon>cancel</mat-icon>{{ 'batches.actions.reject' | translate }}
+          </a>
+        </div>
+      }
+    </header>
+    <!-- Summary: status, quantity and dates -->
+    <section class="summary-strip">
+      <div>
+        <span>{{ 'batches.fields.status' | translate }}</span>
+        <strong class="status" [class.released]="batch.status === 'RELEASED'" [class.rejected]="batch.status === 'REJECTED'">
+          {{ 'batches.status.' + statusKey(batch.status) | translate }}
+        </strong>
       </div>
-    </mat-tab>
-
-    <mat-tab [label]="'batch-detail.tabs.materials' | translate">
-      <div class="tab-content">
-        <app-raw-material-usage [batchId]="batchId"></app-raw-material-usage>
-      </div>
-    </mat-tab>
-  </mat-tab-group>
-</div>
+      <div><span>{{ 'batches.fields.quantity' | translate }}</span><strong>{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</strong></div>
+      <div><span>{{ 'batches.fields.date' | translate }}</span><strong>{{ batch.startDate | date: 'mediumDate' }}</strong></div>
+      @if (batch.endDate) {
+        <div><span>{{ 'batch-detail.closed-on' | translate }}</span><strong>{{ batch.endDate | date: 'mediumDate' }}</strong></div>
+      }
+    </section>
+    @if (!batch.isOpen) {
+      <p class="notice" role="status">{{ 'batch-detail.closed-notice' | translate }}</p>
+    }
+    <!-- Tabs: general, raw materials, participants, storage and traceability -->
+    <mat-tab-group dynamicHeight>
+      <!-- General: manufacturing notes -->
+      <mat-tab [label]="'batch-detail.tabs.general' | translate">
+        <div class="tab-content">
+          <h2>{{ 'batch-detail.notes' | translate }}</h2>
+          <p>{{ batch.notes || ('batch-detail.no-notes' | translate) }}</p>
+        </div>
+      </mat-tab>
+      <!-- Raw materials consumed; the form is only available on open batches to users who operate -->
+      <mat-tab [label]="'batch-detail.tabs.materials' | translate">
+        <div class="tab-content">
+          <app-raw-material-usage [path]="path!" [batchId]="batch.id" [open]="batch.isOpen && store.canOperate()" />
+        </div>
+      </mat-tab>
+      <!-- Equipment and staff that took part -->
+      <mat-tab [label]="'batch-detail.tabs.participants' | translate">
+        <div class="tab-content">
+          <app-batch-participants [path]="path!" [batchId]="batch.id" [open]="batch.isOpen && store.canOperate()" />
+        </div>
+      </mat-tab>
+      <!-- Container where the batch is stored -->
+      <mat-tab [label]="'batch-detail.tabs.storage' | translate">
+        <div class="tab-content">
+          <app-batch-storage [path]="path!" [batchId]="batch.id" />
+        </div>
+      </mat-tab>
+      <!-- Full traceability of the batch -->
+      <mat-tab [label]="'batch-detail.tabs.traceability' | translate">
+        <div class="tab-content">
+          <app-batch-traceability />
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  } @else if (store.isLoading()) {
+    <p role="status">{{ 'common.status-loading' | translate }}</p>
+  }
+</main>

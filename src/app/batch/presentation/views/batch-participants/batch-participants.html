@@ -1,0 +1,98 @@
+<!-- Equipment used in the batch -->
+<section aria-labelledby="equipment-title">
+  <h2 id="equipment-title">{{ 'batch-participants.equipment-title' | translate }}</h2>
+  @if (loadError()) {
+    <p class="error" role="alert">{{ loadError()! | translate }}</p>
+  }
+  <!-- Association form: only on open batches and for users who operate -->
+  @if (editable()) {
+    <div class="filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'batch-participants.equipment' | translate }}</mat-label>
+        <mat-select [(ngModel)]="equipmentId">
+          @for (item of availableEquipment(); track item.id) {
+            <mat-option [value]="item.id">{{ item.name }} · {{ item.serialNumber }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>{{ 'batch-participants.equipment-hint' | translate }}</mat-hint>
+      </mat-form-field>
+      <button mat-flat-button type="button" (click)="addEquipment()" [disabled]="equipmentId === null || store.saving()">
+        <mat-icon>precision_manufacturing</mat-icon>{{ 'batch-participants.add-equipment' | translate }}
+      </button>
+    </div>
+  }
+  <!-- Equipment already associated, taken from the traceability -->
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>{{ 'batch-participants.equipment' | translate }}</th>
+      <th>{{ 'batch-participants.registered-at' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      @for (usage of store.traceability()?.equipment ?? []; track usage.id) {
+        <tr>
+          <td>{{ usage.equipmentName }}</td>
+          <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ usage.registeredAt | date: 'short' }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="2">{{ 'batch-participants.no-equipment' | translate }}</td></tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<!-- Staff that took part in the batch -->
+<section aria-labelledby="staff-title">
+  <h2 id="staff-title">{{ 'batch-participants.staff-title' | translate }}</h2>
+  <!-- Quality managers choose any staff member; operators can only assign themselves -->
+  @if (editable() && iam.canManageQuality()) {
+    <div class="filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'batch-participants.staff' | translate }}</mat-label>
+        <mat-select [(ngModel)]="staffId">
+          @for (member of availableStaff(); track member.id) {
+            <mat-option [value]="member.id">{{ member.fullName }} · {{ member.role }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>{{ 'batch-participants.staff-hint' | translate }}</mat-hint>
+      </mat-form-field>
+      <button mat-flat-button type="button" (click)="addStaff()" [disabled]="staffId === null || store.saving()">
+        <mat-icon>badge</mat-icon>{{ 'batch-participants.add-staff' | translate }}
+      </button>
+    </div>
+  } @else if (editable()) {
+    <div class="filters">
+      @if (ownParticipation()) {
+        <p class="muted">{{ 'batch-participants.already-joined' | translate }}</p>
+      } @else if (ownStaffMember()?.assignable) {
+        <button mat-flat-button type="button" (click)="assignMyself(ownStaffMember()!)" [disabled]="store.saving()">
+          <mat-icon>how_to_reg</mat-icon>{{ 'batch-participants.assign-myself' | translate }}
+        </button>
+      } @else {
+        <p class="muted">{{ 'batch-participants.no-staff-record' | translate }}</p>
+      }
+    </div>
+  }
+  <!-- Staff already associated, taken from the traceability -->
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>{{ 'batch-participants.staff' | translate }}</th>
+      <th>{{ 'batch-participants.role' | translate }}</th>
+      <th>{{ 'batch-participants.registered-at' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      @for (participation of store.traceability()?.staff ?? []; track participation.id) {
+        <tr>
+          <td>{{ participation.staffName }}</td>
+          <td [attr.data-label]="'batch-participants.role' | translate">{{ participation.staffRole || '—' }}</td>
+          <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ participation.registeredAt | date: 'short' }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="3">{{ 'batch-participants.no-staff' | translate }}</td></tr>
+      }
+    </tbody>
+  </table>
+</section>

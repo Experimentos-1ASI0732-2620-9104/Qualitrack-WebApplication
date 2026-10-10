@@ -1,120 +1,105 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import {
+  DatePipe,
+  DecimalPipe
+} from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
-
 import { BatchStore } from '../../../application/batch.store';
+import { BatchStatus } from '../../../domain/model/batch.entity';
 import { IamStore } from '../../../../iam/application/iam.store';
 
 /**
- * Component responsible for displaying the production batch collection.
+ * Batches of every product of the laboratory, newest first.
  *
  * @remarks
- * This standalone presentation component renders manufacturing batches in a
- * tabular view. It obtains the current laboratory context from {@link IamStore}
- * and delegates batch loading operations to {@link BatchStore}.
+ * Batches are created from their product; this list only helps to find them. Batches registered before
+ * environments existed are listed without a link until they are assigned to an environment.
  *
- * The component also exposes formatting helpers for status translation keys and
- * CSS classes, keeping the template free from repeated string manipulation.
+ * @author Qualitrack
  */
 @Component({
   selector: 'app-batch-list',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
+    DecimalPipe,
+    FormsModule,
     RouterLink,
-    MatTableModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
+    MatInputModule,
+    MatSelectModule,
     TranslateModule,
   ],
   templateUrl: './batch-list.html',
-  styleUrl: './batch-list.css',
+  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
 })
 export class BatchList implements OnInit {
-  /**
-   * Store responsible for batch state and operations.
-   */
   protected readonly store = inject(BatchStore);
+  private readonly iam = inject(IamStore);
 
   /**
-   * Store responsible for retrieving the active user or laboratory context.
+   * Statuses offered by the status filter.
    */
-  protected readonly iamStore = inject(IamStore);
+  protected readonly statuses: BatchStatus[] = ['PENDING', 'IN_PROGRESS', 'RELEASED', 'REJECTED'];
 
   /**
-   * Columns rendered in the batches table.
+   * Text typed in the search box.
    */
-  protected readonly displayedColumns: string[] = [
-    'batchNumber',
-    'productName',
-    'quantity',
-    'status',
-    'startDate',
-    'actions',
-  ];
+  protected readonly search = signal('');
 
   /**
-   * Gets the active numeric laboratory identifier.
-   *
-   * @remarks
-   * The current implementation uses the authenticated user identifier as the
-   * laboratory context and falls back to 1 when no session context is available.
+   * Status selected in the filter; empty means every status.
    */
-  private get currentLabId(): number {
-    return this.iamStore.requireLaboratoryId();
-  }
+  protected readonly status = signal<BatchStatus | ''>('');
 
   /**
-   * Lifecycle hook that initializes the batch collection.
+   * Batches that match the selected status and contain the search text in their number or product name.
+   */
+  protected readonly filtered = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    return this.store
+      .batches()
+      .filter(
+        (batch) =>
+          (!this.status() || batch.status === this.status()) &&
+          `${batch.batchNumber} ${batch.productName}`.toLowerCase().includes(term),
+      );
+  });
+
+  /**
+   * Lifecycle hook that loads the batches of the laboratory.
    */
   ngOnInit(): void {
-    this.store.loadBatches(this.currentLabId);
+    this.refresh();
   }
 
   /**
-   * Reloads the batch list from the backend API.
+   * Reloads the batches of the laboratory.
    */
-  protected onRefresh(): void {
-    this.store.loadBatches(this.currentLabId);
+  protected refresh(): void {
+    this.store.loadBatches(this.iam.requireLaboratoryId());
   }
 
   /**
-   * Maps a batch status value to the CSS class used by the status chip.
+   * Builds the translation key suffix of a batch status (e.g., `IN_PROGRESS` becomes `in-progress`).
    *
-   * @param status - Current lifecycle status of the batch
-   * @returns CSS-friendly status value
+   * @param status - The batch status.
+   * @returns The key suffix.
    */
-  protected getStatusClass(status: string): string {
-    return this.normalizeStatus(status);
-  }
-
-  /**
-   * Maps a batch status value to the translation key suffix.
-   *
-   * @param status - Current lifecycle status of the batch
-   * @returns Translation-key-friendly status value
-   */
-  protected getStatusKey(status: string): string {
-    return this.normalizeStatus(status);
-  }
-
-  /**
-   * Normalizes backend enum values for CSS classes and i18n keys.
-   *
-   * @param status - Raw backend status value
-   * @returns Lowercase status with underscores replaced by hyphens
-   */
-  private normalizeStatus(status: string): string {
-    return status ? status.toLowerCase().replace(/_/g, '-') : 'pending';
+  protected statusKey(status: string): string {
+    return status.toLowerCase().replace(/_/g, '-');
   }
 }

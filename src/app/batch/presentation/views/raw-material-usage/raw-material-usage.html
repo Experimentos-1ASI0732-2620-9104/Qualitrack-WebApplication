@@ -1,139 +1,125 @@
-<section class="usage-container">
-  <h3>{{ 'batch-usage.title' | translate }}</h3>
-  @if (inventory.error()) {
-    <p class="error-container" role="alert">{{ inventory.error() | translate }}</p>
-    <button mat-button type="button" (click)="ngOnInit()">
-      {{ 'inventory.refresh' | translate }}
-    </button>
-  }
-  @if (inventory.saved()) {
-    <p role="status">{{ 'inventory.saved' | translate }}</p>
-  }
-  <form [formGroup]="usageForm" (ngSubmit)="onAddMaterial()" class="usage-form">
-    <div class="form-inputs">
+<section aria-labelledby="usage-title">
+  <!-- Consumption form: only on open batches and for users who operate -->
+  @if (open()) {
+    <h2 id="usage-title">{{ 'batch-usage.title' | translate }}</h2>
+    <p class="muted">{{ 'batch-usage.notice' | translate }}</p>
+    @if (consumption.error()) {
+      <p class="error" role="alert">{{ consumption.error()! | translate }}</p>
+    }
+    @if (consumption.saved()) {
+      <p class="success" role="status">{{ 'batch-usage.saved' | translate }}</p>
+    }
+    <form class="editor form-grid" [formGroup]="form">
+      <!-- Environment where the raw material is kept -->
+      <div class="full-width">
+        <app-environment-selector [selectedId]="consumption.environmentId()" (selectedChange)="changeEnvironment($event)" />
+      </div>
+      <!-- Raw material, with its usable stock -->
       <mat-form-field appearance="outline">
         <mat-label>{{ 'batch-usage.fields.raw-material' | translate }}</mat-label>
         <mat-select formControlName="rawMaterialId">
-          @for (material of inventory.materials(); track material.id) {
-            <mat-option [value]="material.id"
-              >{{ material.name }} · {{ material.usableStock }} {{ material.unit }}</mat-option
-            >
+          @for (material of consumption.materials(); track material.id) {
+            <mat-option [value]="material.id">
+              {{ material.name }} · {{ material.usableStock | number: '1.0-3' }} {{ material.unit }}
+            </mat-option>
           }
         </mat-select>
-        <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
       </mat-form-field>
+      <!-- Usable lot: released, not expired and with stock -->
       <mat-form-field appearance="outline">
-        <mat-label>{{ 'inventory.receiptNumber' | translate }}</mat-label>
-        <mat-select formControlName="receiptId">
-          @for (receipt of inventory.receipts(); track receipt.id) {
-            <mat-option [value]="receipt.id"
-              >{{ receipt.batchNumber }} · {{ receipt.availableAmount }} {{ receipt.unit }} ·
-              {{ receipt.expiresOn }}</mat-option
-            >
+        <mat-label>{{ 'batch-usage.fields.lot' | translate }}</mat-label>
+        <mat-select formControlName="lotId">
+          @for (lot of consumption.lots(); track lot.id) {
+            <mat-option [value]="lot.id">
+              {{ lot.batchNumber }} · {{ lot.availableAmount | number: '1.0-3' }} {{ lot.unit }} · {{ lot.expiresOn }}
+            </mat-option>
           }
         </mat-select>
-        <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
       </mat-form-field>
+      <!-- Amount to consume, limited by the stock of the lot -->
       <mat-form-field appearance="outline">
         <mat-label>{{ 'batch-usage.fields.quantity-used' | translate }}</mat-label>
-        <input
-          matInput
-          type="number"
-          formControlName="quantityUsed"
-          min="0.001"
-          [max]="inventory.selectedReceipt()?.availableAmount ?? 0"
-          step="0.001"
-        />
-        <span matTextSuffix>{{ inventory.selectedReceipt()?.unit }}</span>
-        @if (inventory.selectedReceipt(); as receipt) {
-          <mat-hint>{{
-            'batch-usage.available'
-              | translate: { stock: receipt.availableAmount, unit: receipt.unit }
-          }}</mat-hint>
+        <input matInput type="number" formControlName="amount" min="0.001" step="0.001"
+               [max]="consumption.selectedLot()?.availableAmount ?? 0" />
+        <span matTextSuffix>{{ consumption.selectedLot()?.unit }}</span>
+        @if (consumption.selectedLot(); as lot) {
+          <mat-hint>{{ 'batch-usage.available' | translate: { stock: lot.availableAmount, unit: lot.unit } }}</mat-hint>
         }
-        @if (usageForm.controls.quantityUsed.hasError('max')) {
-          <mat-error>{{
-            'batch-usage.errors.insufficient'
-              | translate
-                : {
-                    stock: inventory.selectedReceipt()?.availableAmount,
-                    unit: inventory.selectedReceipt()?.unit,
-                  }
-          }}</mat-error>
+        @if (form.controls.amount.hasError('max')) {
+          <mat-error>{{ 'batch-usage.errors.insufficient' | translate: {
+            stock: consumption.selectedLot()?.availableAmount, unit: consumption.selectedLot()?.unit } }}</mat-error>
+        } @else if (form.controls.amount.hasError('wholeUnits')) {
+          <mat-error>{{ 'batch-usage.errors.whole-units' | translate }}</mat-error>
+        } @else if (form.controls.amount.hasError('precision')) {
+          <mat-error>{{ 'batch-usage.errors.precision' | translate }}</mat-error>
         } @else {
-          <mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error>
+          <mat-error>{{ 'batch-usage.errors.quantity-min' | translate }}</mat-error>
         }
       </mat-form-field>
-    </div>
-    @if (
-      usageForm.controls.rawMaterialId.value && !inventory.loading() && !inventory.receipts().length
-    ) {
-      <p>
-        {{ 'inventory.noUsable' | translate }}
-        <a routerLink="/inventory">{{ 'inventory.title' | translate }}</a>
-      </p>
-    }
-    <button
-      mat-flat-button
-      type="submit"
-      [disabled]="
-        usageForm.invalid ||
-        !inventory.selectedReceipt() ||
-        inventory.loading() ||
-        inventory.saving()
-      "
-    >
-      <mat-icon>add_circle</mat-icon>{{ 'batch-usage.actions.add' | translate }}
-    </button>
-  </form>
-  <h3>{{ 'batch-usage.history-title' | translate }}</h3>
-  @if (store.error()) {
-    <p role="alert">{{ store.error()! | translate }}</p>
+      <!-- Notice when the selected material has no usable lots -->
+      @if (form.controls.rawMaterialId.value && !consumption.loading() && !consumption.lots().length) {
+        <p class="notice full-width">
+          {{ 'batch-usage.no-usable' | translate }}
+          <a routerLink="/inventory">{{ 'inventory.title' | translate }}</a>
+        </p>
+      }
+      <div class="actions full-width">
+        <button mat-flat-button type="button" (click)="consume()"
+                [disabled]="form.invalid || !consumption.selectedLot() || consumption.loading() || consumption.saving()">
+          <mat-icon>add_circle</mat-icon>{{ 'batch-usage.actions.add' | translate }}
+        </button>
+      </div>
+    </form>
   }
-  <div class="table-wrapper">
-    <table mat-table [dataSource]="store.currentBatchUsage()">
-      <ng-container matColumnDef="material"
-        ><th mat-header-cell *matHeaderCellDef>
-          {{ 'batch-usage.fields.raw-material' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let usage">
-          <a
-            [routerLink]="[
-              usage.inventoryReceiptId
-                ? '/inventory/inventory-detail'
-                : '/laboratories/raw-materials',
-              usage.rawMaterialId,
-            ]"
-            >{{ usage.rawMaterialName }}</a
-          >
-          @if (usage.inventoryReceiptId) {
-            <small
-              >{{ 'inventory.receiptNumber' | translate }} #{{ usage.inventoryReceiptId }}</small
-            >
-          }
-        </td></ng-container
-      >
-      <ng-container matColumnDef="quantity"
-        ><th mat-header-cell *matHeaderCellDef>
-          {{ 'batch-usage.fields.quantity-used' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let usage">
-          {{ usage.quantityUsed }} {{ usage.unit }}
-        </td></ng-container
-      >
-      <ng-container matColumnDef="date"
-        ><th mat-header-cell *matHeaderCellDef>
-          {{ 'batch-usage.fields.usage-date' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let usage">
-          {{ usage.usageDate | date: 'short' }}
-        </td></ng-container
-      >
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell empty-cell" colspan="3">{{ 'batch-usage.empty' | translate }}</td>
-      </tr>
-    </table>
-  </div>
+
+  <!-- Consumptions already recorded, taken from the traceability -->
+  <h2>{{ 'batch-usage.history-title' | translate }}</h2>
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>{{ 'batch-usage.fields.raw-material' | translate }}</th>
+      <th>{{ 'batch-usage.fields.quantity-used' | translate }}</th>
+      <th>{{ 'batch-usage.fields.stock' | translate }}</th>
+      <th>{{ 'batch-usage.fields.usage-date' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      @for (usage of store.traceability()?.rawMaterials ?? []; track usage.id) {
+        <tr>
+          <td>
+            <!-- Link to the raw material, when it can be opened -->
+            @if (materialLink(usage); as link) {
+              <a [routerLink]="link">{{ usage.rawMaterialName }}</a>
+            } @else {
+              {{ usage.rawMaterialName }}
+            }
+            <!-- Lot consumed, or a legacy mark for usages recorded before Inventory Management -->
+            <small>
+              @if (usage.inventoryReceiptId !== null) {
+                {{ 'batch-usage.fields.lot' | translate }} #{{ usage.inventoryReceiptId }}
+              } @else {
+                {{ 'batch-usage.legacy' | translate }}
+              }
+            </small>
+          </td>
+          <td [attr.data-label]="'batch-usage.fields.quantity-used' | translate">{{ usage.quantityUsed | number: '1.0-3' }} {{ usage.unit }}</td>
+          <!-- Stock before and after the consumption, when recorded -->
+          <td [attr.data-label]="'batch-usage.fields.stock' | translate">
+            @if (usage.stockBefore !== null && usage.stockAfter !== null) {
+              {{ usage.stockBefore | number: '1.0-3' }} → {{ usage.stockAfter | number: '1.0-3' }} {{ usage.unit }}
+            } @else {
+              —
+            }
+          </td>
+          <td [attr.data-label]="'batch-usage.fields.usage-date' | translate">{{ usage.usageDate | date: 'short' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4">{{ 'batch-usage.empty' | translate }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
 </section>

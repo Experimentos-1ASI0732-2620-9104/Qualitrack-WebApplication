@@ -1,128 +1,121 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import {
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import {
+  ActivatedRoute,
+  Router,
+  RouterLink
+} from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
-
+import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
 import { BatchStore } from '../../../application/batch.store';
-import { LaboratoryStore } from '../../../../laboratory/application/laboratory.store';
+import { ProductStore } from '../../../application/product.store';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { CreateBatchCommand } from '../../../domain/model/create-batch.command';
+import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
 
 /**
- * Component responsible for registering new production batches.
+ * Registers a manufacturing batch of the product taken from the route.
  *
  * @remarks
- * This standalone presentation component manages the batch creation form. It
- * loads pharmaceutical products from the laboratory bounded context so the user
- * can select the product to manufacture, then sends a {@link CreateBatchCommand}
- * to the batch application store.
+ * The product is loaded to show its name in the back link. When the batch is registered, the view
+ * navigates to its detail.
  *
- * The component includes the unit field required by the Batch domain entity and
- * backend resource contract.
+ * @author Qualitrack
  */
 @Component({
   selector: 'app-batch-form',
   standalone: true,
+  providers: [ProductStore],
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatIconModule,
-    TranslateModule,
     RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatInputModule,
+    MatSelectModule,
+    TranslateModule,
   ],
   templateUrl: './batch-form.html',
-  styleUrl: './batch-form.css',
+  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
 })
 export class BatchForm implements OnInit {
-  /**
-   * FormBuilder used to create and configure the reactive form.
-   */
+  protected readonly store = inject(BatchStore);
+  protected readonly products = inject(ProductStore);
+  private readonly iam = inject(IamStore);
   private readonly fb = inject(FormBuilder);
-
-  /**
-   * Router used to return to the batch list after submitting the form.
-   */
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   /**
-   * Store responsible for batch state and creation operations.
-   */
-  protected readonly store = inject(BatchStore);
-
-  /**
-   * Store responsible for loading pharmaceutical products from the laboratory context.
-   */
-  protected readonly labStore = inject(LaboratoryStore);
-
-  /**
-   * Store responsible for retrieving the active user or laboratory context.
-   */
-  protected readonly iamStore = inject(IamStore);
-
-  /**
-   * Available units of measurement for production batch quantities.
+   * Production units offered by the form.
    */
   protected readonly units = ['units', 'kg', 'g', 'L', 'mL'];
 
   /**
-   * Reactive form group for batch creation data.
+   * Laboratory, environment and product of the batch, taken from the route.
    */
-  protected batchForm!: FormGroup;
+  protected path!: BatchPath;
 
   /**
-   * Gets the active numeric laboratory identifier.
-   *
-   * @remarks
-   * The current implementation uses the authenticated user identifier as the
-   * laboratory context and falls back to 1 when no session context is available.
+   * Form of the batch: number (up to 50 characters), quantity (at least 0.001), unit, start date (today by
+   * default) and optional notes (up to 500 characters).
    */
-  private get currentLabId(): number {
-    return this.iamStore.requireLaboratoryId();
-  }
+  protected readonly form = this.fb.nonNullable.group({
+    batchNumber: ['', [Validators.required, Validators.maxLength(50)]],
+    quantity: [1, [Validators.required, Validators.min(0.001)]],
+    unit: ['units', Validators.required],
+    startDate: [localIsoDate(), Validators.required],
+    notes: ['', Validators.maxLength(500)],
+  });
 
   /**
-   * Lifecycle hook that initializes the form and preloads product data.
+   * Lifecycle hook that reads the route parameters and loads the product of the batch.
    */
   ngOnInit(): void {
-    this.labStore.loadProducts(this.currentLabId);
-
-    this.batchForm = this.fb.group({
-      productId: ['', Validators.required],
-      batchNumber: ['', [Validators.required, Validators.pattern(/^LOT-\d{4}-\d{3}$/)]],
-      quantity: [0, [Validators.required, Validators.min(1)]],
-      unit: ['units', Validators.required],
-      startDate: [new Date().toISOString().substring(0, 10), Validators.required],
-      notes: [''],
-    });
+    const params = this.route.snapshot.paramMap;
+    this.path = {
+      laboratoryId: this.iam.requireLaboratoryId(),
+      environmentId: Number(params.get('environmentId')),
+      productId: Number(params.get('productId')),
+    };
+    this.store.clearMessages();
+    void this.products.loadProduct(this.path.environmentId, this.path.productId);
   }
 
   /**
-   * Creates a new production batch using the form values.
+   * Route of the product the batch will belong to.
+   *
+   * @returns The router link segments of the product.
    */
-  protected onSubmit(): void {
-    if (this.batchForm.invalid) return;
+  protected get productLink(): (string | number)[] {
+    return ['/batches/environments', this.path.environmentId, 'products', this.path.productId];
+  }
 
-    const command: CreateBatchCommand = {
-      labId: this.currentLabId,
-      productId: Number(this.batchForm.value.productId),
-      batchNumber: this.batchForm.value.batchNumber,
-      quantity: Number(this.batchForm.value.quantity),
-      unit: this.batchForm.value.unit,
-      startDate: this.batchForm.value.startDate,
-      notes: this.batchForm.value.notes,
-    };
-
-    this.store.createBatch(command);
-    this.router.navigate(['/batches/batch-list']).then();
+  /**
+   * Validates the form, registers the batch and opens its detail.
+   */
+  protected async save(): Promise<void> {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
+    const batch = await this.store.createBatch(this.path, {
+      batchNumber: value.batchNumber.trim(),
+      quantity: Number(value.quantity),
+      unit: value.unit,
+      startDate: value.startDate,
+      notes: value.notes.trim() || undefined,
+    });
+    if (batch?.detailLink) await this.router.navigate(batch.detailLink);
   }
 }
