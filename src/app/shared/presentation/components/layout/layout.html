@@ -12,11 +12,16 @@
   </button>
   }
 
-  <img src="/qualitrack-logo.png" alt="QualiTrack logo">
-  <span class="toolbar-title">QualiTrack</span>
+  <a class="brand" routerLink="/dashboard" [attr.aria-label]="'brand.go-dashboard' | translate">
+    <img src="/qualitrack-logo.png" alt="">
+    <span class="toolbar-title">QualiTrack</span>
+  </a>
   <span class="spacer"></span>
 
   <div class="toolbar-actions">
+    @if (hasOperationalAccess()) {
+      <app-notification-bell />
+    }
     <app-user-session-section />
     <app-language-switcher />
   </div>
@@ -33,7 +38,7 @@
       (openedChange)="sidenavOpened.set($event)"
     >
       <nav class="nav-menu" [attr.aria-label]="'onboarding.navigation' | translate">
-        @for (option of options; track option.label) {
+        @for (option of visibleOptions(); track option.label) {
           @if (!option.children) {
             <button type="button"
               class="nav-item"

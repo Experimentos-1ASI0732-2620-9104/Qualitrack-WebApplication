@@ -14,6 +14,23 @@
   color: #1a3a5c;
 }
 
+.brand {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.brand:focus-visible {
+  outline: 2px solid #148f77;
+  outline-offset: 4px;
+}
+
+.brand:hover .toolbar-title {
+  color: #148f77;
+}
+
 .toolbar img {
   height: 40px;
   width: auto;
@@ -253,15 +270,14 @@ mat-sidenav-content {
   }
 }
 
+/* On narrow screens the brand gives its room to the photo and name of the user. */
+@media (max-width: 720px) {
+  .brand { display: none; }
+}
+
 @media (max-width: 480px) {
   .toolbar { padding: 0 4px; }
-  .toolbar img { display: none; }
-  .toolbar-title { font-size: 16px; }
   .toolbar-actions { gap: 4px; }
   .content-wrapper { padding: 12px; }
   mat-sidenav { width: min(280px, 85vw); }
-}
-
-@media (max-width: 359px) {
-  .toolbar-title { font-size: 14px; }
 }

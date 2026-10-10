@@ -1,7 +1,8 @@
 <mat-button-toggle-group
   [value]="currentLang"
   appearance="standard"
-  aria-label="Preferred language"
+  [hideSingleSelectionIndicator]="compact()"
+  [attr.aria-label]="'language-switcher.aria-label' | translate"
   name="language">
   @for (language of languages; track language.code) {
     <mat-button-toggle

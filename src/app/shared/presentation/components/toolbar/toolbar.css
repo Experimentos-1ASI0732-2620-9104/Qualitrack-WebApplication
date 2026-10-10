@@ -13,6 +13,19 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
 }
 
+.brand {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.brand:focus-visible {
+  outline: 2px solid #148f77;
+  outline-offset: 4px;
+}
+
 .toolbar-logo {
   height: 40px;
   width: auto;
@@ -33,7 +46,7 @@
   transition: color 0.3s ease;
 }
 
-.toolbar-title:hover {
+.brand:hover .toolbar-title {
   color: #148f77; /* Efecto hover con el verde azulado */
 }
 

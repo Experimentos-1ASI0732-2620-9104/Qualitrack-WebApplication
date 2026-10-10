@@ -1,5 +1,5 @@
 import { Component, DestroyRef, computed, effect, inject, signal, viewChild } from '@angular/core';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -22,6 +22,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { LanguageSwitcher } from '../language-switcher/language-switcher';
 import { UserSessionSection } from '../../../../iam/presentation/components/user-session-section/user-session-section';
+import { NotificationBell } from '../../../../ca/presentation/components/notification-bell/notification-bell';
+
+/** Entry of the side navigation menu. */
+interface NavigationOption {
+  label: string;
+  icon?: string;
+  link: string;
+  qualityOnly?: boolean;
+  children?: NavigationOption[];
+}
 
 /**
  * Layout component for the main application shell.
@@ -38,6 +48,7 @@ import { UserSessionSection } from '../../../../iam/presentation/components/user
   providers: [LaboratoryStore, EquipmentStore, BatchStore, CaStore, RaStore, TrackingStore, SubscriptionStore],
   imports: [
     RouterOutlet,
+    RouterLink,
     TranslateModule,
     MatToolbarModule,
     MatSidenavModule,
@@ -47,6 +58,7 @@ import { UserSessionSection } from '../../../../iam/presentation/components/user
     MatTooltipModule,
     LanguageSwitcher,
     UserSessionSection,
+    NotificationBell,
   ],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
@@ -69,9 +81,10 @@ export class Layout {
   protected readonly sidenavOpened = signal(false);
 
   /**
-   * Navigation options rendered by the layout template.
+   * Navigation options rendered by the layout template. Entries marked qualityOnly (subscription,
+   * equipment and staff registration) are reserved to quality managers.
    */
-  protected readonly options = [
+  private readonly options: NavigationOption[] = [
     {
       label: 'nav.dashboard',
       icon: 'dashboard',
@@ -82,8 +95,8 @@ export class Layout {
       icon: 'inventory',
       link: '/batches',
       children: [
-        { label: 'batches.title', link: '/batches/batch-list' },
-        { label: 'batches.add-button', link: '/batches/batch-form' },
+        { label: 'nav.products', link: '/batches' },
+        { label: 'nav.batch-list', link: '/batches/batch-list' },
       ],
     },
     {
@@ -91,8 +104,9 @@ export class Layout {
       icon: 'precision_manufacturing',
       link: '/equipments',
       children: [
-        { label: 'equipment-list.title', link: '/equipments/equipment-list' },
-        { label: 'equipment-list.add-button', link: '/equipments/register-equipment' },
+        { label: 'nav.equipment-list', link: '/equipments/equipment-list' },
+        { label: 'nav.register-equipment', link: '/equipments/register-equipment', qualityOnly: true },
+        { label: 'nav.register-device', link: '/equipments/register-device', qualityOnly: true },
       ],
     },
     {
@@ -100,9 +114,8 @@ export class Layout {
       icon: 'warning',
       link: '/alerts',
       children: [
-        { label: 'ca-alerts.subtitle', link: '/alerts/alert-dashboard' },
-        { label: 'ca-alerts.history.title', link: '/alerts/alert-history' },
-        { label: 'ca-alerts.settings.title', link: '/alerts/notification-settings' },
+        { label: 'nav.alert-dashboard', link: '/alerts/alert-dashboard' },
+        { label: 'nav.alert-history', link: '/alerts/alert-history' },
       ],
     },
     {
@@ -110,10 +123,10 @@ export class Layout {
       icon: 'description',
       link: '/reports',
       children: [
-        { label: 'kpi-dashboard.title', link: '/reports/kpi-dashboard' },
-        { label: 'deviation-trend.title', link: '/reports/deviation-trends' },
-        { label: 'report-generator.title', link: '/reports/report-generator' },
-        { label: 'audit-log.title', link: '/reports/audit-log' },
+        { label: 'nav.kpi-dashboard', link: '/reports/kpi-dashboard' },
+        { label: 'nav.deviation-trends', link: '/reports/deviation-trends' },
+        { label: 'nav.report-generator', link: '/reports/report-generator' },
+        { label: 'nav.audit-log', link: '/reports/audit-log' },
       ],
     },
     {
@@ -121,20 +134,18 @@ export class Layout {
       icon: 'science',
       link: '/laboratories',
       children: [
-        { label: 'lab-profile.title', link: '/laboratories/lab-profile' },
-        { label: 'staff-list.title', link: '/laboratories/staff-list' },
-        { label: 'staff-form.title', link: '/laboratories/staff-form' },
-        { label: 'product-catalog.title', link: '/laboratories/product-catalog' },
-        { label: 'product-form.title', link: '/laboratories/product-form' },
+        { label: 'nav.lab-profile', link: '/laboratories/lab-profile' },
+        { label: 'nav.environments', link: '/laboratories/environments' },
+        { label: 'nav.staff-list', link: '/laboratories/staff-list' },
+        { label: 'nav.register-staff', link: '/laboratories/staff-form', qualityOnly: true },
       ],
     },
     {
-      label: 'inventory.title',
+      label: 'nav.inventory',
       icon: 'inventory_2',
       link: '/inventory',
       children: [
-        { label: 'inventory.catalogue', link: '/inventory/inventory-catalogue' },
-        { label: 'inventory.registerMaterial', link: '/inventory/register-material' },
+        { label: 'nav.raw-material-catalog', link: '/inventory' },
       ],
     },
     {
@@ -142,18 +153,19 @@ export class Layout {
       icon: 'sensors',
       link: '/tracking',
       children: [
-        { label: 'tracking.dashboard.title', link: '/tracking/dashboard' },
-        { label: 'tracking.history.title', link: '/tracking/history' },
-        { label: 'tracking.analysis.title', link: '/tracking/analysis' },
+        { label: 'nav.tracking-monitoring', link: '/tracking/dashboard' },
+        { label: 'nav.tracking-history', link: '/tracking/history' },
+        { label: 'nav.tracking-profiles', link: '/tracking/profiles' },
       ],
     },
     {
       label: 'nav.subscription',
       icon: 'payments',
       link: '/subscriptions',
+      qualityOnly: true,
       children: [
-        { label: 'subscription.billing.title', link: '/subscriptions/billing-summary' },
-        { label: 'subscription.plans.title', link: '/subscriptions/plans' },
+        { label: 'nav.billing-summary', link: '/subscriptions/billing-summary' },
+        { label: 'nav.subscription-plans', link: '/subscriptions/plans' },
       ],
     },
   ];
@@ -163,6 +175,19 @@ export class Layout {
    *
    * @param router - Angular router used for navigation and active route checks
    */
+  /**
+   * Options visible to the signed-in user.
+   */
+  protected readonly visibleOptions = computed(() => {
+    const quality = this.iam.canManageQuality();
+    return this.options
+      .filter((option) => quality || !option.qualityOnly)
+      .map((option) => ({
+        ...option,
+        children: option.children?.filter((child) => quality || !child.qualityOnly),
+      }));
+  });
+
   constructor(private readonly router: Router) {
     effect(() => this.sidenavOpened.set(!this.mobile() && this.hasOperationalAccess()));
     router.events.pipe(filter((event) => event instanceof NavigationEnd),
