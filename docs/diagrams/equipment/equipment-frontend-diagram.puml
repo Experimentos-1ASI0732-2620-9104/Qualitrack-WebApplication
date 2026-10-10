@@ -11,16 +11,20 @@ package "shared" {
   class BaseApi
   class BaseApiEndpoint
   interface BaseAssembler
-  interface BaseResource
-  interface BaseResponse
-  interface MessageResource
+  class ApiError
 }
 
 package "iam.application" {
   class IamStore {
-    +currentUserId()
-    +currentLaboratoryId()
-    +isSignedIn()
+    +requireLaboratoryId(): number
+    +canManageQuality: Signal<boolean>
+  }
+}
+
+package "laboratory" {
+  class EnvironmentStore {
+    +environments: Signal<Environment[]>
+    +loadEnvironments()
   }
 }
 
@@ -28,317 +32,165 @@ package "equipment.domain.model" {
   class Equipment {
     +id: number
     +labId: number
+    +environmentId: number | null
     +name: string
     +type: string
     +model: string
     +serialNumber: string
-    +status: string
-    +sensorExternalId?: string
-    +createdAt: string
+    +status: EquipmentStatus
+    +deviceType: IotDeviceType | null
+    +sensorExternalId: string | null
+    +firmwareVersion: string | null
+    +isIotDevice: boolean
+    +isLocated: boolean
   }
-
-  class BpmParameterConfig {
-    +id: number
-    +equipmentId: number
-    +parameterName: string
-    +minValue: number
-    +maxValue: number
-    +unit: string
-    +createdAt: string
+  enum IotDeviceType {
+    ENVIRONMENTAL_DEVICE
+    CONTAINER_MONITOR
   }
-
+  enum EquipmentStatus {
+    OPERATIONAL
+    MAINTENANCE
+    OUT_OF_SERVICE
+    INACTIVE
+  }
   class MaintenanceRecord {
     +id: number
     +equipmentId: number
-    +maintenanceDate: string
-    +technicianName: string
-    +description: string
-    +type: string
-    +createdAt: string
-  }
-
-  interface RegisterEquipmentCommand {
-    +laboratoryId: number
-    +name: string
-    +type: string
-    +model: string
-    +serialNumber: string
-  }
-
-  interface ConfigureBpmCommand {
-    +equipmentId: number
-    +parameterName: string
-    +minValue: number
-    +maxValue: number
-    +unit: string
-  }
-
-  interface RegisterMaintenanceCommand {
-    +equipmentId: number
+    +environmentId: number | null
     +maintenanceDate: string
     +technicianName: string
     +description: string
     +type: string
   }
-
-  interface LinkSensorCommand {
-    +equipmentId: number
-    +sensorExternalId: string
-    +sensorType: string
-  }
-}
-
-package "equipment.application" {
-  class EquipmentStore {
-    -api: EquipmentApi
-    -_equipmentList
-    -_selectedEquipment
-    -_bpmConfigs
-    -_maintenanceHistory
-    -_isLoading
-    -_error
-    -_successMsg
-
-    +equipmentList
-    +selectedEquipment
-    +bpmConfigs
-    +maintenanceHistory
-    +isLoading
-    +error
-    +successMsg
-    +operationalEquipment
-    +needsMaintenance
-
-    +loadEquipment(labId: number): void
-    +loadEquipmentById(equipmentId: number): void
-    +registerEquipment(command: RegisterEquipmentCommand): void
-    +loadBpmConfig(equipmentId: number): void
-    +configureBpm(command: ConfigureBpmCommand): void
-    +loadMaintenanceHistory(equipmentId: number): void
-    +registerMaintenance(command: RegisterMaintenanceCommand): void
-    +clearMessages(): void
-  }
-}
-
-package "equipment.infrastructure" {
-  class EquipmentApi {
-    -_equipmentEndpoint: EquipmentApiEndpoint
-    -_bpmEndpoint: BpmConfigApiEndpoint
-    -_maintenanceEndpoint: MaintenanceApiEndpoint
-
-    +getEquipment(labId: number)
-    +getEquipmentById(equipmentId: number)
-    +registerEquipment(request: RegisterEquipmentRequest)
-    +getBpmConfig(equipmentId: number)
-    +configureBpm(request: ConfigureBpmRequest)
-    +getMaintenanceHistory(equipmentId: number)
-    +registerMaintenance(request: RegisterMaintenanceRequest)
-  }
-
-  class EquipmentApiEndpoint {
-    +getEquipmentByLab(labId: number)
-    +getEquipmentById(equipmentId: number)
-    +registerEquipment(request: RegisterEquipmentRequest)
-  }
-
-  class BpmConfigApiEndpoint {
-    +getConfigByEquipment(equipmentId: number)
-    +configureBpm(request: ConfigureBpmRequest)
-  }
-
-  class MaintenanceApiEndpoint {
-    +getMaintenanceHistory(equipmentId: number)
-    +registerMaintenance(request: RegisterMaintenanceRequest)
-  }
-
-  class EquipmentAssembler
-  class BpmConfigAssembler
-  class MaintenanceAssembler
-
-  interface EquipmentResource {
-    +id: number
-    +laboratoryId: number
-    +name: string
-    +type: string
-    +model: string
-    +serialNumber: string
-    +status: string
-    +sensorExternalId?: string
-    +createdAt?: string
-  }
-
-  interface EquipmentsResponse {
-    +equipments: EquipmentResource[]
-  }
-
-  interface BpmConfigResource {
-    +id: number
-    +equipmentId: number
-    +parameterName: string
-    +minValue: number
-    +maxValue: number
-    +unit: string
-    +createdAt?: string
-  }
-
-  interface BpmConfigsResponse {
-    +bpmConfigs: BpmConfigResource[]
-  }
-
-  interface MaintenanceResource {
-    +id: number
-    +equipmentId: number
-    +maintenanceDate: string
-    +technicianName: string
-    +description: string
-    +type: string
-    +createdAt?: string
-  }
-
-  interface MaintenancesResponse {
-    +maintenances: MaintenanceResource[]
-  }
-
-  interface RegisterEquipmentRequest {
-    +laboratoryId: number
-    +name: string
-    +type: string
-    +model: string
-    +serialNumber: string
-  }
-
-  interface ConfigureBpmRequest {
-    +equipmentId: number
-    +parameterName: string
-    +minValue: number
-    +maxValue: number
-    +unit: string
-  }
-
-  interface RegisterMaintenanceRequest {
-    +equipmentId: number
-    +maintenanceDate: string
-    +technicianName: string
-    +description: string
-    +type: string
-  }
-}
-
-package "equipment.presentation" {
-  class EquipmentRoutes
-
-  class EquipmentList {
-    -iamStore: IamStore
-    +displayedColumns: string[]
-    +ngOnInit(): void
-    +onRefresh(): void
-  }
-
-  class EquipmentForm {
-    -iamStore: IamStore
-    +equipmentTypes: string[]
-    +form
-    +onSave(): void
-  }
-
-  class EquipmentDetail {
-    +equipmentId
-    +ngOnInit(): void
-    +currentEquipment
-  }
-
-  class BpmConfigForm {
-    +equipmentId
-    +form
-    +ngOnInit(): void
-    +onSave(): void
-  }
-
-  class MaintenanceHistory {
-    +equipmentId
-    +displayedColumns: string[]
-    +ngOnInit(): void
-    +onBack(): void
-  }
-
-  class MaintenanceForm {
-    +equipmentId
-    +maintenanceTypes: string[]
-    +form
-    +ngOnInit(): void
-    +onSave(): void
-  }
-
-  class CalibrationAlert {
-    +store: EquipmentStore
-  }
+  class BpmParameterConfig
+  interface RegisterEquipmentCommand
+  interface RegisterIotDeviceCommand
+  interface ChangeEquipmentStatusCommand
+  interface RegisterMaintenanceCommand
+  interface ConfigureBpmCommand
 }
 
 Equipment ..|> BaseEntity
-BpmParameterConfig ..|> BaseEntity
 MaintenanceRecord ..|> BaseEntity
+BpmParameterConfig ..|> BaseEntity
+Equipment --> IotDeviceType
+Equipment --> EquipmentStatus
+note right of Equipment
+  An IoT device is an equipment with a device type and the identity
+  Edge uses to recognise it. Only IoT devices send telemetry.
+end note
+
+package "equipment.infrastructure" {
+  class EquipmentApi {
+    +getEquipment(lab)
+    +getEquipmentById(lab, equipmentId)
+    +registerEquipment(lab, request)
+    +registerDevice(lab, deviceType, request)
+    +assignToEnvironment(lab, environmentId, equipment)
+    +changeStatus(lab, environmentId, equipmentId, request)
+    +getMaintenanceHistory(lab, environmentId, equipmentId)
+    +registerMaintenance(lab, environmentId, equipmentId, request)
+    +getBpmConfig(lab, equipmentId)
+    +configureBpm(lab, request)
+  }
+  class EquipmentApiEndpoint
+  class MaintenanceApiEndpoint
+  class BpmConfigApiEndpoint
+  class EquipmentAssembler
+  class MaintenanceAssembler
+  class BpmConfigAssembler
+}
 
 EquipmentApi --|> BaseApi
+EquipmentApi --> EquipmentApiEndpoint
+EquipmentApi --> MaintenanceApiEndpoint
+EquipmentApi --> BpmConfigApiEndpoint
 EquipmentApiEndpoint --|> BaseApiEndpoint
-BpmConfigApiEndpoint --|> BaseApiEndpoint
 MaintenanceApiEndpoint --|> BaseApiEndpoint
-
+BpmConfigApiEndpoint --|> BaseApiEndpoint
+EquipmentApiEndpoint --> EquipmentAssembler
+MaintenanceApiEndpoint --> MaintenanceAssembler
+BpmConfigApiEndpoint --> BpmConfigAssembler
 EquipmentAssembler ..|> BaseAssembler
-BpmConfigAssembler ..|> BaseAssembler
 MaintenanceAssembler ..|> BaseAssembler
+BpmConfigAssembler ..|> BaseAssembler
+note right of EquipmentApiEndpoint
+  /laboratories/{laboratoryId}/equipments[/{equipmentId}]
+  /laboratories/{laboratoryId}/devices/{environmental-devices|container-monitors}
+  .../environments/{environmentId}/equipments
+  .../environments/{environmentId}/{environmental-devices|container-monitors}
+  .../environments/{environmentId}/equipments/{equipmentId}/status-changes
+end note
+note right of MaintenanceApiEndpoint
+  .../environments/{environmentId}/equipments/{equipmentId}/maintenance-records
+end note
+note bottom of BpmConfigApiEndpoint
+  /laboratories/{laboratoryId}/equipments/{equipmentId}/bpm-configs
+  PUT .../bpm-configs/{parameterName} creates or replaces the range: process
+  parameters of the equipment (Report); environmental thresholds live in Tracking.
+end note
 
-EquipmentResource ..|> BaseResource
-EquipmentsResponse ..|> BaseResponse
-BpmConfigResource ..|> BaseResource
-BpmConfigsResponse ..|> BaseResponse
-MaintenanceResource ..|> BaseResource
-MaintenancesResponse ..|> BaseResponse
+package "equipment.application" {
+  class EquipmentStore <<root>> {
+    +equipmentList: Signal<Equipment[]>
+    +selectedEquipment: Signal<Equipment>
+    +iotDevices: Signal<Equipment[]>
+    +processEquipment: Signal<Equipment[]>
+    +needsMaintenance: Signal<Equipment[]>
+    +maintenanceHistory: Signal<MaintenanceRecord[]>
+    +canManage: Signal<boolean>
+    +loadEquipment(labId?)
+    +loadEquipmentById(equipmentId)
+    +registerEquipment(command)
+    +registerDevice(command, environmentId)
+    +assignToEnvironment(equipment, environmentId)
+    +changeStatus(equipment, command)
+    +loadMaintenanceHistory(equipment)
+    +registerMaintenance(equipment, command)
+  }
+  class equipmentError <<function>>
+}
 
 EquipmentStore --> EquipmentApi
+EquipmentStore --> IamStore
+EquipmentStore ..> equipmentError
+equipmentError ..> ApiError
 
-EquipmentStore ..> Equipment
-EquipmentStore ..> BpmParameterConfig
-EquipmentStore ..> MaintenanceRecord
-EquipmentStore ..> RegisterEquipmentCommand
-EquipmentStore ..> ConfigureBpmCommand
-EquipmentStore ..> RegisterMaintenanceCommand
-
-EquipmentApi --> EquipmentApiEndpoint
-EquipmentApi --> BpmConfigApiEndpoint
-EquipmentApi --> MaintenanceApiEndpoint
-
-EquipmentApiEndpoint --> EquipmentAssembler
-BpmConfigApiEndpoint --> BpmConfigAssembler
-MaintenanceApiEndpoint --> MaintenanceAssembler
-
-EquipmentApiEndpoint ..> RegisterEquipmentRequest
-BpmConfigApiEndpoint ..> ConfigureBpmRequest
-MaintenanceApiEndpoint ..> RegisterMaintenanceRequest
-
-EquipmentAssembler ..> Equipment
-EquipmentAssembler ..> EquipmentResource
-BpmConfigAssembler ..> BpmParameterConfig
-BpmConfigAssembler ..> BpmConfigResource
-MaintenanceAssembler ..> MaintenanceRecord
-MaintenanceAssembler ..> MaintenanceResource
+package "equipment.presentation" {
+  class EquipmentList
+  class EquipmentForm
+  class DeviceForm
+  class EquipmentDetail
+  class MaintenanceForm
+  class BpmConfigForm
+  class EquipmentRoutes
+}
 
 EquipmentList --> EquipmentStore
-EquipmentList --> IamStore
-
+EquipmentList --> EnvironmentStore
 EquipmentForm --> EquipmentStore
-EquipmentForm --> IamStore
-
+DeviceForm --> EquipmentStore
+DeviceForm --> EnvironmentStore
 EquipmentDetail --> EquipmentStore
-BpmConfigForm --> EquipmentStore
-MaintenanceHistory --> EquipmentStore
+EquipmentDetail --> EnvironmentStore
 MaintenanceForm --> EquipmentStore
-CalibrationAlert --> EquipmentStore
+MaintenanceForm --> LaboratoryApi
+MaintenanceForm --> IamStore
+note right of MaintenanceForm
+  The technician is chosen from the active operators of the laboratory;
+  an operator can only choose themselves (technicianStaffId).
+  Status changes, maintenance and BPM limits are hidden for auditors.
+end note
+BpmConfigForm --> EquipmentStore
 
-EquipmentRoutes ..> EquipmentList
-EquipmentRoutes ..> EquipmentForm
-EquipmentRoutes ..> EquipmentDetail
-EquipmentRoutes ..> BpmConfigForm
-EquipmentRoutes ..> MaintenanceHistory
-EquipmentRoutes ..> MaintenanceForm
+note bottom of EquipmentRoutes
+  /equipments/equipment-list: summary (process equipment, IoT devices, in maintenance
+  or out of service), search and filters by kind and attention, like the inventory
+  /equipments/register-equipment, /equipments/register-device
+  /equipments/equipment-detail/:id (location, status change, BPM, maintenance)
+  /equipments/maintenance-form/:id, /equipments/bpm-config-form/:id
+  /equipments/maintenance-history/:id redirects to the detail
+end note
 
 @enduml
