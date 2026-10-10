@@ -26,6 +26,9 @@ export interface SignUpCommand {
    */
   username: string;
 
+  /** E-mail where the platform sends the password recovery codes. */
+  email: string;
+
   /**
    * The password for the new account.
    */

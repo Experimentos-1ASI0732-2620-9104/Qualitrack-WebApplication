@@ -34,6 +34,9 @@ export class User implements BaseEntity {
    */
   username: string;
 
+  /** E-mail of the account; null for accounts registered before it was required. */
+  email: string | null;
+
   /**
    * The authorization roles assigned to the user.
    */
@@ -47,9 +50,10 @@ export class User implements BaseEntity {
    * @param params.username - User login name
    * @param params.roles - Authorization roles assigned to the user
    */
-  constructor(params: { id: number; username: string; roles: string[] }) {
+  constructor(params: { id: number; username: string; email?: string | null; roles: string[] }) {
     this.id = params.id;
     this.username = params.username;
+    this.email = params.email ?? null;
     this.roles = params.roles;
   }
 }
