@@ -11,16 +11,25 @@ package "shared" {
   class BaseApi
   class BaseApiEndpoint
   interface BaseAssembler
-  interface BaseResource
-  interface BaseResponse
-  interface MessageResource
 }
 
 package "iam.application" {
   class IamStore {
-    +currentUserId()
-    +currentLaboratoryId()
-    +isSignedIn()
+    +requireLaboratoryId(): number
+    +canManageQuality: Signal<boolean>
+  }
+}
+
+package "profile.application" {
+  class ProfileStore {
+    +staffProfile(laboratoryId, staffId): Observable<StaffProfile>
+  }
+}
+
+package "batch.infrastructure" {
+  class BatchApi {
+    +getBatches(lab)
+    +getMaterialHistory(laboratoryId, legacyRawMaterialId)
   }
 }
 
@@ -32,10 +41,7 @@ package "laboratory.domain.model" {
     +address: string
     +phone: string
     +applicableRegulations: string[]
-    +createdAt: string
-    +updatedAt: string
   }
-
   class StaffMember {
     +id: number
     +laboratoryId: number
@@ -43,319 +49,181 @@ package "laboratory.domain.model" {
     +role: string
     +email: string
     +active: boolean
-    +createdAt: string
+    +accessRole: StaffAccessRole | null
+    +userId: number | null
+    +assignable: boolean
   }
-
-  class PharmaceuticalProduct {
+  enum StaffAccessRole {
+    OPERATOR
+    AUDITOR
+  }
+  class StaffCredentials <<type>> {
+    +username: string
+    +delivery: 'EMAIL' | 'SHOWN_ONCE'
+    +temporaryPassword: string | null
+  }
+  class RegisteredStaff <<type>> {
+    +staffMember: StaffMember
+    +credentials: StaffCredentials
+  }
+  class Environment {
     +id: number
     +laboratoryId: number
     +code: string
     +name: string
-    +description: string
-    +specifications: string
-    +active: boolean
-    +createdAt: string
+    +description: string | null
+    +usage: EnvironmentUsage | null
   }
-
-  class RawMaterial {
-    +id: number
-    +laboratoryId: number
-    +name: string
-    +code: string
-    +supplier: string
-    +batchNumber: string
-    +expirationDate: string
-    +quantityInStock: number
-    +unit: string
-    +minimumStock: number
-    +createdAt: string
+  enum EnvironmentUsage {
+    LABORATORY
+    PRODUCTION
+    RAW_MATERIAL_STORAGE
+    PRODUCT_STORAGE
+    OTHER
   }
-
-  interface CreateLaboratoryCommand {
-    +name: string
-    +ruc: string
-    +address: string
-    +phone: string
-    +applicableRegulations: string[]
-  }
-
-  interface UpdateLaboratoryCommand {
-    +name: string
-    +address: string
-    +phone: string
-    +applicableRegulations: string[]
-  }
-
-  interface RegisterStaffCommand {
-    +laboratoryId: number
-    +fullName: string
-    +role: string
-    +email: string
-  }
-
-  interface CreateProductCommand {
-    +laboratoryId: number
-    +code: string
-    +name: string
-    +description: string
-    +specifications: string
-  }
-
-  interface CreateRawMaterialCommand {
-    +laboratoryId: number
-    +name: string
-    +code: string
-    +supplier: string
-    +batchNumber: string
-    +expirationDate: string
-    +quantityInStock: number
-    +unit: string
-    +minimumStock: number
-  }
-}
-
-package "laboratory.application" {
-  class LaboratoryStore {
-    -_laboratory
-    -_staffList
-    -_products
-    -_rawMaterials
-    -_lowStock
-    -_isLoading
-    -_error
-    -_successMsg
-
-    +laboratory
-    +staffList
-    +products
-    +rawMaterials
-    +lowStock
-    +isLoading
-    +error
-    +successMsg
-    +hasLowStock
-    +activeStaff
-
-    +createLaboratory(command: CreateLaboratoryCommand): void
-    +loadLaboratory(laboratoryId: number): void
-    +updateLaboratory(laboratoryId: number, command: UpdateLaboratoryCommand): void
-    +loadStaff(laboratoryId: number): void
-    +registerStaff(laboratoryId: number, command: RegisterStaffCommand): void
-    +deactivateStaff(laboratoryId: number, staffId: number): void
-    +loadProducts(laboratoryId: number): void
-    +createProduct(laboratoryId: number, command: CreateProductCommand): void
-    +loadRawMaterials(laboratoryId: number): void
-    +createRawMaterial(laboratoryId: number, command: CreateRawMaterialCommand): void
-    +clearMessages(): void
-  }
-}
-
-package "laboratory.infrastructure" {
-  class LaboratoryApi {
-    -laboratoryEndpoint: LaboratoryApiEndpoint
-    -staffEndpoint: StaffApiEndpoint
-    -productsEndpoint: ProductApiEndpoint
-    -materialsEndpoint: RawMaterialApiEndpoint
-
-    +createLaboratory(request: CreateLaboratoryRequest)
-    +getLaboratory(laboratoryId: number)
-    +updateLaboratory(laboratoryId: number, request: UpdateLaboratoryRequest)
-    +getStaff(laboratoryId: number)
-    +registerStaff(laboratoryId: number, request: RegisterStaffRequest)
-    +deactivateStaff(staffId: number)
-    +getProducts(laboratoryId: number)
-    +createProduct(laboratoryId: number, request: CreateProductRequest)
-    +getRawMaterials(laboratoryId: number)
-    +getLowStockMaterials(laboratoryId: number)
-    +createRawMaterial(laboratoryId: number, request: CreateRawMaterialRequest)
-  }
-
-  class LaboratoryApiEndpoint {
-    +createLaboratory(request: CreateLaboratoryRequest)
-    +getByLaboratoryId(laboratoryId: number)
-    +updateLaboratory(laboratoryId: number, request: UpdateLaboratoryRequest)
-  }
-
-  class StaffApiEndpoint {
-    +getStaffByLaboratoryId(laboratoryId: number)
-    +registerStaff(laboratoryId: number, request: RegisterStaffRequest)
-    +deactivateStaff(staffId: number)
-  }
-
-  class ProductApiEndpoint {
-    +getProductsByLaboratoryId(laboratoryId: number)
-    +createProduct(laboratoryId: number, request: CreateProductRequest)
-  }
-
-  class RawMaterialApiEndpoint {
-    +getRawMaterialsByLaboratoryId(laboratoryId: number)
-    +getLowStockMaterials(laboratoryId: number)
-    +createRawMaterial(laboratoryId: number, request: CreateRawMaterialRequest)
-  }
-
-  class LaboratoryAssembler
-  class StaffAssembler
-  class ProductAssembler
-  class RawMaterialAssembler
-
-  interface LaboratoryResource
-  interface LaboratoriesResponse
-  interface StaffMemberResource
-  interface StaffMembersResponse
-  interface PharmaceuticalProductResource
-  interface PharmaceuticalProductsResponse
-  interface RawMaterialResource
-  interface RawMaterialsResponse
-
-  interface CreateLaboratoryRequest
-  interface UpdateLaboratoryRequest
-  interface RegisterStaffRequest
-  interface CreateProductRequest
-  interface CreateRawMaterialRequest
-}
-
-package "laboratory.presentation" {
-  class LaboratoryRoutes
-
-  class LabProfile {
-    +ngOnInit(): void
-    +loadLaboratory(): void
-    +enableEdit(): void
-    +cancelEdit(): void
-    +onSubmit(): void
-  }
-
-  class LabForm {
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class StaffList {
-    +ngOnInit(): void
-    +loadStaff(): void
-    +onDeactivateStaff(staffId: number): void
-  }
-
-  class StaffForm {
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class ProductCatalog {
-    +ngOnInit(): void
-    +loadProducts(): void
-  }
-
-  class ProductForm {
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
-
-  class RawMaterialList {
-    +ngOnInit(): void
-    +loadRawMaterials(): void
-  }
-
-  class RawMaterialForm {
-    +ngOnInit(): void
-    +onSubmit(): void
-  }
+  class RawMaterial <<legacy, read-only>>
+  interface CreateLaboratoryCommand
+  interface UpdateLaboratoryCommand
+  interface RegisterStaffCommand
+  interface RegisterEnvironmentCommand
+  interface UpdateEnvironmentCommand
 }
 
 Laboratory ..|> BaseEntity
 StaffMember ..|> BaseEntity
-PharmaceuticalProduct ..|> BaseEntity
-RawMaterial ..|> BaseEntity
+StaffMember --> StaffAccessRole
+RegisteredStaff --> StaffMember
+RegisteredStaff --> StaffCredentials
+Environment ..|> BaseEntity
+Environment --> EnvironmentUsage
+
+package "laboratory.infrastructure" {
+  class LaboratoryApi {
+    +createLaboratory(request)
+    +getLaboratory(laboratoryId)
+    +updateLaboratory(laboratoryId, request)
+    +getStaff(laboratoryId)
+    +getStaffMember(laboratoryId, staffId)
+    +registerStaff(laboratoryId, request): Observable<RegisteredStaff>
+    +deactivateStaff(laboratoryId, staffId): Observable<StaffMember>
+    +getRawMaterials(laboratoryId)
+    +getEnvironments(laboratoryId)
+    +getEnvironment(laboratoryId, environmentId)
+    +createEnvironment(laboratoryId, request)
+    +updateEnvironment(laboratoryId, environmentId, request)
+    +assignUsage(laboratoryId, environmentId, request)
+  }
+  class LaboratoryApiEndpoint
+  class StaffApiEndpoint
+  class EnvironmentApiEndpoint
+  class RawMaterialApiEndpoint
+  class LaboratoryAssembler
+  class StaffAssembler
+  class EnvironmentAssembler
+  class RawMaterialAssembler
+}
 
 LaboratoryApi --|> BaseApi
-LaboratoryApiEndpoint --|> BaseApiEndpoint
-StaffApiEndpoint --|> BaseApiEndpoint
-ProductApiEndpoint --|> BaseApiEndpoint
-RawMaterialApiEndpoint --|> BaseApiEndpoint
-
-LaboratoryAssembler ..|> BaseAssembler
-StaffAssembler ..|> BaseAssembler
-ProductAssembler ..|> BaseAssembler
-RawMaterialAssembler ..|> BaseAssembler
-
-LaboratoryResource ..|> BaseResource
-LaboratoriesResponse ..|> BaseResponse
-StaffMemberResource ..|> BaseResource
-StaffMembersResponse ..|> BaseResponse
-PharmaceuticalProductResource ..|> BaseResource
-PharmaceuticalProductsResponse ..|> BaseResponse
-RawMaterialResource ..|> BaseResource
-RawMaterialsResponse ..|> BaseResponse
-
-LaboratoryStore --> LaboratoryApi
-
-LaboratoryStore ..> Laboratory
-LaboratoryStore ..> StaffMember
-LaboratoryStore ..> PharmaceuticalProduct
-LaboratoryStore ..> RawMaterial
-
-LaboratoryStore ..> CreateLaboratoryCommand
-LaboratoryStore ..> UpdateLaboratoryCommand
-LaboratoryStore ..> RegisterStaffCommand
-LaboratoryStore ..> CreateProductCommand
-LaboratoryStore ..> CreateRawMaterialCommand
-
 LaboratoryApi --> LaboratoryApiEndpoint
 LaboratoryApi --> StaffApiEndpoint
-LaboratoryApi --> ProductApiEndpoint
+LaboratoryApi --> EnvironmentApiEndpoint
 LaboratoryApi --> RawMaterialApiEndpoint
-
+LaboratoryApiEndpoint --|> BaseApiEndpoint
+StaffApiEndpoint --|> BaseApiEndpoint
+EnvironmentApiEndpoint --|> BaseApiEndpoint
+RawMaterialApiEndpoint --|> BaseApiEndpoint
 LaboratoryApiEndpoint --> LaboratoryAssembler
 StaffApiEndpoint --> StaffAssembler
-ProductApiEndpoint --> ProductAssembler
+EnvironmentApiEndpoint --> EnvironmentAssembler
 RawMaterialApiEndpoint --> RawMaterialAssembler
-
-LaboratoryApiEndpoint ..> CreateLaboratoryRequest
-LaboratoryApiEndpoint ..> UpdateLaboratoryRequest
-StaffApiEndpoint ..> RegisterStaffRequest
-ProductApiEndpoint ..> CreateProductRequest
-RawMaterialApiEndpoint ..> CreateRawMaterialRequest
-
-LaboratoryAssembler ..> Laboratory
-LaboratoryAssembler ..> LaboratoryResource
-StaffAssembler ..> StaffMember
-StaffAssembler ..> StaffMemberResource
-ProductAssembler ..> PharmaceuticalProduct
-ProductAssembler ..> PharmaceuticalProductResource
-RawMaterialAssembler ..> RawMaterial
-RawMaterialAssembler ..> RawMaterialResource
-
-LabProfile --> LaboratoryStore
-LabProfile --> IamStore
-LabForm --> LaboratoryStore
-
-StaffList --> LaboratoryStore
-StaffList --> IamStore
-StaffForm --> LaboratoryStore
-StaffForm --> IamStore
-
-ProductCatalog --> LaboratoryStore
-ProductCatalog --> IamStore
-ProductForm --> LaboratoryStore
-ProductForm --> IamStore
-
-RawMaterialList --> LaboratoryStore
-RawMaterialList --> IamStore
-RawMaterialForm --> LaboratoryStore
-RawMaterialForm --> IamStore
-
-LaboratoryRoutes ..> LabProfile
-LaboratoryRoutes ..> LabForm
-LaboratoryRoutes ..> StaffList
-LaboratoryRoutes ..> StaffForm
-LaboratoryRoutes ..> ProductCatalog
-LaboratoryRoutes ..> ProductForm
-LaboratoryRoutes ..> RawMaterialList
-LaboratoryRoutes ..> RawMaterialForm
-
-note bottom of RawMaterial
-  Legacy Laboratory model retained for historical reads.
-  Inventory owns the new catalogue, supplier receipts and movement history.
-  See inventory/inventory-frontend-diagram.puml.
+note bottom of StaffApiEndpoint
+  GET/POST /laboratories/{laboratoryId}/staff, GET .../staff/{staffId},
+  POST .../staff/{staffId}/deactivations
 end note
+
+package "laboratory.application" {
+  class LaboratoryStore {
+    +laboratory: Signal<Laboratory>
+    +staffList: Signal<StaffMember[]>
+    +activeStaff
+    +loadLaboratory(laboratoryId)
+    +createLaboratory(command)
+    +updateLaboratory(laboratoryId, command)
+    +loadStaff(laboratoryId)
+    +registerStaff(laboratoryId, command): Observable<RegisteredStaff>
+    +deactivateStaff(laboratoryId, staffId): Observable<StaffMember>
+  }
+  class EnvironmentStore <<root>> {
+    +environments: Signal<Environment[]>
+    +canManage: Signal<boolean>
+    +loadEnvironments()
+    +register(command)
+    +update(environmentId, command)
+    +assignUsage(environmentId, usage)
+    +preferredEnvironment(usage?, scope?)
+    +rememberEnvironment(environmentId, scope?)
+  }
+  class RawMaterialHistoryStore <<component scoped>> {
+    +material
+    +usages
+    +load(laboratoryId, materialId)
+  }
+}
+
+LaboratoryStore --> LaboratoryApi
+EnvironmentStore --> LaboratoryApi
+EnvironmentStore --> IamStore
+RawMaterialHistoryStore --> LaboratoryApi
+RawMaterialHistoryStore --> BatchApi
+note right of EnvironmentStore
+  Remembers the environment per feature
+  (inventory, production) in this browser only.
+end note
+
+package "laboratory.presentation" {
+  class LabForm
+  class LabProfile
+  class EnvironmentList
+  class EnvironmentForm
+  class EnvironmentSelector <<component>>
+  class StaffList
+  class StaffForm
+  class StaffDetail
+  class RawMaterialDetail
+  class LaboratoryRoutes
+}
+
+LabForm --> LaboratoryStore
+LabProfile --> LaboratoryStore
+EnvironmentList --> EnvironmentStore
+EnvironmentForm --> EnvironmentStore
+EnvironmentSelector --> EnvironmentStore
+StaffList --> LaboratoryStore
+StaffForm --> LaboratoryStore
+StaffForm ..> RegisteredStaff
+StaffList --> IamStore
+StaffDetail --> LaboratoryApi
+StaffDetail --> LaboratoryStore
+StaffDetail --> RaApi
+StaffDetail --> ProfileStore : photo and personal data (quality managers)
+StaffDetail ..> OperationsPage
+note right of StaffForm
+  Quality managers register operators and auditors; the credentials are e-mailed
+  or shown once (username and temporary password) when the e-mail cannot be sent.
+end note
+note right of StaffDetail
+  Profile and activity history of a staff member (audit log entries they performed),
+  for quality managers and auditors. Only the quality manager sees the photo, DNI,
+  phone and location the staff member keeps in the profile.
+end note
+RawMaterialDetail --> RawMaterialHistoryStore
+
+note bottom of LaboratoryRoutes
+  /laboratories/lab-profile, environments[/new|/:environmentId/edit],
+  staff-list, staff-form (quality managers), staff/:staffId (quality managers and auditors),
+  raw-materials/:id (legacy history).
+  product-catalog and product-form redirect to /batches;
+  raw-material-list and raw-material-form redirect to /inventory.
+end note
+
 @enduml
