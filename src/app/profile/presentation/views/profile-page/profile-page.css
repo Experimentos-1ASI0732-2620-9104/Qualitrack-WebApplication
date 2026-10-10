@@ -1,0 +1,180 @@
+.profile-page .page-heading p {
+  margin: 6px 0 0;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.identity,
+.card {
+  border: 1px solid #d4dfe3;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.identity {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1a3a5c;
+  color: #ffffff;
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.danger {
+  color: #a12d2d;
+}
+
+.hint {
+  margin: 8px 0 0;
+  color: #5c7079;
+  font-size: 12px;
+}
+
+.compact {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.identity-name {
+  margin: 18px 0 8px;
+  font-size: 20px;
+}
+
+.identity-facts {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.identity-facts li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.identity-facts mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #60727a;
+}
+
+.role {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e6f2f1;
+  color: #00534e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.card h2 {
+  margin: 0 0 6px;
+}
+
+.card > .muted {
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+.card form {
+  margin-top: 12px;
+}
+
+.card .success,
+.card .error {
+  margin: 12px 0 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+#notifications {
+  scroll-margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .identity {
+    position: static;
+  }
+}
