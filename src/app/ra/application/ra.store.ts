@@ -1,14 +1,19 @@
-import { DestroyRef, Injectable, signal, computed, inject } from '@angular/core';
+import { DestroyRef, Injectable, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { RaApi } from '../infrastructure/ra-api';
+import { IamStore } from '../../iam/application/iam.store';
+import { EquipmentApi } from '../../equipment/infrastructure/equipment-api';
+import { Equipment } from '../../equipment/domain/model/equipment.entity';
 
 import { KpiDashboard } from '../domain/model/kpi-dashboard.entity';
 import { DeviationTrend } from '../domain/model/deviation-trend.entity';
 import { AuditLogEntry } from '../domain/model/audit-log-entry.entity';
+import { IndicatorPeriod } from '../domain/model/indicator-period';
 
 import { GenerateBatchReportCommand } from '../domain/model/generate-batch-report.command';
 import { GenerateComplianceReportCommand } from '../domain/model/generate-compliance-report.command';
+import { GenerateInventoryReportCommand } from '../domain/model/generate-inventory-report.command';
 import { ExportEquipmentLogCommand } from '../domain/model/export-equipment-log.command';
 
 /**
@@ -20,10 +25,10 @@ import { ExportEquipmentLogCommand } from '../domain/model/export-equipment-log.
  * presentation layer and coordinates all data access through {@link RaApi}.
  *
  * It manages:
- * - KPI dashboards for laboratories
- * - Deviation trends for equipment
+ * - Indicators of the laboratory for a period (US93)
+ * - Deviation indicators of an environment (US94)
  * - Audit log entries
- * - Report generation and file downloads
+ * - Report generation and file downloads (US95–US98)
  */
 @Injectable({ providedIn: 'root' })
 export class RaStore {
@@ -31,20 +36,27 @@ export class RaStore {
    * Infrastructure API facade for Reporting and Analysis operations.
    */
   private readonly api = inject(RaApi);
+  private readonly equipmentApi = inject(EquipmentApi);
+  private readonly iam = inject(IamStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reloadDashboard = new Subject<void>();
   private readonly reloadTrends = new Subject<void>();
   private readonly reloadAudit = new Subject<void>();
 
   /**
-   * Current KPI dashboard loaded for the selected laboratory.
+   * Indicators loaded for the selected period and environment.
    */
   private readonly _dashboard = signal<KpiDashboard | null>(null);
 
   /**
-   * Current deviation trend collection loaded for the selected equipment.
+   * Deviation indicators loaded for the selected environment and period.
    */
   private readonly _deviationTrends = signal<DeviationTrend[]>([]);
+
+  /**
+   * Equipment of the laboratory, used to show the name of the device of each indicator.
+   */
+  private readonly _devices = signal<Equipment[]>([]);
 
   /**
    * Current audit log entries loaded from the backend.
@@ -57,22 +69,22 @@ export class RaStore {
   private readonly _isLoading = signal<boolean>(false);
 
   /**
-   * Stores the latest error message, if any.
+   * Latest error as a translation key or server detail.
    */
   private readonly _error = signal<string | null>(null);
 
   /**
-   * Stores the latest success message, if any.
+   * Latest confirmation as a translation key.
    */
   private readonly _successMsg = signal<string | null>(null);
 
   /**
-   * Read-only signal for the current KPI dashboard.
+   * Read-only signal for the indicators of the laboratory.
    */
   readonly dashboard = this._dashboard.asReadonly();
 
   /**
-   * Read-only signal for the current deviation trend collection.
+   * Read-only signal for the deviation indicators of the environment.
    */
   readonly deviationTrends = this._deviationTrends.asReadonly();
 
@@ -97,85 +109,72 @@ export class RaStore {
   readonly successMsg = this._successMsg.asReadonly();
 
   /**
-   * Computed collection of KPI metrics with critical status.
+   * Name of a device of the laboratory, or null while the equipment is not loaded.
    *
-   * @returns Metrics whose status is `CRITICAL`.
+   * @param deviceId - Identifier of the environmental device or container monitor
    */
-  readonly criticalMetrics = computed(() => {
-    const dashboard = this._dashboard();
-    return dashboard ? dashboard.metrics.filter((metric) => metric.status === 'CRITICAL') : [];
-  });
+  deviceName(deviceId: number): string | null {
+    return this._devices().find((device) => device.id === deviceId)?.name ?? null;
+  }
+
+  /** Loads the equipment of the laboratory once, to show the name of the device of each indicator. */
+  loadDevices(): void {
+    if (this._devices().length) return;
+    this.equipmentApi
+      .getEquipment(this.iam.requireLaboratoryId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (devices) => this._devices.set(devices), error: () => this._devices.set([]) });
+  }
 
   /**
-   * Computed collection of KPI metrics at risk.
+   * Fetches the indicators of the laboratory for a period (US93, TS81).
    *
-   * @returns Metrics whose status is `AT_RISK`.
+   * @param period - Period of the measurement summaries (at most 31 days)
+   * @param environmentId - Optional environment; null covers every environment of the laboratory
    */
-  readonly atRiskMetrics = computed(() => {
-    const dashboard = this._dashboard();
-    return dashboard ? dashboard.metrics.filter((metric) => metric.status === 'AT_RISK') : [];
-  });
-
-  /**
-   * Indicates whether the loaded dashboard contains critical metrics.
-   */
-  readonly hasCriticalDeviations = computed(() => this.criticalMetrics().length > 0);
-
-  /**
-   * Fetches the KPI dashboard for a specific laboratory.
-   *
-   * @param laboratoryId - The unique numeric identifier of the laboratory
-   *
-   * @remarks
-   * Delegates the operation to {@link RaApi.getDashboardByLaboratory} and stores
-   * the resulting dashboard in the local signal state.
-   */
-  loadDashboard(laboratoryId: number): void {
+  loadDashboard(period: IndicatorPeriod, environmentId: number | null): void {
     this.reloadDashboard.next();
     this._dashboard.set(null);
     this._isLoading.set(true);
     this._error.set(null);
 
     this.api
-      .getDashboardByLaboratory(laboratoryId)
+      .getDashboardByLaboratory(this.iam.requireLaboratoryId(), period, environmentId)
       .pipe(takeUntil(this.reloadDashboard), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (dashboard: KpiDashboard) => {
           this._dashboard.set(dashboard);
           this._isLoading.set(false);
         },
-        error: (err: unknown) => {
-          this._error.set(this.formatError(err, 'Failed to load KPI dashboard'));
+        error: () => {
+          this._error.set('reporting.errors.load');
           this._isLoading.set(false);
         },
       });
   }
 
   /**
-   * Fetches deviation trends for a specific equipment.
+   * Fetches the deviation indicators of the variables of an environment (US94, TS82).
    *
-   * @param equipmentId - The unique numeric identifier of the equipment
-   *
-   * @remarks
-   * Loads all trend analyses associated with the equipment and replaces the
-   * current deviation trend state.
+   * @param environmentId - The environment whose readings are evaluated
+   * @param period - Period of at most 31 days
    */
-  loadDeviationTrends(equipmentId: number): void {
+  loadDeviationTrends(environmentId: number, period: IndicatorPeriod): void {
     this.reloadTrends.next();
     this._deviationTrends.set([]);
     this._isLoading.set(true);
     this._error.set(null);
 
     this.api
-      .getTrendsByEquipment(equipmentId)
+      .getTrendsByEnvironment(this.iam.requireLaboratoryId(), environmentId, period)
       .pipe(takeUntil(this.reloadTrends), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (trends: DeviationTrend[]) => {
           this._deviationTrends.set(trends);
           this._isLoading.set(false);
         },
-        error: (err: unknown) => {
-          this._error.set(this.formatError(err, 'Failed to load deviation trends'));
+        error: () => {
+          this._error.set('reporting.errors.load');
           this._isLoading.set(false);
         },
       });
@@ -206,7 +205,7 @@ export class RaStore {
     this._error.set(null);
 
     this.api
-      .getAuditLog(filters)
+      .getAuditLog(this.iam.requireLaboratoryId(), filters)
       .pipe(takeUntil(this.reloadAudit), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (logs: AuditLogEntry[]) => {
@@ -221,83 +220,49 @@ export class RaStore {
   }
 
   /**
-   * Generates and downloads a production batch report.
+   * Generates and downloads the traceability report of a batch (US96).
    *
-   * @param command - Command containing batch report generation parameters
-   *
-   * @remarks
-   * The backend returns a binary Blob. The store converts it into a downloadable
-   * file and updates the success/error state accordingly.
+   * @param command - Batch, deviation section and format
    */
   generateBatchReport(command: GenerateBatchReportCommand): void {
-    this._isLoading.set(true);
-    this._error.set(null);
-    this._successMsg.set(null);
-
-    this.api.generateBatchReport(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob: Blob) => {
-        const filename = `Batch_Report_${command.batchId}.${command.format.toLowerCase()}`;
-        this.downloadFile(blob, filename);
-        this._successMsg.set('Batch report downloaded successfully');
-        this._isLoading.set(false);
-      },
-      error: (err: unknown) => {
-        this._error.set(this.formatError(err, 'Failed to generate batch report'));
-        this._isLoading.set(false);
-      },
-    });
+    this.download(this.api.generateBatchReport(command),
+      `Batch_Report_${command.batchId}.${command.format.toLowerCase()}`, 'report-generator.success.batch',
+      'report-generator.errors.batch');
   }
 
   /**
-   * Generates and downloads a regulatory compliance report.
+   * Generates and downloads the environmental report of a period (US95).
    *
-   * @param command - Command containing compliance report generation parameters
-   *
-   * @remarks
-   * Uses `laboratoryId` to identify the laboratory whose compliance information
-   * should be included in the generated report.
+   * @param command - Laboratory, optional environment, calendar days and format
    */
   generateComplianceReport(command: GenerateComplianceReportCommand): void {
-    this._isLoading.set(true);
-    this._error.set(null);
-    this._successMsg.set(null);
-
-    this.api.generateComplianceReport(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob: Blob) => {
-        const filename = `Compliance_Report_${command.laboratoryId}.${command.format.toLowerCase()}`;
-        this.downloadFile(blob, filename);
-        this._successMsg.set('Compliance report downloaded successfully');
-        this._isLoading.set(false);
-      },
-      error: (err: unknown) => {
-        this._error.set(this.formatError(err, 'Failed to generate compliance report'));
-        this._isLoading.set(false);
-      },
-    });
+    const scope = command.environmentId ?? command.laboratoryId;
+    this.download(this.api.generateComplianceReport(command),
+      `Environmental_Report_${scope}_${command.startDate}_${command.endDate}.${command.format.toLowerCase()}`,
+      'report-generator.success.compliance', 'report-generator.errors.compliance');
   }
 
   /**
-   * Exports and downloads historical equipment logs.
+   * Generates and downloads the inventory report of the laboratory or of one environment (US97).
+   *
+   * @param command - Laboratory, optional environment and format
+   */
+  generateInventoryReport(command: GenerateInventoryReportCommand): void {
+    const scope = command.environmentId ?? command.laboratoryId;
+    this.download(this.api.generateInventoryReport(command),
+      `Inventory_Report_${scope}.${command.format.toLowerCase()}`, 'report-generator.success.inventory',
+      'report-generator.errors.inventory');
+  }
+
+  /**
+   * Exports and downloads the maintenance and operation log of an equipment (US98).
    *
    * @param command - Command containing equipment log export parameters
    */
   exportEquipmentLog(command: ExportEquipmentLogCommand): void {
-    this._isLoading.set(true);
-    this._error.set(null);
-    this._successMsg.set(null);
-
-    this.api.exportEquipmentLog(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob: Blob) => {
-        const filename = `Equipment_Log_${command.equipmentId}.${command.format.toLowerCase()}`;
-        this.downloadFile(blob, filename);
-        this._successMsg.set('Equipment log exported successfully');
-        this._isLoading.set(false);
-      },
-      error: (err: unknown) => {
-        this._error.set(this.formatError(err, 'Failed to export equipment log'));
-        this._isLoading.set(false);
-      },
-    });
+    this.download(this.api.exportEquipmentLog(command),
+      `Equipment_Log_${command.equipmentId}.${command.format.toLowerCase()}`, 'report-generator.success.equipment',
+      'report-generator.errors.equipment');
   }
 
   /**
@@ -306,6 +271,25 @@ export class RaStore {
   clearMessages(): void {
     this._error.set(null);
     this._successMsg.set(null);
+  }
+
+  private download(request: ReturnType<RaApi['generateBatchReport']>, filename: string, success: string,
+                   fallback: string): void {
+    this._isLoading.set(true);
+    this._error.set(null);
+    this._successMsg.set(null);
+
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob: Blob) => {
+        this.downloadFile(blob, filename);
+        this._successMsg.set(success);
+        this._isLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this._error.set(this.formatError(err, fallback));
+        this._isLoading.set(false);
+      },
+    });
   }
 
   /**

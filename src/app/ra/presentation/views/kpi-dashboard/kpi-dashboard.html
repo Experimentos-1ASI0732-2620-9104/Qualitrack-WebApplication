@@ -1,33 +1,92 @@
-<main class="dashboard-container">
-  <div class="section-header">
-    <div class="title-group"><mat-icon class="title-icon">insights</mat-icon>
-      <h2>{{ 'kpi-dashboard.title' | translate }}</h2>
+<main class="operations-page">
+  <header class="page-heading">
+    <div>
+      <h1><mat-icon aria-hidden="true">insights</mat-icon>{{ 'reporting.summary.title' | translate }}</h1>
+      <p class="muted">{{ 'reporting.summary.subtitle' | translate }}</p>
     </div>
-    <button mat-stroked-button (click)="reload()" [disabled]="store.isLoading()">
-      <mat-icon>refresh</mat-icon>{{ 'common.refresh' | translate }}
-    </button>
-  </div>
-  @if (store.isLoading()) {
-    <div class="empty-state" role="status"><mat-spinner diameter="40" /><p>{{ 'onboarding.loading-data' | translate }}</p></div>
-  } @else if (store.error()) {
-    <p class="error-message" role="alert">{{ 'onboarding.load-error' | translate }}</p>
+    <div class="actions">
+      <mat-button-toggle-group [value]="days()" (change)="changePeriod($event.value)" [disabled]="store.isLoading()"
+                               [attr.aria-label]="'reporting.period.label' | translate">
+        @for (option of periods; track option) {
+          <mat-button-toggle [value]="option">{{ 'reporting.period.days-' + option | translate }}</mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+      @if (!environments.isEmpty()) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="scope-select">
+          <mat-label>{{ 'environments.selector' | translate }}</mat-label>
+          <mat-icon matPrefix aria-hidden="true">meeting_room</mat-icon>
+          <mat-select [value]="environmentId() ?? ALL_ENVIRONMENTS" (selectionChange)="changeEnvironment($event.value)">
+            <mat-option [value]="ALL_ENVIRONMENTS">{{ 'reporting.all-environments' | translate }}</mat-option>
+            @for (environment of environments.environments(); track environment.id) {
+              <mat-option [value]="environment.id">{{ environment.code }} · {{ environment.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+  </header>
+
+  @if (store.error(); as error) {
+    <p class="error" role="alert">{{ error | translate }}</p>
+  }
+
+  @if (environments.isEmpty()) {
+    <p class="notice">{{ 'reporting.no-environments' | translate }}</p>
+  } @else if (store.isLoading()) {
+    <div class="loading" role="status"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
   } @else if (store.dashboard(); as dashboard) {
+    @if (dashboard.from && dashboard.to) {
+      <p class="period-line">
+        {{ 'reporting.period.range' | translate: { from: (dashboard.from | date:'short'), to: (dashboard.to | date:'short') } }}
+      </p>
+    }
+
+    <h2>{{ 'reporting.summary.readings-title' | translate }}</h2>
+    @for (group of groups(); track group.environment.id) {
+      <h3>{{ group.environment.code }} · {{ group.environment.name }}</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'reporting.fields.device' | translate }}</th>
+            <th>{{ 'reporting.fields.variable' | translate }}</th>
+            <th class="numeric">{{ 'reporting.fields.readings' | translate }}</th>
+            <th class="numeric">{{ 'reporting.fields.average' | translate }}</th>
+            <th class="numeric">{{ 'reporting.fields.minimum' | translate }}</th>
+            <th class="numeric">{{ 'reporting.fields.maximum' | translate }}</th>
+            <th>{{ 'reporting.fields.last-reading' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (summary of group.summaries; track summary.deviceId + summary.metric + summary.unit) {
+            <tr>
+              <td [attr.data-label]="'reporting.fields.device' | translate">{{ deviceLabel(summary.deviceId) }}</td>
+              <td [attr.data-label]="'reporting.fields.variable' | translate">{{ 'tracking.metrics.' + summary.metric | translate }}</td>
+              <td class="numeric" [attr.data-label]="'reporting.fields.readings' | translate">{{ summary.readings | number }}</td>
+              <td class="numeric" [attr.data-label]="'reporting.fields.average' | translate">{{ summary.average | number:'1.0-2' }} {{ summary.unit }}</td>
+              <td class="numeric" [attr.data-label]="'reporting.fields.minimum' | translate">{{ summary.minimum | number:'1.0-2' }} {{ summary.unit }}</td>
+              <td class="numeric" [attr.data-label]="'reporting.fields.maximum' | translate">{{ summary.maximum | number:'1.0-2' }} {{ summary.unit }}</td>
+              <td [attr.data-label]="'reporting.fields.last-reading' | translate">{{ summary.lastMeasuredAt | date:'short' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @empty {
+      <p class="notice">{{ 'reporting.summary.no-readings' | translate }}</p>
+    }
+    @if (groups().length) {
+      <p class="muted formula">{{ 'reporting.summary.formula' | translate }}</p>
+    }
+
+    <h2>{{ 'reporting.summary.records-title' | translate }}</h2>
     @if (dashboard.metrics.length) {
-      <div class="summary-cards">
+      <div class="summary-strip">
         @for (metric of dashboard.metrics; track metric.name) {
-          <mat-card class="stat-card"><mat-card-content>
-            <h3>{{ 'operational-metrics.' + metric.name | translate }}</h3>
-            <strong class="stat-value">{{ metric.value | number }}</strong>
-            <p class="last-update">{{ metric.recordedAt | date:'short' }}</p>
-          </mat-card-content></mat-card>
+          <div><span>{{ 'operational-metrics.' + metric.name | translate }}</span><strong>{{ metric.value | number }}</strong></div>
         }
       </div>
-      <div class="chart-container">
-        <canvas baseChart [data]="chartData()" [options]="barChartOptions" [type]="barChartType"
-          role="img" [attr.aria-label]="'kpi-dashboard.title' | translate"></canvas>
-      </div>
+      <p class="muted">{{ 'reporting.summary.records-note' | translate }}</p>
     } @else {
-      <div class="empty-state"><mat-icon>insights</mat-icon><p>{{ 'onboarding.insufficient-data' | translate }}</p></div>
+      <p class="muted">{{ 'reporting.summary.no-records' | translate }}</p>
     }
   }
 </main>
