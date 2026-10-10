@@ -12,7 +12,7 @@ concurrency:
 
 env:
   # Backend branch used by the system tests (it provides the isolated SystemTestServer).
-  PLATFORM_REF: feature/core-tests
+  PLATFORM_REF: develop
 
 jobs:
   build:
