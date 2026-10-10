@@ -1,4 +1,4 @@
-<main class="inventory-page">
+<main class="operations-page">
   <header class="page-heading">
     <h1><mat-icon>add_box</mat-icon>{{ 'inventory.registerMaterial' | translate }}</h1>
   </header>
@@ -44,7 +44,7 @@
       ><button
         mat-button
         type="button"
-        routerLink="/inventory/inventory-catalogue"
+        [routerLink]="catalogueLink"
         [disabled]="store.saving()"
       >
         {{ 'inventory.cancel' | translate }}
