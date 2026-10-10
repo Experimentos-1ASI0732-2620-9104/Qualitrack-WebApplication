@@ -75,6 +75,11 @@ export class Subscription implements BaseEntity {
   cancelledBy?: number;
 
   /**
+   * True when the renewal was cancelled: the subscription ends with the current period (US23).
+   */
+  cancelAtPeriodEnd: boolean;
+
+  /**
    * Creates a new Subscription entity.
    *
    * @param params - Initialization properties
@@ -93,6 +98,7 @@ export class Subscription implements BaseEntity {
     currentPeriodEnd?: string;
     cancelledAt?: string;
     cancelledBy?: number;
+    cancelAtPeriodEnd?: boolean;
   }) {
     this.id = params.id;
     this.userId = params.userId;
@@ -107,5 +113,6 @@ export class Subscription implements BaseEntity {
     this.currentPeriodEnd = params.currentPeriodEnd;
     this.cancelledAt = params.cancelledAt;
     this.cancelledBy = params.cancelledBy;
+    this.cancelAtPeriodEnd = params.cancelAtPeriodEnd ?? false;
   }
 }
