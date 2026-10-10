@@ -1,5 +1,6 @@
 import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-response';
 import { KpiMetricStatus } from '../domain/model/kpi-metric.entity';
+import { MeasurementSummary } from '../domain/model/kpi-dashboard.entity';
 
 /**
  * Resource representation of a single Key Performance Indicator (KPI) metric.
@@ -75,9 +76,21 @@ export interface KpiDashboardResource extends BaseResource {
   overallHealthScore: number | null;
 
   /**
+   * Period of the measurement summaries (ISO-8601 instants).
+   */
+  from: string | null;
+
+  to: string | null;
+
+  /**
    * The collection of KPI metrics included in this dashboard snapshot.
    */
   metrics: KpiMetricResource[];
+
+  /**
+   * Average, minimum and maximum per device and metric in the period (US93).
+   */
+  measurementSummaries: MeasurementSummary[];
 }
 
 /**

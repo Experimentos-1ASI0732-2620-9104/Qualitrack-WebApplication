@@ -54,6 +54,9 @@ export class KpiAssembler implements BaseAssembler<
       laboratoryId: resource.laboratoryId,
       timestamp: resource.timestamp,
       overallHealthScore: resource.overallHealthScore,
+      from: resource.from,
+      to: resource.to,
+      measurementSummaries: resource.measurementSummaries ?? [],
       metrics: resource.metrics.map(
         (metric) =>
           new KpiMetric({
@@ -81,6 +84,9 @@ export class KpiAssembler implements BaseAssembler<
       laboratoryId: entity.laboratoryId,
       timestamp: entity.timestamp,
       overallHealthScore: entity.overallHealthScore,
+      from: entity.from,
+      to: entity.to,
+      measurementSummaries: entity.measurementSummaries,
       metrics: entity.metrics.map((metric) => ({
         id: metric.id,
         name: metric.name,

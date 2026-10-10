@@ -26,7 +26,7 @@ export class AuditLogApiEndpoint extends BaseApiEndpoint<
     super(http, apiBaseUrl, new AuditLogAssembler());
   }
 
-  getAuditLog(filters?: {
+  getAuditLog(laboratoryId: number, filters?: {
     equipmentId?: number;
     batchId?: number;
     dateFrom?: string;
@@ -47,12 +47,28 @@ export class AuditLogApiEndpoint extends BaseApiEndpoint<
     }
 
     const endpointUrl = filters.equipmentId
-      ? `${this.endpointUrl}${environment.equipmentEndpointPath}/${filters.equipmentId}${environment.equipmentAuditLogsEndpointPath}`
+      ? `${this.endpointUrl}${environment.laboratoryLabsEndpointPath}/${laboratoryId}${environment.equipmentEndpointPath}/${filters.equipmentId}${environment.equipmentAuditLogsEndpointPath}`
       : `${this.endpointUrl}${environment.batchEndpointPath}/${filters.batchId}${environment.batchAuditLogsEndpointPath}`;
 
     return this.http.get<AuditLogEntryResource[]>(endpointUrl, { params }).pipe(
       map((resources) => this.assembler.toEntitiesFromResources(resources)),
       catchError(this.handleError('Failed to fetch audit logs')),
+    );
+  }
+
+  /**
+   * Retrieves what a staff member did with their account, newest first.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param staffId - Numeric identifier of the staff member
+   * @returns Observable stream emitting the audit log entries performed by the staff member
+   */
+  getStaffActivity(laboratoryId: number, staffId: number): Observable<AuditLogEntry[]> {
+    const endpointUrl = `${this.endpointUrl}${environment.laboratoryLabsEndpointPath}/${laboratoryId}`
+      + `${environment.laboratoryStaffEndpointPath}/${staffId}${environment.raAuditLogsEndpointPath}`;
+    return this.http.get<AuditLogEntryResource[]>(endpointUrl).pipe(
+      map((resources) => this.assembler.toEntitiesFromResources(resources)),
+      catchError(this.handleError(`Failed to fetch the activity of staff member ${staffId}`)),
     );
   }
 }
