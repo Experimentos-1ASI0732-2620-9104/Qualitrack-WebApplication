@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -12,27 +12,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { EquipmentStore } from '../../../application/equipment.store';
-import { IamStore } from '../../../../iam/application/iam.store';
-import { RegisterEquipmentCommand } from '../../../domain/model/register-equipment.command';
 
 /**
- * Component responsible for displaying and handling the equipment registration form.
- *
- * @remarks
- * This standalone Angular component allows the user to register new equipment
- * associated with the current laboratory or authenticated user context.
- *
- * It uses Angular Reactive Forms to manage form data and validations, Material
- * components to build the user interface, and EquipmentStore to send the
- * registration command to the application layer.
- *
- * The component also obtains the laboratory identifier from IamStore, which is
- * used as the laboratoryId when creating the RegisterEquipmentCommand.
- *
- * @example
- * ```html
- * <app-equipment-form></app-equipment-form>
- * ```
+ * Registers an equipment of the laboratory (US45). IoT devices are registered with the device form.
  */
 @Component({
   selector: 'app-equipment-form',
@@ -54,29 +36,13 @@ import { RegisterEquipmentCommand } from '../../../domain/model/register-equipme
   styleUrl: './equipment-form.css',
 })
 export class EquipmentForm {
-  /**
-   * FormBuilder instance used to create and configure the reactive form.
-   */
   private readonly fb = inject(FormBuilder);
 
-  /**
-   * Router used to navigate after successful form submission.
-   */
   private readonly router = inject(Router);
 
-  /**
-   * Store responsible for equipment-related state and operations.
-   */
   protected readonly store = inject(EquipmentStore);
 
-  /**
-   * Store responsible for identity and access management state.
-   */
-  private readonly iamStore = inject(IamStore);
-
-  /**
-   * List of available equipment types displayed in the form.
-   */
+  /** Common laboratory equipment categories offered as suggestions; the type is free text in the platform. */
   protected readonly equipmentTypes = [
     'Autoclave',
     'Centrifuge',
@@ -84,57 +50,22 @@ export class EquipmentForm {
     'Mixer',
     'Refrigerator',
     'HPLC System',
-    'IoT Sensor',
   ];
 
-  /**
-   * Reactive form used to register equipment.
-   *
-   * @remarks
-   * The form contains fields for equipment name, type, model, and serial number.
-   * Validators ensure that required data is provided, the name has a minimum
-   * length, and the serial number only contains letters, numbers, and hyphens.
-   */
-  protected form: FormGroup = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(3)]],
-    type: ['', Validators.required],
-    model: ['', Validators.required],
-    serialNumber: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9-]+$/)]],
+  protected readonly form = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
+    type: ['', [Validators.required, Validators.maxLength(100)]],
+    model: ['', [Validators.required, Validators.maxLength(100)]],
+    serialNumber: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^[a-zA-Z0-9-]+$/)]],
   });
 
-  /**
-   * Gets the current laboratory identifier from the authenticated user context.
-   *
-   * @returns The current laboratory numeric identifier.
-   *
-   * @remarks
-   * The application currently uses the authenticated user ID as the laboratory
-   * context. If no user ID is available, it falls back to 1 to keep local
-   * development and seeded demo scenarios usable.
-   */
-  private get currentLabId(): number {
-    return this.iamStore.requireLaboratoryId();
+  constructor() {
+    this.store.clearMessages();
   }
 
-  /**
-   * Saves the equipment registration form.
-   *
-   * @remarks
-   * This method first validates the form. Then it creates a
-   * RegisterEquipmentCommand using the current laboratory context and sends it
-   * to EquipmentStore.
-   *
-   * After dispatching the command, the user is redirected to the equipment list.
-   */
-  protected onSave(): void {
+  protected async onSave(): Promise<void> {
     if (this.form.invalid) return;
-
-    const command: RegisterEquipmentCommand = {
-      laboratoryId: this.currentLabId,
-      ...this.form.getRawValue(),
-    };
-
-    this.store.registerEquipment(command);
-    this.router.navigate(['/equipments/equipment-list']).then();
+    const equipment = await this.store.registerEquipment(this.form.getRawValue());
+    if (equipment) await this.router.navigate(['/equipments/equipment-detail', equipment.id]);
   }
 }

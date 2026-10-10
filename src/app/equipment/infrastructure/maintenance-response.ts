@@ -14,13 +14,14 @@ import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-res
  * @example
  * ```typescript
  * const resource: MaintenanceResource = {
- * id: 1,
- * equipmentId: 101,
- * maintenanceDate: '2026-05-12',
- * technicianName: 'John Doe',
- * description: 'Preventive maintenance and calibration performed.',
- * type: 'PREVENTIVE',
- * createdAt: '2026-05-12T10:00:00Z'
+ *   id: 1,
+ *   equipmentId: 101,
+ *   environmentId: 5,
+ *   maintenanceDate: '2026-05-12',
+ *   technicianName: 'John Doe',
+ *   description: 'Preventive maintenance and calibration performed.',
+ *   type: 'PREVENTIVE',
+ *   createdAt: '2026-05-12T10:00:00Z'
  * };
  * ```
  */
@@ -38,6 +39,15 @@ export interface MaintenanceResource extends BaseResource {
    * in the system.
    */
   equipmentId: number;
+
+  /**
+   * The numeric identifier of the environment where the equipment was located
+   * when the maintenance was registered.
+   *
+   * @remarks
+   * It is `null` when the location is unknown.
+   */
+  environmentId: number | null;
 
   /**
    * The date when the maintenance activity was performed.
@@ -80,6 +90,7 @@ export interface MaintenanceResource extends BaseResource {
    *
    * @remarks
    * This value is stored as a string, commonly using ISO 8601 date format.
+   * It is optional because the API may not return it.
    */
   createdAt?: string;
 }
@@ -96,17 +107,18 @@ export interface MaintenanceResource extends BaseResource {
  * @example
  * ```typescript
  * const response: MaintenancesResponse = {
- * maintenances: [
- * {
- * id: 1,
- * equipmentId: 101,
- * maintenanceDate: '2026-05-12',
- * technicianName: 'John Doe',
- * description: 'Preventive maintenance and calibration performed.',
- * type: 'PREVENTIVE',
- * createdAt: '2026-05-12T10:00:00Z'
- * }
- * ]
+ *   maintenances: [
+ *     {
+ *       id: 1,
+ *       equipmentId: 101,
+ *       environmentId: 5,
+ *       maintenanceDate: '2026-05-12',
+ *       technicianName: 'John Doe',
+ *       description: 'Preventive maintenance and calibration performed.',
+ *       type: 'PREVENTIVE',
+ *       createdAt: '2026-05-12T10:00:00Z'
+ *     }
+ *   ]
  * };
  * ```
  */

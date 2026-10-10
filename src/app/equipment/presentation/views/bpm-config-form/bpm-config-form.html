@@ -63,7 +63,7 @@
         @if (store.error()) {
           <div class="error-msg">
             <mat-icon>error</mat-icon>
-            <span>{{ store.error() }}</span>
+            <span>{{ store.error()! | translate }}</span>
           </div>
         }
       </mat-card-content>
@@ -76,8 +76,8 @@
           {{ 'common.cancel' | translate }}
         </button>
 
-        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.isLoading()">
-          @if (store.isLoading()) {
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.saving()">
+          @if (store.saving()) {
             <mat-spinner diameter="18"></mat-spinner>
           } @else {
             <mat-icon>settings_suggest</mat-icon>

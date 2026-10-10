@@ -20,8 +20,8 @@ import { BpmConfigResource, BpmConfigsResponse } from './bpm-config-response';
  * const assembler = new BpmConfigAssembler();
  *
  * const entity = assembler.toEntityFromResource({
- *   id: 'config-001',
- *   equipmentId: 'equipment-001',
+ *   id: 1,
+ *   equipmentId: 101,
  *   parameterName: 'Temperature',
  *   minValue: 20,
  *   maxValue: 80,
@@ -40,12 +40,12 @@ export class BpmConfigAssembler implements BaseAssembler<
   /**
    * Converts a BPM configurations API response into a list of domain entities.
    *
-   * @param response - The API response containing BPM configuration resources.
-   * @returns An array of BpmParameterConfig domain entities.
-   *
    * @remarks
    * This method iterates through the bpmConfigs collection from the response
    * and converts each resource into a domain entity using toEntityFromResource.
+   *
+   * @param response - The API response containing BPM configuration resources.
+   * @returns An array of BpmParameterConfig domain entities.
    */
   toEntitiesFromResponse(response: BpmConfigsResponse): BpmParameterConfig[] {
     return response.bpmConfigs.map((resource) => this.toEntityFromResource(resource));
@@ -54,13 +54,14 @@ export class BpmConfigAssembler implements BaseAssembler<
   /**
    * Converts a BPM configuration resource into a domain entity.
    *
-   * @param resource - The BPM configuration resource received from the API.
-   * @returns A BpmParameterConfig domain entity.
-   *
    * @remarks
    * This method maps the raw API resource fields into the constructor of
    * BpmParameterConfig, preserving the equipment reference, parameter name,
-   * configured range, unit, and creation date.
+   * configured range, unit, and creation date. When the resource has no
+   * creation date, an empty string is used.
+   *
+   * @param resource - The BPM configuration resource received from the API.
+   * @returns A BpmParameterConfig domain entity.
    */
   toEntityFromResource(resource: BpmConfigResource): BpmParameterConfig {
     return new BpmParameterConfig({
@@ -77,13 +78,13 @@ export class BpmConfigAssembler implements BaseAssembler<
   /**
    * Converts a BPM parameter configuration domain entity into an API resource.
    *
-   * @param entity - The BpmParameterConfig domain entity to be converted.
-   * @returns A BpmConfigResource compatible with the API structure.
-   *
    * @remarks
    * This method is useful when the application needs to send a BPM configuration
    * entity back to the infrastructure layer or serialize it using the resource
    * format expected by the API.
+   *
+   * @param entity - The BpmParameterConfig domain entity to be converted.
+   * @returns A BpmConfigResource compatible with the API structure.
    */
   toResourceFromEntity(entity: BpmParameterConfig): BpmConfigResource {
     return {

@@ -1,0 +1,103 @@
+<div class="form-container">
+  <mat-card class="equipment-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'device-form.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'device-form.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="equipment-form">
+      <mat-card-content>
+        @if (!store.canManage()) {
+          <p class="notice" role="note">{{ 'equipment-form.quality-only' | translate }}</p>
+        }
+
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'device-form.fields.device-type' | translate }}</mat-label>
+            <mat-select formControlName="deviceType">
+              @for (type of deviceTypes; track type) {
+                <mat-option [value]="type">{{ 'device-types.' + type | translate }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>{{ 'device-types.hints.' + form.controls.deviceType.value | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'equipment-list.fields.name' | translate }}</mat-label>
+            <input matInput formControlName="name" [placeholder]="'device-form.placeholders.name' | translate">
+            @if (form.controls.name.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+            @if (form.controls.name.hasError('minlength')) {
+              <mat-error>{{ 'equipment-form.errors.name-minlength' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'device-form.fields.identifier' | translate }}</mat-label>
+            <input matInput formControlName="sensorExternalId" [placeholder]="'device-form.placeholders.identifier' | translate">
+            <mat-hint>{{ 'device-form.hints.identifier' | translate }}</mat-hint>
+            @if (form.controls.sensorExternalId.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'device-form.fields.serial' | translate }}</mat-label>
+            <input matInput formControlName="serialNumber" [placeholder]="'device-form.placeholders.serial' | translate">
+            @if (form.controls.serialNumber.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'equipment-list.fields.model' | translate }}</mat-label>
+            <input matInput formControlName="model">
+            @if (form.controls.model.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'device-form.fields.firmware' | translate }}</mat-label>
+            <input matInput formControlName="firmwareVersion" [placeholder]="'device-form.placeholders.firmware' | translate">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'device-form.fields.environment' | translate }}</mat-label>
+            <mat-select formControlName="environmentId">
+              <mat-option [value]="null">{{ 'device-form.no-environment' | translate }}</mat-option>
+              @for (environment of environments.environments(); track environment.id) {
+                <mat-option [value]="environment.id" [disabled]="isOccupied(environment.id)">
+                  {{ environment.code }} - {{ environment.name }}
+                  @if (isOccupied(environment.id)) { ({{ 'device-form.occupied' | translate }}) }
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint>{{ 'device-form.hints.environment' | translate }}</mat-hint>
+          </mat-form-field>
+        </div>
+
+        @if (store.error()) {
+          <div class="error-msg" role="alert">
+            <mat-icon>error</mat-icon>
+            <span>{{ store.error()! | translate }}</span>
+          </div>
+        }
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <a mat-button routerLink="../equipment-list">{{ 'common.cancel' | translate }}</a>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.saving() || !store.canManage()">
+          @if (store.saving()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>sensors</mat-icon>
+          }
+          {{ 'device-form.save' | translate }}
+        </button>
+      </mat-card-actions>
+    </form>
+  </mat-card>
+</div>

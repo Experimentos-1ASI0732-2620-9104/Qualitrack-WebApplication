@@ -12,11 +12,11 @@
  * @example
  * ```typescript
  * const request: ConfigureBpmRequest = {
- * equipmentId: 101,
- * parameterName: 'Temperature',
- * minValue: 20,
- * maxValue: 80,
- * unit: '°C'
+ *   equipmentId: 101,
+ *   parameterName: 'Temperature',
+ *   minValue: 20,
+ *   maxValue: 80,
+ *   unit: '°C'
  * };
  * ```
  */

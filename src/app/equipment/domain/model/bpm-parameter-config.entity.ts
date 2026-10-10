@@ -15,13 +15,13 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  * @example
  * ```typescript
  * const temperatureConfig = new BpmParameterConfig({
- * id: 1,
- * equipmentId: 101,
- * parameterName: 'Temperature',
- * minValue: 20,
- * maxValue: 80,
- * unit: '°C',
- * createdAt: '2026-05-12T10:00:00Z'
+ *   id: 1,
+ *   equipmentId: 101,
+ *   parameterName: 'Temperature',
+ *   minValue: 20,
+ *   maxValue: 80,
+ *   unit: '°C',
+ *   createdAt: '2026-05-12T10:00:00Z'
  * });
  *
  * console.log(temperatureConfig.parameterName); // 'Temperature'
@@ -84,6 +84,11 @@ export class BpmParameterConfig implements BaseEntity {
   /**
    * Creates a new BPM parameter configuration entity.
    *
+   * @remarks
+   * The constructor initializes the entity with all required values.
+   * Each configuration belongs to a specific equipment and defines
+   * the allowed range for one monitored parameter.
+   *
    * @param params - Initialization properties for the BPM parameter configuration.
    * @param params.id - The unique numeric identifier of the configuration.
    * @param params.equipmentId - The numeric identifier of the related equipment.
@@ -92,11 +97,6 @@ export class BpmParameterConfig implements BaseEntity {
    * @param params.maxValue - The maximum acceptable parameter value.
    * @param params.unit - The measurement unit of the parameter.
    * @param params.createdAt - The creation date of the configuration.
-   *
-   * @remarks
-   * The constructor initializes the entity with all required values.
-   * Each configuration belongs to a specific equipment and defines
-   * the allowed range for one monitored parameter.
    */
   constructor(params: {
     id: number;

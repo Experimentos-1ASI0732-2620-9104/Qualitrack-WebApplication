@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -7,42 +8,35 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { EquipmentStore } from '../../../application/equipment.store';
+import { Equipment } from '../../../domain/model/equipment.entity';
+import { EQUIPMENT_STATUSES, EquipmentStatus } from '../../../domain/model/equipment-status';
+import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
 
 /**
- * Component responsible for displaying detailed information about a specific equipment.
- *
- * @remarks
- * This standalone Angular component shows the detail view of an equipment item.
- * It obtains the equipment identifier from the route, loads the equipment by ID,
- * loads the related BPM configuration, and retrieves the maintenance history
- * associated with that equipment.
- *
- * The component interacts with the EquipmentStore to access equipment state,
- * BPM parameter configurations, maintenance records, loading state, and other
- * related data. It does not communicate directly with the API.
- *
- * Angular Material modules are used to organize the detail view with tabs,
- * cards, buttons, icons, dividers, and progress indicators.
- *
- * @example
- * ```html
- * <app-equipment-detail></app-equipment-detail>
- * ```
+ * Technical file of an equipment or IoT device: identity, location, operational status,
+ * BPM limits and maintenance history (US46-US50).
  */
 @Component({
   selector: 'app-equipment-detail',
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     MatTabsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
     MatProgressBarModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     RouterModule,
     TranslatePipe,
   ],
@@ -50,72 +44,78 @@ import { EquipmentStore } from '../../../application/equipment.store';
   styleUrl: './equipment-detail.css',
 })
 export class EquipmentDetail implements OnInit {
-  /**
-   * ActivatedRoute instance used to access route parameters.
-   *
-   * @remarks
-   * This component uses the current route to obtain the equipment identifier
-   * from the URL parameter named id.
-   */
   private readonly route = inject(ActivatedRoute);
 
-  /**
-   * Store responsible for equipment-related state and operations.
-   *
-   * @remarks
-   * The store provides access to the equipment list, selected equipment,
-   * BPM configurations, maintenance history, loading state, error messages,
-   * and success messages.
-   */
+  private readonly fb = inject(FormBuilder);
+
   protected readonly store = inject(EquipmentStore);
 
-  /**
-   * Signal that stores the current numeric equipment identifier.
-   *
-   * @remarks
-   * The value is initialized from the route parameter during component startup.
-   * It remains null if the route does not contain a valid equipment identifier.
-   */
+  protected readonly environments = inject(EnvironmentStore);
+
   protected readonly equipmentId = signal<number | null>(null);
 
-  /**
-   * Initializes the component and loads related equipment information.
-   *
-   * @remarks
-   * During initialization, this method reads the equipment id from the route.
-   * If the id exists, it stores the value in the equipmentId signal and then
-   * loads the equipment by ID, BPM configuration, and maintenance history.
-   *
-   * Loading the equipment by ID allows the detail view to work even when the
-   * user enters the route directly without previously loading the equipment list.
-   */
+  /** Why the environment chosen when registering a device could not be recorded. */
+  protected readonly locationNotice = signal<string | null>(history.state?.locationError ?? null);
+
+  protected readonly equipment = computed(() => {
+    const selected = this.store.selectedEquipment();
+    return selected?.id === this.equipmentId() ? selected : null;
+  });
+
+  protected readonly locationForm = this.fb.group({
+    environmentId: this.fb.control<number | null>(null, Validators.required),
+  });
+
+  protected readonly statusForm = this.fb.group({
+    status: this.fb.control<EquipmentStatus | null>(null, Validators.required),
+    reason: this.fb.control<string | null>(null, Validators.maxLength(500)),
+  });
+
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-
-    if (idParam) {
-      const id = Number(idParam);
-
-      this.equipmentId.set(id);
-      this.store.loadEquipmentById(id);
-      this.store.loadBpmConfig(id);
-      this.store.loadMaintenanceHistory(id);
-    }
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (!Number.isSafeInteger(id) || id <= 0) return;
+    this.equipmentId.set(id);
+    void this.environments.loadEnvironments();
+    this.store.loadEquipment();
+    this.store.loadBpmConfig(id);
+    void this.load(id);
   }
 
-  /**
-   * Gets the equipment entity currently associated with this detail view.
-   *
-   * @returns The selected equipment if available, otherwise the matching item
-   * from the equipment list.
-   *
-   * @remarks
-   * This getter first checks the selected equipment loaded by ID. If no selected
-   * equipment is available, it falls back to searching the equipment list.
-   */
-  protected get currentEquipment() {
-    return (
-      this.store.selectedEquipment() ??
-      this.store.equipmentList().find((equipment) => equipment.id === this.equipmentId())
-    );
+  /** Statuses the equipment can change to; the current status is not a change. */
+  protected statusOptions(equipment: Equipment): EquipmentStatus[] {
+    return EQUIPMENT_STATUSES.filter((status) => status !== equipment.status);
+  }
+
+  protected environmentName(environmentId: number | null): string | null {
+    if (environmentId === null) return null;
+    const environment = this.environments.environments().find((item) => item.id === environmentId);
+    return environment ? `${environment.code} - ${environment.name}` : `#${environmentId}`;
+  }
+
+  /** An environment keeps a single environmental device (US52). */
+  protected isOccupied(equipment: Equipment, environmentId: number): boolean {
+    return equipment.deviceType === 'ENVIRONMENTAL_DEVICE' && this.store.iotDevices().some((device) =>
+      device.id !== equipment.id && device.deviceType === 'ENVIRONMENTAL_DEVICE' && device.environmentId === environmentId);
+  }
+
+  protected async onLocate(equipment: Equipment): Promise<void> {
+    const environmentId = this.locationForm.controls.environmentId.value;
+    if (environmentId === null || environmentId === equipment.environmentId) return;
+    const located = await this.store.assignToEnvironment(equipment, environmentId);
+    if (!located) return;
+    this.locationNotice.set(null);
+    this.locationForm.reset();
+    await this.store.loadMaintenanceHistory(located);
+  }
+
+  protected async onChangeStatus(equipment: Equipment): Promise<void> {
+    const { status, reason } = this.statusForm.getRawValue();
+    if (this.statusForm.invalid || status === null) return;
+    if (await this.store.changeStatus(equipment, { status, reason })) this.statusForm.reset();
+  }
+
+  private async load(id: number): Promise<void> {
+    const equipment = await this.store.loadEquipmentById(id);
+    if (equipment) await this.store.loadMaintenanceHistory(equipment);
   }
 }
