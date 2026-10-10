@@ -7,7 +7,8 @@ import { StaffMemberResource, StaffMembersResponse } from './staff-response';
  *
  * @remarks
  * This assembler keeps staff member domain objects independent from backend
- * transport contracts.
+ * transport contracts. Staff registered before accounts existed have no access
+ * role nor user, which are normalized to `null`.
  */
 export class StaffAssembler implements BaseAssembler<
   StaffMember,
@@ -38,7 +39,8 @@ export class StaffAssembler implements BaseAssembler<
       role: resource.role,
       email: resource.email,
       active: resource.active,
-      createdAt: resource.createdAt,
+      accessRole: resource.accessRole ?? null,
+      userId: resource.userId ?? null,
     });
   }
 
@@ -56,7 +58,8 @@ export class StaffAssembler implements BaseAssembler<
       role: entity.role,
       email: entity.email,
       active: entity.active,
-      createdAt: entity.createdAt,
+      accessRole: entity.accessRole,
+      userId: entity.userId,
     };
   }
 }

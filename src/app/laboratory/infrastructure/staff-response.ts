@@ -1,12 +1,11 @@
 import { BaseResource, BaseResponse } from '../../shared/infrastructure/base-response';
 
 /**
- * Resource representation of a staff member for API communication.
+ * Staff member returned by `/laboratories/{laboratoryId}/staff`.
  *
  * @remarks
- * This interface belongs to the infrastructure layer and mirrors the backend
- * staff resource contract. It is converted into a StaffMember domain entity
- * by the corresponding assembler.
+ * This interface belongs to the infrastructure layer and is converted into a
+ * {@link StaffMember} domain entity by the staff assembler.
  */
 export interface StaffMemberResource extends BaseResource {
   /**
@@ -15,7 +14,7 @@ export interface StaffMemberResource extends BaseResource {
   id: number;
 
   /**
-   * The numeric identifier of the laboratory this staff member belongs to.
+   * The numeric identifier of the laboratory the staff member belongs to.
    */
   laboratoryId: number;
 
@@ -25,36 +24,73 @@ export interface StaffMemberResource extends BaseResource {
   fullName: string;
 
   /**
-   * The professional role assigned to the staff member.
+   * The job title of the staff member in the laboratory.
    */
   role: string;
 
   /**
-   * The institutional email address of the staff member.
+   * The corporate email address, also the username of their account.
    */
   email: string;
 
   /**
-   * Indicates whether the staff member is active.
+   * Indicates whether the staff member is currently active.
    */
   active: boolean;
 
   /**
-   * The ISO 8601 timestamp indicating when the staff member was created.
+   * What the staff member can do; `null` for staff registered before accounts existed.
    */
-  createdAt: string;
+  accessRole: 'OPERATOR' | 'AUDITOR' | null;
+
+  /**
+   * Account the staff member signs in with; `null` for staff registered before accounts existed.
+   */
+  userId: number | null;
 }
 
 /**
- * Response envelope for staff collection queries.
- *
- * @remarks
- * This response is used when the backend returns staff members inside a
- * collection wrapper.
+ * Response envelope for staff member collections.
  */
 export interface StaffMembersResponse extends BaseResponse {
   /**
    * Array of staff member resources returned by the API.
    */
   staffMembers: StaffMemberResource[];
+}
+
+/**
+ * Credentials of the account created for a staff member.
+ */
+export interface StaffCredentialsResource {
+  /**
+   * Username of the account, which is the e-mail of the staff member.
+   */
+  username: string;
+
+  /**
+   * `EMAIL` when the credentials were e-mailed; `SHOWN_ONCE` when the temporary
+   * password is returned this single time.
+   */
+  delivery: 'EMAIL' | 'SHOWN_ONCE';
+
+  /**
+   * Temporary password; only present when `delivery` is `SHOWN_ONCE`.
+   */
+  temporaryPassword: string | null;
+}
+
+/**
+ * Body of `201 Created` after registering a staff member.
+ */
+export interface RegisteredStaffResource {
+  /**
+   * The staff member that was registered.
+   */
+  staffMember: StaffMemberResource;
+
+  /**
+   * How the credentials of the new account were delivered.
+   */
+  credentials: StaffCredentialsResource;
 }

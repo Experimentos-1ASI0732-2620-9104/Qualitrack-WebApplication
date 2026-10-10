@@ -3,19 +3,22 @@ import { Observable, catchError, map } from 'rxjs';
 import { BaseApiEndpoint } from '../../shared/infrastructure/base-api-endpoint';
 import { environment } from '../../../environments/environment';
 import { StaffMember } from '../domain/model/staff-member.entity';
-import { StaffMemberResource, StaffMembersResponse } from './staff-response';
+import { RegisteredStaff } from '../domain/model/register-staff.command';
+import { RegisteredStaffResource, StaffMemberResource, StaffMembersResponse } from './staff-response';
 import { StaffAssembler } from './staff-assembler';
 import { RegisterStaffRequest } from './staff.request';
-import { MessageResource } from '../../shared/infrastructure/message-response';
 
+/**
+ * Base URL of the laboratories resource, built from the environment configuration.
+ */
 const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
-const staffEndpointUrl = `${environment.serverBasePath}${environment.laboratoryStaffEndpointPath}`;
 
 /**
  * HTTP endpoint client for laboratory staff operations.
  *
  * @remarks
- * This endpoint handles staff listing, registration, and status updates.
+ * This endpoint handles staff listing, registration (which creates the account of the staff
+ * member) and deactivation under /laboratories/{laboratoryId}/staff.
  */
 export class StaffApiEndpoint extends BaseApiEndpoint<
   StaffMember,
@@ -39,7 +42,7 @@ export class StaffApiEndpoint extends BaseApiEndpoint<
    * @returns Observable stream emitting StaffMember domain entities
    */
   getStaffByLaboratoryId(laboratoryId: number): Observable<StaffMember[]> {
-    return this.http.get<StaffMemberResource[]>(`${this.endpointUrl}/${laboratoryId}/staff`).pipe(
+    return this.http.get<StaffMemberResource[]>(this.staffUrl(laboratoryId)).pipe(
       map((resources) =>
         resources.map((resource) => this.assembler.toEntityFromResource(resource)),
       ),
@@ -48,33 +51,60 @@ export class StaffApiEndpoint extends BaseApiEndpoint<
   }
 
   /**
-   * Registers a new staff member under a laboratory.
+   * Retrieves one staff member of a laboratory.
    *
    * @param laboratoryId - Numeric identifier of the laboratory
-   * @param request - Request payload containing staff registration data
-   * @returns Observable stream emitting a message response
+   * @param staffId - Numeric identifier of the staff member
+   * @returns Observable stream emitting the StaffMember domain entity
    */
-  registerStaff(laboratoryId: number, request: RegisterStaffRequest): Observable<MessageResource> {
-    return this.http
-      .post<MessageResource>(`${this.endpointUrl}/${laboratoryId}/staff`, request)
-      .pipe(catchError(this.handleError('Failed to register staff member')));
+  getStaffMember(laboratoryId: number, staffId: number): Observable<StaffMember> {
+    return this.http.get<StaffMemberResource>(`${this.staffUrl(laboratoryId)}/${staffId}`).pipe(
+      map((resource) => this.assembler.toEntityFromResource(resource)),
+      catchError(this.handleError(`Failed to fetch staff member ${staffId}`)),
+    );
   }
 
   /**
-   * Deactivates an existing staff member.
+   * Registers a staff member; the platform creates their account and sends the credentials.
    *
-   * @param staffId - Numeric identifier of the staff member to deactivate
-   * @returns Observable stream completing when the deactivation succeeds
-   *
-   * @remarks
-   * Maps to `PATCH /staff/{staffId}` with `{ active: false }`.
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param request - Staff member data
+   * @returns Observable stream emitting the registered staff member and their credentials delivery
    */
-  deactivateStaff(staffId: number): Observable<void> {
+  registerStaff(laboratoryId: number, request: RegisterStaffRequest): Observable<RegisteredStaff> {
+    return this.http.post<RegisteredStaffResource>(this.staffUrl(laboratoryId), request).pipe(
+      map((resource) => ({
+        staffMember: this.assembler.toEntityFromResource(resource.staffMember),
+        credentials: { ...resource.credentials },
+      })),
+      catchError(this.handleError('Failed to register staff member')),
+    );
+  }
+
+  /**
+   * Deactivates a staff member and disables their account.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param staffId - Numeric identifier of the staff member to deactivate
+   * @returns Observable stream emitting the deactivated staff member
+   */
+  deactivateStaff(laboratoryId: number, staffId: number): Observable<StaffMember> {
     return this.http
-      .patch<MessageResource>(`${staffEndpointUrl}/${staffId}`, { active: false })
+      .post<StaffMemberResource>(
+        `${this.staffUrl(laboratoryId)}/${staffId}${environment.laboratoryStaffDeactivationsEndpointPath}`, {})
       .pipe(
-        map(() => undefined),
+        map((resource) => this.assembler.toEntityFromResource(resource)),
         catchError(this.handleError(`Failed to deactivate staff member ${staffId}`)),
       );
+  }
+
+  /**
+   * Builds the URL of the staff collection of a laboratory.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @returns URL of the staff collection
+   */
+  private staffUrl(laboratoryId: number): string {
+    return `${this.endpointUrl}/${laboratoryId}${environment.laboratoryStaffEndpointPath}`;
   }
 }

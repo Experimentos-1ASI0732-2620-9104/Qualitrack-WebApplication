@@ -7,6 +7,9 @@ import { LaboratoryResource, LaboratoriesResponse } from './laboratory-response'
 import { LaboratoryAssembler } from './laboratory-assembler';
 import { CreateLaboratoryRequest, UpdateLaboratoryRequest } from './laboratory.request';
 
+/**
+ * Base URL of the laboratories resource, built from the environment configuration.
+ */
 const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
 
 /**
@@ -52,6 +55,9 @@ export class LaboratoryApiEndpoint extends BaseApiEndpoint<
    *
    * @param laboratoryId - Numeric identifier of the laboratory
    * @returns Observable stream emitting a Laboratory domain entity
+   *
+   * @remarks
+   * Maps to `GET /laboratories/{laboratoryId}`.
    */
   getByLaboratoryId(laboratoryId: number): Observable<Laboratory> {
     return this.http.get<LaboratoryResource>(`${this.endpointUrl}/${laboratoryId}`).pipe(
@@ -66,6 +72,9 @@ export class LaboratoryApiEndpoint extends BaseApiEndpoint<
    * @param laboratoryId - Numeric identifier of the laboratory to update
    * @param request - Request payload containing updated laboratory data
    * @returns Observable stream emitting the updated Laboratory domain entity
+   *
+   * @remarks
+   * Maps to `PUT /laboratories/{laboratoryId}`.
    */
   updateLaboratory(laboratoryId: number, request: UpdateLaboratoryRequest): Observable<Laboratory> {
     return this.http.put<LaboratoryResource>(`${this.endpointUrl}/${laboratoryId}`, request).pipe(
