@@ -1,151 +1,325 @@
-import { Component, OnInit, effect, untracked, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
-
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTableModule } from '@angular/material/table';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartData, ChartOptions } from 'chart.js';
 
-import { TrackingStore } from '../../../application/tracking.store';
-import { EquipmentStore } from '../../../../equipment/application/equipment.store';
-import { IamStore } from '../../../../iam/application/iam.store';
+import { TrackingStore, recentPeriod } from '../../../application/tracking.store';
+import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
+import { EnvironmentSelector } from '../../../../laboratory/presentation/components/environment-selector/environment-selector';
+import { MonitoredMetric, metricDefinition, metricsOf } from '../../../domain/model/monitored-metric';
 
 /**
- * Component responsible for displaying historical telemetry data in a tabular format.
+ * Component responsible for displaying historical telemetry information
+ * of IoT devices.
  *
- * @remarks
- * In the presentation layer, this component provides a detailed data grid view of
- * equipment sensor readings over time. It allows users to filter time-series data
- * by equipment and date range, while highlighting measurements marked as anomalies.
+ * This view allows users to analyze historical device behavior through:
+ * - Telemetry measurements.
+ * - Actuation events.
+ * - Metric-based filtering.
+ * - Time period selection.
+ * - Interactive charts with configured thresholds.
+ *
+ * The component supports historical analysis of environmental conditions
+ * by comparing device measurements against the active environmental profile.
+ *
+ * Chart visualization includes normal and critical threshold references
+ * when available.
  */
 @Component({
   selector: 'app-telemetry-history',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
+    DecimalPipe,
     FormsModule,
     TranslateModule,
-    MatCardModule,
-    MatIconModule,
     MatButtonModule,
-    MatSelectModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
+    MatSelectModule,
     MatProgressSpinnerModule,
-    MatTableModule,
+    BaseChartDirective,
+    EnvironmentSelector,
   ],
   templateUrl: './telemetry-history.html',
-  styleUrl: './telemetry-history.css',
+  styleUrls: [
+    '../../../../shared/presentation/styles/operations-page.css',
+    '../tracking-views.css',
+  ],
 })
-export class TelemetryHistoryComponent implements OnInit {
-  /**
-   * Store that manages Tracking bounded context state.
-   */
+export class TelemetryHistory implements OnInit {
   protected readonly store = inject(TrackingStore);
+  protected readonly environments = inject(EnvironmentStore);
+  private readonly translate = inject(TranslateService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly language = toSignal(this.translate.onLangChange, { initialValue: null });
+
+  protected deviceId: number | null = null;
+  protected metric: MonitoredMetric | null = null;
+  protected from = toLocalInput(new Date(recentPeriod().from));
+  protected to = toLocalInput(new Date(recentPeriod().to));
+  protected readonly chartMetric = signal<MonitoredMetric | null>(null);
+  protected readonly periodError = signal(false);
+
+  protected readonly selectedDevice = computed(() => this.store.history()?.device ?? null);
+
+  protected readonly deviceMetrics = computed(() => {
+    const device = this.store.devices().find((item) => item.id === this.deviceId);
+    return device?.deviceType ? metricsOf(device.deviceType) : [];
+  });
 
   /**
-   * Store that manages Equipment bounded context state.
-   */
-  protected readonly equipmentStore = inject(EquipmentStore);
-
-  /**
-   * Store that exposes authenticated user context.
-   */
-  protected readonly iamStore = inject(IamStore);
-
-  /**
-   * Columns displayed in the telemetry history table.
-   */
-  protected readonly displayedColumns = ['timestamp', 'parameterName', 'recordedValue', 'status'];
-
-  /**
-   * Current filter state used to query telemetry history.
+   * Retrieves numeric metrics available for chart visualization.
    *
-   * @remarks
-   * Equipment identifiers are numeric to stay aligned with the backend API and
-   * the domain model. Date values are converted to ISO strings before querying.
+   * Only metrics with numeric readings and configurable thresholds
+   * are included because they can be compared against environmental limits.
    */
-  protected filters = {
-    equipmentId: null as number | null,
-    dateFrom: null as Date | null,
-    dateTo: null as Date | null,
-  };
+  protected readonly chartMetrics = computed(() => {
+    const metrics = new Set(
+      this.store
+        .history()
+        ?.measurements.filter(
+          (reading) => reading.value !== null && metricDefinition(reading.metric)?.configurable,
+        )
+        .map((reading) => reading.metric),
+    );
+    return [...metrics];
+  });
 
   /**
-   * Selects the first recorded equipment after loading completes.
-   */
-  constructor() {
-    effect(() => {
-      const first = this.equipmentStore.equipmentList()[0];
-      if (this.equipmentStore.isLoading() || this.equipmentStore.error() || !first) return;
-      untracked(() => {
-        if (this.filters.equipmentId) return;
-        this.filters.equipmentId = first.id;
-        this.loadHistoryData();
-      });
-    });
-  }
-
-  /**
-   * Retrieves the current laboratory ID based on the authenticated context.
+   * Determines the metric currently displayed in the chart.
    *
-   * @remarks
-   * The value is converted to number to keep consistency with the backend API.
+   * If the selected metric is unavailable, the first available
+   * chart metric is automatically selected.
    */
-  private get currentLabId(): number {
-    return this.iamStore.requireLaboratoryId();
-  }
+  protected readonly activeChartMetric = computed(() => {
+    const selected = this.chartMetric();
+    return selected && this.chartMetrics().includes(selected)
+      ? selected
+      : (this.chartMetrics()[0] ?? null);
+  });
 
   /**
-   * Lifecycle hook that loads available equipment and initializes history data.
+   * Builds chart data from historical measurements.
    *
-   * @remarks
-   * Once the equipment list is available, the first equipment is selected
-   * automatically and its telemetry history is loaded.
+   * The generated chart contains:
+   * - Measurement values over time.
+   * - Normal threshold references.
+   * - Critical threshold references.
+   *
+   * Threshold lines allow users to visually identify
+   * abnormal environmental conditions.
    */
-  ngOnInit(): void {
-    this.equipmentStore.loadEquipment(this.currentLabId);
-  }
-
+  protected readonly chartData = computed<ChartData<'line'>>(() => {
+    this.language();
+    const history = this.store.history();
+    const metric = this.activeChartMetric();
+    if (!history || !metric) return { datasets: [] };
+    const points = history.measurements
+      .filter((reading) => reading.metric === metric && reading.value !== null)
+      .map((reading) => ({ x: Date.parse(reading.measuredAt), y: reading.value as number }));
+    const datasets: ChartData<'line'>['datasets'] = [
+      {
+        label: this.translate.instant('tracking.metrics.' + metric),
+        data: points,
+        borderColor: '#158378',
+        backgroundColor: '#15837818',
+        pointRadius: 3,
+        borderWidth: 2,
+        tension: 0,
+      },
+    ];
+    const threshold = history.profile?.threshold(metric);
+    if (threshold && points.length) {
+      const first = points[0].x;
+      const last = points[points.length - 1].x;
+      const line = (value: number | null, label: string, color: string) => {
+        if (value === null) return;
+        datasets.push({
+          label: this.translate.instant(label),
+          data: [
+            { x: first, y: value },
+            { x: last, y: value },
+          ],
+          borderColor: color,
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        });
+      };
+      line(threshold.normalMax, 'tracking.history.normal-max', '#c08a00');
+      line(threshold.normalMin, 'tracking.history.normal-min', '#c08a00');
+      line(threshold.criticalMax, 'tracking.history.critical-max', '#c62828');
+      line(threshold.criticalMin, 'tracking.history.critical-min', '#c62828');
+    }
+    return { datasets };
+  });
 
   /**
-   * Constructs the query payload from the current filters and loads telemetry history.
+   * Defines chart visualization options.
+   *
+   * Includes:
+   * - Responsive behavior.
+   * - Localized labels.
+   * - Tooltip formatting.
+   * - Axis configuration.
    */
-  protected loadHistoryData(): void {
-    if (!this.filters.equipmentId) return;
-
-    const query: { equipmentId: number; from?: string; to?: string } = {
-      equipmentId: this.filters.equipmentId,
+  protected readonly chartOptions = computed<ChartOptions<'line'>>(() => {
+    this.language();
+    const unit = metricDefinition(this.activeChartMetric() ?? '')?.unit ?? '';
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      parsing: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            title: (items) => this.formatDate(items[0].parsed.x ?? 0),
+            label: (item) => `${item.dataset.label}: ${item.parsed.y} ${unit}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          grid: { display: false },
+          ticks: {
+            maxTicksLimit: 6,
+            maxRotation: 0,
+            callback: (value) => this.formatDate(Number(value)),
+          },
+        },
+        y: { title: { display: true, text: unit } },
+      },
     };
+  });
 
-    if (this.filters.dateFrom) {
-      query.from = this.filters.dateFrom.toISOString();
-    }
-
-    if (this.filters.dateTo) {
-      query.to = this.filters.dateTo.toISOString();
-    }
-
-    this.store.loadTelemetryHistory(query);
+  /**
+   * Initializes the telemetry history view.
+   *
+   * Restores environment and device information from route parameters
+   * when available, otherwise uses the preferred environment.
+   */
+  async ngOnInit(): Promise<void> {
+    if (!this.environments.loaded()) await this.environments.loadEnvironments();
+    const query = this.route.snapshot.queryParamMap;
+    const requested = Number(query.get('environmentId'));
+    const requestedDevice = Number(query.get('deviceId'));
+    const linked = this.environments
+      .environments()
+      .some((environment) => environment.id === requested)
+      ? requested
+      : null;
+    const current =
+      linked ??
+      this.store.environmentId() ??
+      this.environments.preferredEnvironment(undefined, 'tracking')?.id ??
+      null;
+    if (current !== null)
+      await this.changeEnvironment(
+        current,
+        linked !== null && requestedDevice > 0 ? requestedDevice : null,
+      );
   }
 
   /**
-   * Clears the selected date range and reloads history for the selected equipment.
+   * Changes the active environment and loads its devices.
+   *
+   * Selects the preferred device when provided, otherwise defaults
+   * to an available environmental device or container monitor.
    */
-  protected clearFilters(): void {
-    this.filters.dateFrom = null;
-    this.filters.dateTo = null;
-    this.loadHistoryData();
+  protected async changeEnvironment(
+    environmentId: number,
+    preferredDeviceId: number | null = null,
+  ): Promise<void> {
+    this.environments.rememberEnvironment(environmentId, 'tracking');
+    if (this.store.environmentId() !== environmentId || !this.store.devices().length) {
+      await this.store.selectEnvironment(environmentId);
+    }
+    const preferred = this.store.devices().find((device) => device.id === preferredDeviceId);
+    this.deviceId =
+      preferred?.id ??
+      this.store.environmentalDevice()?.id ??
+      this.store.containerMonitors()[0]?.id ??
+      null;
+    this.metric = null;
+    await this.search();
   }
 
+  /**
+   * Reloads telemetry history after changing the selected device.
+   */
+  protected changeDevice(): void {
+    this.metric = null;
+    void this.search();
+  }
+
+  /**
+   * Executes a telemetry history search.
+   *
+   * Validates the selected period before requesting information.
+   *
+   * The allowed range is limited to 31 days to prevent excessive
+   * telemetry queries.
+   */
+  protected async search(): Promise<void> {
+    const device = this.store.devices().find((item) => item.id === this.deviceId);
+    if (!device) return;
+    const from = new Date(this.from);
+    const to = new Date(this.to);
+    const valid =
+      !Number.isNaN(from.getTime()) &&
+      !Number.isNaN(to.getTime()) &&
+      from <= to &&
+      to.getTime() - from.getTime() <= 31 * 24 * 3600_000;
+    this.periodError.set(!valid);
+    if (!valid) return;
+    this.chartMetric.set(
+      this.metric && metricDefinition(this.metric)?.configurable ? this.metric : null,
+    );
+    await this.store.loadHistory(
+      device,
+      { from: from.toISOString(), to: to.toISOString() },
+      this.metric,
+    );
+  }
+
+  /**
+   * Formats timestamps according to the current application language.
+   */
+  private formatDate(value: number): string {
+    return new Intl.DateTimeFormat(this.translate.currentLang || 'en', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  }
+}
+
+/**
+ * Converts a date into the format required by datetime-local inputs.
+ *
+ * The conversion preserves the browser local timezone representation.
+ *
+ * @param date Date to convert.
+ * @returns Local datetime input value.
+ */
+function toLocalInput(date: Date): string {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }

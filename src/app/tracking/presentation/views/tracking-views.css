@@ -1,0 +1,132 @@
+/* Styles shared by the Tracking views on top of the operations page layout. */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.device-card {
+  border: 1px solid #cfdbdf;
+  border-radius: 6px;
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.device-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid #e3ecee;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+.device-header h3 {
+  margin: 0 0 4px;
+}
+.readings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px 20px;
+}
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reading .label {
+  font-size: 13px;
+  color: #4b6068;
+}
+.reading strong {
+  font-size: 20px;
+}
+.reading strong small {
+  font-size: 13px;
+  color: #4b6068;
+}
+.reading p {
+  margin: 0;
+}
+.reading .tag {
+  font-family: monospace;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.state {
+  display: inline-block;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.state.normal {
+  background: #e7f5ef;
+  color: #19664e;
+}
+.state.warning {
+  background: #fff6df;
+  color: #8a5d00;
+}
+.state.critical {
+  background: #fff0f0;
+  color: #9d2424;
+}
+.connection {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a5d00;
+  white-space: nowrap;
+}
+.connection.connected {
+  color: #19664e;
+}
+.history-link {
+  display: inline-block;
+  margin-top: 12px;
+}
+.chart-wrapper {
+  position: relative;
+  height: 320px;
+  margin: 16px 0 24px;
+}
+.editor-table input {
+  width: 100%;
+  min-width: 70px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #b3c6cd;
+  border-radius: 4px;
+  font: inherit;
+}
+.editor-table input:disabled {
+  background: #f1f5f6;
+}
+.editor-table select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #b3c6cd;
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+}
+.profile-version {
+  font-size: 13px;
+  color: #4b6068;
+}
+.section-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+@media (max-width: 760px) {
+  .device-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
