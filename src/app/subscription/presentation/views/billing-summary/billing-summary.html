@@ -20,7 +20,7 @@
   @if (store.error()) {
     <div class="error-container">
       <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error() }}</p>
+      <p>{{ store.error()! | translate }}</p>
     </div>
   }
 
@@ -52,22 +52,33 @@
           </div>
 
           <div>
-            <span class="label">{{ 'subscription.billing.period-ends' | translate }}</span>
+            <span class="label">{{ (subscription.cancelAtPeriodEnd ? 'subscription.billing.access-until' : 'subscription.billing.renews-on') | translate }}</span>
             <strong>{{ subscription.currentPeriodEnd | date:'mediumDate' }}</strong>
           </div>
         </div>
 
-        <div class="subscription-actions">
-          <button
-            mat-button
-            color="warn"
-            type="button"
-            [disabled]="store.isLoading() || subscription.status !== 'ACTIVE'"
-            (click)="onCancelSubscription()">
-            <mat-icon>cancel</mat-icon>
-            {{ 'subscription.billing.cancel-subscription' | translate }}
-          </button>
-        </div>
+        @if (store.successMsg(); as message) {
+          <p class="renewal-notice success" role="status">{{ message | translate }}</p>
+        }
+
+        @if (subscription.cancelAtPeriodEnd) {
+          <p class="renewal-notice" role="status">
+            <mat-icon aria-hidden="true">event_busy</mat-icon>
+            {{ 'subscription.billing.renewal-cancelled' | translate: { date: (subscription.currentPeriodEnd | date:'mediumDate') } }}
+          </p>
+        } @else if (subscription.status === 'ACTIVE') {
+          <div class="subscription-actions">
+            <button
+              mat-button
+              color="warn"
+              type="button"
+              [disabled]="store.isLoading()"
+              (click)="onCancelRenewal()">
+              <mat-icon>event_busy</mat-icon>
+              {{ 'subscription.billing.cancel-renewal' | translate }}
+            </button>
+          </div>
+        }
       } @else {
         <div class="empty-state">
           <mat-icon>workspace_premium</mat-icon>

@@ -72,6 +72,7 @@ package "subscription" {
       +currentPeriodEnd?: string
       +cancelledAt?: string
       +cancelledBy?: number
+      +cancelAtPeriodEnd: boolean
     }
 
     class Payment {
@@ -130,6 +131,7 @@ package "subscription" {
       +selectPlan(command: SelectPlanCommand): void
       +clearSelectedPlan(): void
       +createCheckoutSession(command: CreateCheckoutSessionCommand): void
+      +cancelRenewal(subscriptionId: number): void
       +clearMessages(): void
       -toCreateCheckoutSessionRequest(command): CreateCheckoutSessionRequest
       -startRequest(): void
@@ -173,6 +175,7 @@ package "subscription" {
       +currentPeriodEnd?: string
       +cancelledAt?: string
       +cancelledBy?: number
+      +cancelAtPeriodEnd: boolean
     }
 
     interface SubscriptionsResponse {
@@ -245,6 +248,7 @@ package "subscription" {
       +getCurrentSubscription(laboratoryId: number): Observable<Subscription>
       +getPaymentsBySubscription(subscriptionId: number): Observable<Payment[]>
       +createCheckoutSession(request: CreateCheckoutSessionRequest): Observable<CheckoutSessionResource>
+      +cancelRenewal(subscriptionId: number): Observable<Subscription>
     }
 
     class SubscriptionApi {
@@ -253,6 +257,7 @@ package "subscription" {
       +getCurrentSubscription(laboratoryId: number): Observable<Subscription>
       +getPaymentsBySubscription(subscriptionId: number): Observable<Payment[]>
       +createCheckoutSession(request: CreateCheckoutSessionRequest): Observable<CheckoutSessionResource>
+      +cancelRenewal(subscriptionId: number): Observable<Subscription>
     }
   }
 
@@ -291,6 +296,7 @@ package "subscription" {
       -displayedColumns: string[]
       +ngOnInit(): void
       +getStatusClass(status?: string): string
+      +onCancelRenewal(): void
     }
 
     class PaymentSuccess
@@ -353,5 +359,11 @@ SubscriptionRoutes ..> Checkout
 SubscriptionRoutes ..> BillingSummary
 SubscriptionRoutes ..> PaymentSuccess
 SubscriptionRoutes ..> PaymentCancel
+
+note bottom of SubscriptionApiEndpoint
+  GET  /laboratories/{laboratoryId}/subscriptions?status=ACTIVE (list, TS10)
+  POST /subscriptions/{subscriptionId}/cancellation-requests (TS11): cancels the renewal;
+  the subscription keeps its access until currentPeriodEnd (US23)
+end note
 
 @enduml
