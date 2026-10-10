@@ -93,17 +93,30 @@ try {
     await page.locator('[formcontrolname=model]').fill('R-200');
     await page.locator('[formcontrolname=serialNumber]').fill(serial);
     await page.locator('button[type=submit]').click();
-    await page.waitForURL('**/equipments/equipment-list', { timeout: 15000 });
+    await page.waitForURL('**/equipments/equipment-detail/**', { timeout: 15000 });
+    await page.goto(origin + '/equipments/equipment-list');
     await page.getByText('Cold storage system test').first().waitFor();
     await page.screenshot({ path: `${output}/02-equipment-list.png`, fullPage: true });
 
-    // 3. The sensor reports a deviation directly to the API, as the IoT edge would.
+    // 3. The environment monitor reports a deviation directly to the API, as the IoT edge would.
     const onboarding = await apiCall(page, 'GET', '/users/me/onboarding');
-    const equipment = await apiCall(page, 'GET', `/equipments?labId=${onboarding.body.laboratoryId}`);
-    const equipmentId = equipment.body.find(item => item.serialNumber === serial).id;
-    const alert = await apiCall(page, 'POST', `/equipments/${equipmentId}/deviation-alerts`, {
+    const laboratoryPath = `/laboratories/${onboarding.body.laboratoryId}`;
+    const suffix = randomUUID().slice(0, 8).toUpperCase();
+    const environment = await apiCall(page, 'POST', `${laboratoryPath}/environments`, {
+      code: `ENV-${suffix}`, name: 'System test environment',
+    });
+    assert.equal(environment.status, 201);
+    const environmentPath = `${laboratoryPath}/environments/${environment.body.id}`;
+    const device = await apiCall(page, 'POST', `${laboratoryPath}/devices/environmental-devices`, {
+      name: 'Space monitor', sensorExternalId: `ENV-${suffix}`, serialNumber: `MAC-${suffix}`,
+      model: 'ESP32-WROOM-32', firmwareVersion: '1.0.3',
+    });
+    assert.equal(device.status, 201);
+    const association = await apiCall(page, 'POST', `${environmentPath}/environmental-devices`, { deviceId: device.body.id });
+    assert.equal(association.status, 201);
+    const alert = await apiCall(page, 'POST', `${environmentPath}/deviation-alerts`, {
       parameterName: 'TEMPERATURE', recordedValue: 9.5, thresholdValue: 8.0, unit: 'Celsius',
-      timestamp: new Date().toISOString(), severity: 'CRITICAL',
+      detectedAt: new Date().toISOString(), severity: 'CRITICAL',
     });
     assert.equal(alert.status, 201);
 
@@ -113,10 +126,17 @@ try {
     await page.getByText('9.5 Celsius').waitFor();
     await page.getByText('8 Celsius').waitFor();
     const resolve = page.getByRole('button', { name: /resolve/i });
-    assert.equal(await resolve.isDisabled(), true, 'Resolve must stay disabled without notes');
-    await page.locator('[formcontrolname=resolutionNotes]').fill('Short');
-    assert.equal(await resolve.isDisabled(), true, 'Resolve must require at least ten characters');
-    await page.locator('[formcontrolname=resolutionNotes]').fill('Door closed and equipment recalibrated');
+    const notes = page.locator('[formcontrolname=resolutionNotes]');
+    await resolve.click();
+    await notes.waitFor();
+    assert.equal((await apiCall(page, 'GET', `/deviation-alerts/${alert.body.id}`)).body.status, 'UNRESOLVED',
+      'The alert must stay unresolved without notes');
+    await notes.fill('Short');
+    await resolve.click();
+    await notes.waitFor();
+    assert.equal((await apiCall(page, 'GET', `/deviation-alerts/${alert.body.id}`)).body.status, 'UNRESOLVED',
+      'The alert must require at least ten characters of notes');
+    await notes.fill('Door closed and equipment recalibrated');
     await page.screenshot({ path: `${output}/03-alert-detail.png`, fullPage: true });
     await resolve.click();
     await page.locator('[formcontrolname=resolutionNotes]').waitFor({ state: 'detached', timeout: 15000 });
