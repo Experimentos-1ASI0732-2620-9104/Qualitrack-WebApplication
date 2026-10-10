@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +21,7 @@ import { Toolbar } from '../../../../shared/presentation/components/toolbar/tool
 @Component({
   selector: 'app-sign-in',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, MatProgressSpinnerModule, MatIconModule, Toolbar],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, MatProgressSpinnerModule, MatIconModule, RouterLink, Toolbar],
   templateUrl: './sign-in-form.html',
   styleUrls: ['./sign-in-form.css'],
 })
@@ -55,6 +55,22 @@ export class SignInForm {
    */
   protected hidePassword = true;
 
+  /** Set when the person arrives after resetting the password with a recovery code. */
+  protected readonly passwordReset: boolean;
+
+  /**
+   * Creates the form.
+   *
+   * @remarks
+   * If the person comes from the password recovery, the navigation state carries `passwordReset` (to show a notice)
+   * and the username, which is filled in.
+   */
+  constructor() {
+    const state = this.router.currentNavigation()?.extras.state as { passwordReset?: boolean; username?: string } | undefined;
+    this.passwordReset = !!state?.passwordReset;
+    if (state?.username) this.form.controls.username.setValue(state.username);
+  }
+
   /**
    * Submits the sign-in form.
    */
@@ -77,15 +93,6 @@ export class SignInForm {
    */
   protected togglePasswordVisibility(): void {
     this.hidePassword = !this.hidePassword;
-  }
-
-  /**
-   * Navigates to the sign-up view for a selected role.
-   *
-   * @param role - Registration role mode to pass through query parameters
-   */
-  protected performSignUp(role: string): void {
-    this.router.navigate(['/iam/sign-up'], { queryParams: { role } }).then();
   }
 
   /**

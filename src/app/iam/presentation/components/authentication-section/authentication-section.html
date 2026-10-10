@@ -13,20 +13,9 @@
   </div>
 
   <div class="role-buttons">
-    <button
-      mat-stroked-button
-      class="btn-role"
-      [routerLink]="['/iam/sign-up']"
-      [queryParams]="{ role: 'qa-manager' }">
+    <button mat-stroked-button class="btn-role" routerLink="/iam/sign-up">
       {{ 'iam.sign-up.roles.manager' | translate }}
     </button>
-
-    <button
-      mat-stroked-button
-      class="btn-role"
-      [routerLink]="['/iam/sign-up']"
-      [queryParams]="{ role: 'lab-operator' }">
-      {{ 'iam.sign-up.roles.operator' | translate }}
-    </button>
   </div>
+  <p class="auth-hint">{{ 'iam.auth.staff-hint' | translate }}</p>
 </div>

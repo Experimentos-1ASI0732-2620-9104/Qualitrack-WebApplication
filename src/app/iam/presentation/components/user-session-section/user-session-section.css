@@ -9,7 +9,28 @@
   background: #f8fbfc;
 }
 
+.user-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.user-identity:hover .user-name,
+a.user-identity:focus-visible .user-name {
+  text-decoration: underline;
+}
+
+a.user-identity:focus-visible {
+  outline: 2px solid #006d67;
+  outline-offset: 2px;
+}
+
 .user-avatar {
+  overflow: hidden;
   display: grid;
   place-items: center;
   width: 36px;
@@ -20,6 +41,12 @@
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-copy {
@@ -61,19 +88,52 @@
   font-size: 19px;
 }
 
+/* Narrow screens hide the brand of the toolbar, so the photo, name and role stay visible in a smaller size. */
 @media (max-width: 720px) {
-  .user-copy {
-    display: none;
+  /* 8px keeps the 48px touch target of the sign-out button off the name. */
+  .user-session {
+    gap: 8px;
+    padding: 3px 2px 3px 3px;
   }
 
-  .user-session {
-    gap: 4px;
-    padding-right: 2px;
+  .user-identity {
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    font-size: 0.76rem;
+  }
+
+  .user-name,
+  .user-role {
+    max-width: 120px;
   }
 }
 
-@media (max-width: 480px) {
-  .user-avatar { display: none; }
-  .user-session { padding: 0; border: 0; background: transparent; }
-  .sign-out-button { width: 40px !important; height: 40px !important; }
+@media (max-width: 400px) {
+  .user-name,
+  .user-role {
+    max-width: 88px;
+  }
+
+  .user-name {
+    font-size: 0.82rem;
+  }
+
+  .user-role {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 340px) {
+  .user-role {
+    display: none;
+  }
+
+  .user-name {
+    max-width: 50px;
+  }
 }
