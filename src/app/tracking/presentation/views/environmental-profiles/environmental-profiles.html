@@ -1,0 +1,84 @@
+<section class="operations-page">
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">tune</mat-icon>{{ 'tracking.profiles.title' | translate }}</h1>
+    <div class="actions">
+      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
+    </div>
+  </header>
+  <p class="muted">{{ 'tracking.profiles.subtitle' | translate }}</p>
+  @if (!store.canConfigure()) {
+    <p class="notice">{{ 'tracking.profiles.read-only' | translate }}</p>
+  }
+
+  @if (store.notice(); as notice) {
+    <p class="success" role="status">{{ notice | translate }}</p>
+  }
+  @if (store.error(); as error) {
+    <p class="error" role="alert">{{ error | translate }}</p>
+  }
+
+  @if (environments.isEmpty()) {
+    <p class="notice">{{ 'tracking.no-environments' | translate }}</p>
+  } @else if (store.isLoading()) {
+    <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
+  } @else if (store.environmentId() !== null) {
+    <h2>{{ 'tracking.profiles.environment' | translate }}</h2>
+    @if (store.environmentalDevice(); as device) {
+      <article class="device-card">
+        <header class="device-header">
+          <div>
+            <h3>{{ device.name }}</h3>
+            <small class="muted">{{ 'device-types.ENVIRONMENTAL_DEVICE' | translate }}</small>
+          </div>
+          <span class="profile-version">
+            @if (store.environmentProfile(); as profile) {
+              {{ 'tracking.profiles.version' | translate: { version: profile.version } }}
+              @if (profile.updatedAt) { · {{ profile.updatedAt | date: 'short' }} }
+            } @else {
+              {{ 'tracking.profiles.not-configured' | translate }}
+            }
+          </span>
+        </header>
+        <app-threshold-editor [metrics]="environmentMetrics" [thresholds]="thresholdsOf(store.environmentProfile())"
+                              [readonly]="!store.canConfigure()" [saving]="store.saving()" (save)="saveEnvironment($event)" />
+      </article>
+    } @else {
+      <p class="notice">
+        {{ 'tracking.profiles.no-environmental-device' | translate }}
+        @if (store.canConfigure()) {
+          <a routerLink="/equipments/register-device">{{ 'tracking.profiles.register-device' | translate }}</a>
+        }
+      </p>
+    }
+
+    <h2>{{ 'tracking.profiles.containers' | translate }}</h2>
+    @for (device of store.containerMonitors(); track device.id) {
+      @let profile = containerProfile(device.id);
+      <article class="device-card">
+        <header class="device-header">
+          <div>
+            <h3>{{ device.name }}</h3>
+            <small class="muted">{{ 'device-types.CONTAINER_MONITOR' | translate }}</small>
+          </div>
+          <span class="profile-version">
+            @if (profile) {
+              {{ 'tracking.profiles.version' | translate: { version: profile.version } }}
+              @if (profile.updatedAt) { · {{ profile.updatedAt | date: 'short' }} }
+            } @else {
+              {{ 'tracking.profiles.not-configured' | translate }}
+            }
+          </span>
+        </header>
+        <h4>{{ 'tracking.profiles.thresholds' | translate }}</h4>
+        <app-threshold-editor [metrics]="containerMetrics" [thresholds]="thresholdsOf(profile)"
+                              [readonly]="!store.canConfigure()" [saving]="store.saving()" (save)="saveContainer(device.id, $event)" />
+        <h4>{{ 'tracking.profiles.rules' | translate }}</h4>
+        <p class="muted">{{ 'tracking.profiles.rules-hint' | translate }}</p>
+        <app-actuation-rules-editor [metrics]="configuredMetrics(device.id)" [rules]="rulesOf(profile)"
+                                    [readonly]="!store.canConfigure()" [saving]="store.saving()" (save)="saveRules(device.id, $event)" />
+      </article>
+    } @empty {
+      <p class="muted">{{ 'tracking.profiles.no-containers' | translate }}</p>
+    }
+  }
+</section>

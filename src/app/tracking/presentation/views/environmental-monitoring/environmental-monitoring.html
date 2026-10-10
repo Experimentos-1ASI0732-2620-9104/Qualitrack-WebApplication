@@ -1,0 +1,127 @@
+<section class="operations-page">
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">sensors</mat-icon>{{ 'tracking.monitoring.title' | translate }}</h1>
+    <div class="actions">
+      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
+      <button mat-stroked-button type="button" (click)="refresh()" [disabled]="store.isLoading() || store.environmentId() === null">
+        <mat-icon>refresh</mat-icon>{{ 'tracking.refresh' | translate }}
+      </button>
+    </div>
+  </header>
+  <p class="muted">{{ 'tracking.monitoring.subtitle' | translate }}</p>
+
+  @if (store.error(); as error) {
+    <p class="error" role="alert">{{ error | translate }}</p>
+  }
+
+  @if (environments.isEmpty()) {
+    <p class="notice">{{ 'tracking.no-environments' | translate }}</p>
+  } @else if (store.isLoading() && !store.snapshots().length) {
+    <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
+  } @else if (store.environmentId() !== null && !store.devices().length) {
+    <p class="notice">{{ 'tracking.no-devices' | translate }}</p>
+  } @else {
+    @if (store.environmentalDevice(); as device) {
+      <h2>{{ 'tracking.monitoring.environment' | translate }}</h2>
+      @let snapshot = snapshotOf(device.id);
+      <article class="device-card">
+        <header class="device-header">
+          <div>
+            <h3>{{ device.name }}</h3>
+            <small class="muted">{{ 'device-types.ENVIRONMENTAL_DEVICE' | translate }}</small>
+          </div>
+          @if (snapshot?.connection; as connection) {
+            <span class="connection" [class.connected]="connection.isConnected">
+              {{ 'tracking.connection.' + connection.connectionStatus | translate }}
+            </span>
+          }
+        </header>
+        @if (snapshot?.failed) {
+          <p class="error">{{ 'tracking.errors.device' | translate }}</p>
+        }
+        <div class="readings">
+          <div class="reading">
+            <span class="label">{{ 'tracking.metrics.AIR_QUALITY' | translate }}</span>
+            @if (reading(snapshot, 'AIR_QUALITY'); as air) {
+              <strong>{{ air.value | number: '1.0-2' }} <small>{{ air.unit }}</small></strong>
+              @if (air.state) { <span class="state" [class]="'state ' + air.state.toLowerCase()">{{ 'tracking.states.' + air.state | translate }}</span> }
+              <small class="muted">{{ air.measuredAt | date: 'short' }}</small>
+            } @else {
+              <p class="muted">{{ 'tracking.monitoring.no-recent-reading' | translate }}</p>
+            }
+          </div>
+          <div class="reading">
+            <span class="label">{{ 'tracking.metrics.MOTION' | translate }}</span>
+            @if (snapshot?.lastMotion; as motion) {
+              <strong>{{ 'tracking.monitoring.motion-detected' | translate }}</strong>
+              <small class="muted">{{ motion.measuredAt | date: 'short' }}</small>
+            } @else {
+              <p class="muted">{{ 'tracking.monitoring.no-motion' | translate }}</p>
+            }
+          </div>
+        </div>
+        <a class="history-link" routerLink="/tracking/history">{{ 'tracking.monitoring.see-history' | translate }}</a>
+      </article>
+    }
+
+    @if (store.containerMonitors().length) {
+      <h2>{{ 'tracking.monitoring.containers' | translate }}</h2>
+      <div class="device-grid">
+        @for (device of store.containerMonitors(); track device.id) {
+          @let snapshot = snapshotOf(device.id);
+          <article class="device-card">
+            <header class="device-header">
+              <div>
+                <h3>{{ device.name }}</h3>
+                <small class="muted">{{ 'device-types.CONTAINER_MONITOR' | translate }}</small>
+              </div>
+              @if (snapshot?.connection; as connection) {
+                <span class="connection" [class.connected]="connection.isConnected">
+                  {{ 'tracking.connection.' + connection.connectionStatus | translate }}
+                </span>
+              }
+            </header>
+            @if (snapshot?.failed) {
+              <p class="error">{{ 'tracking.errors.device' | translate }}</p>
+            }
+            <div class="readings">
+              @for (metric of containerMetrics; track metric) {
+                <div class="reading">
+                  <span class="label">{{ 'tracking.metrics.' + metric | translate }}</span>
+                  @if (reading(snapshot, metric); as value) {
+                    <strong>{{ value.value | number: '1.0-2' }} <small>{{ value.unit }}</small></strong>
+                    @if (value.state) { <span [class]="'state ' + value.state.toLowerCase()">{{ 'tracking.states.' + value.state | translate }}</span> }
+                    <small class="muted">{{ value.measuredAt | date: 'short' }}</small>
+                  } @else {
+                    <p class="muted">{{ 'tracking.monitoring.no-recent-reading' | translate }}</p>
+                  }
+                </div>
+              }
+              <div class="reading">
+                <span class="label">{{ 'tracking.metrics.RFID_TAG' | translate }}</span>
+                @if (reading(snapshot, 'RFID_TAG'); as tag) {
+                  <strong class="tag">{{ tag.textValue }}</strong>
+                  <small class="muted">{{ tag.measuredAt | date: 'short' }}</small>
+                } @else {
+                  <p class="muted">{{ 'tracking.monitoring.no-rfid' | translate }}</p>
+                }
+              </div>
+              <div class="reading">
+                <span class="label">{{ 'tracking.monitoring.last-action' | translate }}</span>
+                @if (snapshot?.lastAction; as action) {
+                  <strong>{{ 'tracking.actions.' + action.action | translate }}</strong>
+                  @if (action.triggerMetric && action.triggerState) {
+                    <small>{{ 'tracking.metrics.' + action.triggerMetric | translate }} · {{ 'tracking.states.' + action.triggerState | translate }}</small>
+                  }
+                  <small class="muted">{{ action.occurredAt | date: 'short' }}</small>
+                } @else {
+                  <p class="muted">{{ 'tracking.monitoring.no-action' | translate }}</p>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+</section>

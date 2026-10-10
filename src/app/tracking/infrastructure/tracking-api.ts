@@ -1,82 +1,171 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { BaseApi } from '../../shared/infrastructure/base-api';
 import { Measurement } from '../domain/model/measurement.entity';
-import { EquipmentStatus } from '../domain/model/equipment-status.entity';
-import { TelemetryHistoryPoint } from '../domain/model/telemetry-history-point.entity';
-
-import { MeasurementApiEndpoint } from './measurement-api-endpoint';
-import { EquipmentStatusApiEndpoint } from './equipment-status-api-endpoint';
-import { TelemetryHistoryApiEndpoint } from './telemetry-history-api-endpoint';
+import { DeviceConnection } from '../domain/model/device-connection.entity';
+import { ActuationEvent } from '../domain/model/actuation-event.entity';
+import { ActuationRule, EnvironmentalProfile, ThresholdInput } from '../domain/model/environmental-profile.entity';
+import { MonitoredMetric } from '../domain/model/monitored-metric';
+import { DeviceConnectionApiEndpoint } from './device-connection-api-endpoint';
+import {
+  ActuationEventApiEndpoint,
+  DeviceTarget,
+  EnvironmentalProfileApiEndpoint,
+  MeasurementApiEndpoint,
+  TelemetryPeriod,
+} from './tracking-api-endpoints';
 
 /**
- * Facade service for Tracking infrastructure API operations.
+ * Facade responsible for providing access to Tracking & Telemetry API operations.
  *
- * @remarks
- * This service centralizes access to the Tracking bounded context endpoints.
- * It hides endpoint-specific details from the application store and provides
- * a clean API for telemetry measurements, equipment status, and historical data.
+ * This service centralizes communication with infrastructure endpoints related to:
+ * - Environmental measurements.
+ * - Device actuation events.
+ * - Environmental profiles.
+ * - IoT device connectivity status.
+ *
+ * It hides endpoint implementation details from the application layer,
+ * allowing business logic to interact with backend capabilities through
+ * a simplified and consistent API interface.
+ *
+ * This class acts as an abstraction boundary between application services
+ * and external HTTP communication mechanisms.
  */
 @Injectable({ providedIn: 'root' })
-export class TrackingApi {
+export class TrackingApi extends BaseApi {
+
   /**
-   * Endpoint client for telemetry measurement operations.
+   * Endpoint responsible for retrieving environmental measurements.
    */
   private readonly measurementEndpoint: MeasurementApiEndpoint;
 
   /**
-   * Endpoint client for equipment status operations.
+   * Endpoint responsible for retrieving device actuation events.
    */
-  private readonly equipmentStatusEndpoint: EquipmentStatusApiEndpoint;
+  private readonly actuationEventEndpoint: ActuationEventApiEndpoint;
 
   /**
-   * Endpoint client for telemetry history operations.
+   * Endpoint responsible for environmental profile operations.
    */
-  private readonly telemetryHistoryEndpoint: TelemetryHistoryApiEndpoint;
+  private readonly profileEndpoint: EnvironmentalProfileApiEndpoint;
 
   /**
-   * Creates a new TrackingApi facade.
+   * Endpoint responsible for device connectivity information.
+   */
+  private readonly deviceConnectionEndpoint: DeviceConnectionApiEndpoint;
+
+  /**
+   * Initializes Tracking API endpoint handlers.
    *
-   * @param http - Angular HttpClient used by the internal endpoint clients
+   * Each endpoint is responsible for a specific infrastructure operation,
+   * keeping HTTP communication concerns separated by responsibility.
+   *
+   * @param http Angular HTTP client used for external API communication.
    */
-  constructor(private readonly http: HttpClient) {
-    this.measurementEndpoint = new MeasurementApiEndpoint(this.http);
-    this.equipmentStatusEndpoint = new EquipmentStatusApiEndpoint(this.http);
-    this.telemetryHistoryEndpoint = new TelemetryHistoryApiEndpoint(this.http);
+  constructor(http: HttpClient) {
+    super();
+    this.measurementEndpoint = new MeasurementApiEndpoint(http);
+    this.actuationEventEndpoint = new ActuationEventApiEndpoint(http);
+    this.profileEndpoint = new EnvironmentalProfileApiEndpoint(http);
+    this.deviceConnectionEndpoint = new DeviceConnectionApiEndpoint(http);
   }
 
   /**
-   * Retrieves the latest telemetry measurements.
+   * Retrieves telemetry measurements from an IoT device.
    *
-   * @param equipmentId - Optional numeric equipment identifier used for filtering
-   * @returns Observable stream emitting Measurement domain entities
+   * Allows filtering measurements by time period and optional metric.
+   *
+   * @param target Device identification information.
+   * @param period Time range used for telemetry retrieval.
+   * @param metric Optional metric filter.
+   * @returns Observable stream containing device measurements.
    */
-  getLatestMeasurements(equipmentId: number): Observable<Measurement[]> {
-    return this.measurementEndpoint.getLatestMeasurements(equipmentId);
+  getMeasurements(
+    target: DeviceTarget,
+    period: TelemetryPeriod,
+    metric?: MonitoredMetric | null,
+  ): Observable<Measurement[]> {
+    return this.measurementEndpoint.getMeasurements(target, period, metric);
   }
 
   /**
-   * Retrieves the current telemetry status for a specific equipment.
+   * Retrieves actuation events generated by a container monitor.
    *
-   * @param equipmentId - Numeric identifier of the equipment
-   * @returns Observable stream emitting the current EquipmentStatus
+   * Provides historical information about automated or manual
+   * device actions executed during a specific period.
+   *
+   * @param target Device identification information.
+   * @param period Time range used for event retrieval.
+   * @returns Observable stream containing actuation events.
    */
-  getEquipmentStatus(equipmentId: number): Observable<EquipmentStatus | null> {
-    return this.equipmentStatusEndpoint.getStatusByEquipment(equipmentId);
+  getActuationEvents(target: DeviceTarget, period: TelemetryPeriod): Observable<ActuationEvent[]> {
+    return this.actuationEventEndpoint.getActuationEvents(target, period);
   }
 
   /**
-   * Retrieves historical telemetry points using optional filters.
+   * Retrieves the environmental profile associated with a target.
    *
-   * @param filters - Optional telemetry history filters
-   * @returns Observable stream emitting TelemetryHistoryPoint domain entities
+   * The profile contains threshold configurations and automation rules
+   * applied to the environment or monitoring device.
+   *
+   * @param target Device or environment identification information.
+   * @returns Observable containing the profile or null when unavailable.
    */
-  getTelemetryHistory(filters: {
-    equipmentId: number;
-    from?: string;
-    to?: string;
-  }): Observable<TelemetryHistoryPoint[]> {
-    return this.telemetryHistoryEndpoint.getTelemetryHistory(filters);
+  getProfile(target: DeviceTarget): Observable<EnvironmentalProfile | null> {
+    return this.profileEndpoint.getProfile(target);
+  }
+
+  /**
+   * Updates environmental threshold configurations.
+   *
+   * Sends new metric limits to the backend and retrieves
+   * the updated environmental profile.
+   *
+   * @param target Target environment or device.
+   * @param thresholds Threshold configurations to persist.
+   * @returns Observable containing the updated profile.
+   */
+  updateThresholds(
+    target: DeviceTarget,
+    thresholds: ThresholdInput[],
+  ): Observable<EnvironmentalProfile> {
+    return this.profileEndpoint.updateThresholds(target, thresholds);
+  }
+
+  /**
+   * Updates automatic actuation rules for a monitoring device.
+   *
+   * Actuation rules define automated responses triggered
+   * by abnormal environmental conditions.
+   *
+   * @param target Target monitoring device.
+   * @param rules Rules configuration to persist.
+   * @returns Observable containing the updated profile.
+   */
+  updateActuationRules(
+    target: DeviceTarget,
+    rules: ActuationRule[],
+  ): Observable<EnvironmentalProfile> {
+    return this.profileEndpoint.updateActuationRules(target, rules);
+  }
+
+  /**
+   * Retrieves the current connectivity status of an IoT device.
+   *
+   * This information is used to determine whether the device
+   * is communicating correctly with the platform.
+   *
+   * @param laboratoryId Laboratory identifier.
+   * @param environmentId Environment identifier.
+   * @param deviceId IoT device identifier.
+   * @returns Observable containing device connection information.
+   */
+  getDeviceConnection(
+    laboratoryId: number,
+    environmentId: number,
+    deviceId: number,
+  ): Observable<DeviceConnection> {
+    return this.deviceConnectionEndpoint.getConnection(laboratoryId, environmentId, deviceId);
   }
 }

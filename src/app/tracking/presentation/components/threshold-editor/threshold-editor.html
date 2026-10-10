@@ -1,0 +1,55 @@
+<form (ngSubmit)="submit()">
+  <table class="data-table editor-table">
+    <thead>
+      <tr>
+        <th>{{ 'tracking.profiles.metric' | translate }}</th>
+        <th>{{ 'tracking.profiles.critical-min' | translate }}</th>
+        <th>{{ 'tracking.profiles.normal-min' | translate }}</th>
+        <th>{{ 'tracking.profiles.normal-max' | translate }}</th>
+        <th>{{ 'tracking.profiles.critical-max' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.definition.metric) {
+        <tr>
+          <td [attr.data-label]="'tracking.profiles.metric' | translate">
+            <mat-checkbox [(ngModel)]="row.enabled" [name]="row.definition.metric + '-enabled'" [disabled]="readonly()">
+              {{ 'tracking.metrics.' + row.definition.metric | translate }} ({{ row.definition.unit }})
+            </mat-checkbox>
+          </td>
+          <td [attr.data-label]="'tracking.profiles.critical-min' | translate">
+            @if (!row.definition.upperOnly) {
+              <input type="number" step="any" [(ngModel)]="row.criticalMin" [name]="row.definition.metric + '-critical-min'"
+                     [disabled]="readonly() || !row.enabled" [attr.aria-label]="'tracking.profiles.critical-min' | translate">
+            } @else { <span class="muted">—</span> }
+          </td>
+          <td [attr.data-label]="'tracking.profiles.normal-min' | translate">
+            @if (!row.definition.upperOnly) {
+              <input type="number" step="any" [(ngModel)]="row.normalMin" [name]="row.definition.metric + '-normal-min'"
+                     [disabled]="readonly() || !row.enabled" [attr.aria-label]="'tracking.profiles.normal-min' | translate">
+            } @else { <span class="muted">—</span> }
+          </td>
+          <td [attr.data-label]="'tracking.profiles.normal-max' | translate">
+            <input type="number" step="any" [(ngModel)]="row.normalMax" [name]="row.definition.metric + '-normal-max'"
+                   [disabled]="readonly() || !row.enabled" [attr.aria-label]="'tracking.profiles.normal-max' | translate">
+          </td>
+          <td [attr.data-label]="'tracking.profiles.critical-max' | translate">
+            <input type="number" step="any" [(ngModel)]="row.criticalMax" [name]="row.definition.metric + '-critical-max'"
+                   [disabled]="readonly() || !row.enabled" [attr.aria-label]="'tracking.profiles.critical-max' | translate">
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <p class="muted">{{ 'tracking.profiles.thresholds-hint' | translate }}</p>
+  @if (error(); as problem) {
+    <p class="error" role="alert">{{ problem | translate }}</p>
+  }
+  @if (!readonly()) {
+    <div class="section-actions">
+      <button mat-flat-button type="submit" [disabled]="saving()">
+        <mat-icon>save</mat-icon>{{ 'tracking.profiles.save-thresholds' | translate }}
+      </button>
+    </div>
+  }
+</form>
