@@ -1,69 +1,106 @@
 /**
- * Represents a request used to register a new equipment in the system.
- *
- * @remarks
- * This request contains the required data to create an equipment record
- * associated with a specific laboratory. It is commonly used in the
- * presentation or application layer when a user or client submits equipment
- * registration information.
- *
- * Unlike a domain entity, this request only carries input data needed to
- * register the equipment, including its laboratory assignment, name, type,
- * model, and serial number.
+ * Body of `POST /laboratories/{laboratoryId}/equipments` (TS31).
  *
  * @example
  * ```typescript
  * const request: RegisterEquipmentRequest = {
- * labId: 101,
- * name: 'Centrifuge',
- * type: 'Laboratory Equipment',
- * model: 'CF-3000',
- * serialNumber: 'SN-2026-001'
+ *   name: 'Analytical balance',
+ *   type: 'Balance',
+ *   model: 'AX-224',
+ *   serialNumber: 'SN-12345'
  * };
  * ```
  */
 export interface RegisterEquipmentRequest {
-  /**
-   * The numeric identifier of the laboratory where the equipment will be registered.
-   *
-   * @remarks
-   * This value links the equipment registration request to a specific
-   * laboratory within the system.
-   */
-  laboratoryId: number;
-  /**
-   * The display name of the equipment.
-   *
-   * @remarks
-   * This name is used to identify the equipment in the system interface,
-   * inventory records, or operational workflows.
-   */
+  /** The display name of the equipment. */
   name: string;
 
-  /**
-   * The type or category of the equipment.
-   *
-   * @remarks
-   * Examples may include biomedical equipment, laboratory equipment,
-   * diagnostic equipment, measurement equipment, or industrial equipment.
-   */
+  /** The type or category of the equipment. */
   type: string;
 
-  /**
-   * The model of the equipment.
-   *
-   * @remarks
-   * This value identifies the technical or commercial model assigned
-   * by the manufacturer.
-   */
+  /** The model of the equipment. */
   model: string;
 
+  /** The serial number of the equipment. */
+  serialNumber: string;
+}
+
+/**
+ * Body of `POST /laboratories/{laboratoryId}/devices/{environmental-devices|container-monitors}` (TS37, TS39).
+ *
+ * @remarks
+ * The kind of device is not part of the body: it is given by the last segment of the URL.
+ *
+ * @example
+ * ```typescript
+ * const request: RegisterIotDeviceRequest = {
+ *   name: 'Container monitor 1',
+ *   sensorExternalId: 'esp32-container-001',
+ *   serialNumber: 'AA:BB:CC:DD:EE:FF',
+ *   model: 'ESP32-DevKit',
+ *   firmwareVersion: '1.0.0'
+ * };
+ * ```
+ */
+export interface RegisterIotDeviceRequest {
+  /** The display name of the device. */
+  name: string;
+
+  /** The unique identifier with which Edge recognises the device. */
+  sensorExternalId: string;
+
+  /** The MAC address or serial number of the device. */
+  serialNumber: string;
+
+  /** The model of the device. */
+  model: string;
+
+  /** The firmware version installed on the device, or `null` if unknown. */
+  firmwareVersion: string | null;
+}
+
+/**
+ * Body of `POST .../environments/{environmentId}/equipments` (TS33).
+ *
+ * @remarks
+ * Locates an equipment in an environment.
+ */
+export interface AssignEquipmentRequest {
+  /** The identifier of the equipment to locate in the environment. */
+  equipmentId: number;
+}
+
+/**
+ * Body of `POST .../environments/{environmentId}/{environmental-devices|container-monitors}` (TS38, TS40).
+ *
+ * @remarks
+ * Locates an IoT device in an environment.
+ */
+export interface AssignDeviceRequest {
+  /** The identifier of the IoT device to locate in the environment. */
+  deviceId: number;
+}
+
+/**
+ * Body of `POST .../equipments/{equipmentId}/status-changes` (TS34).
+ *
+ * @example
+ * ```typescript
+ * const request: ChangeEquipmentStatusRequest = {
+ *   status: 'MAINTENANCE',
+ *   reason: 'Scheduled preventive maintenance'
+ * };
+ * ```
+ */
+export interface ChangeEquipmentStatusRequest {
   /**
-   * The serial number of the equipment.
+   * The new operational status of the equipment.
    *
    * @remarks
-   * The serial number is used for traceability, inventory control,
-   * maintenance records, and manufacturer identification.
+   * It should be one of the values of `EquipmentStatus`.
    */
-  serialNumber: string;
+  status: string;
+
+  /** The reason for the status change, or `null` when no reason is provided. */
+  reason: string | null;
 }
