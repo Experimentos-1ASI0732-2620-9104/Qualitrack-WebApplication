@@ -21,10 +21,10 @@ const NARROW_SCREEN = '(max-width: 480px)';
   styleUrl: './language-switcher.css',
 })
 export class LanguageSwitcher {
-  protected currentLang = 'en';
+  protected currentLang = 'en_US';
   protected languages = [
-    { code: 'en', label: 'EN', name: 'English' },
-    { code: 'es', label: 'ES', name: 'Español' },
+    { code: 'en_US', label: 'EN', name: 'English' },
+    { code: 'es_419', label: 'ES', name: 'Español' },
   ];
   protected translate: TranslateService;
   private readonly breakpoints = inject(BreakpointObserver);
