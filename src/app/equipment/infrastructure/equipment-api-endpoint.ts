@@ -68,6 +68,26 @@ export class EquipmentApiEndpoint extends BaseApiEndpoint<
   }
 
   /**
+   * Retrieves what is located in an environment of a laboratory.
+   *
+   * @remarks
+   * With `iotOnly` the cloud answers only the IoT devices; otherwise it answers the equipment,
+   * the IoT devices and the Edge Gateways of the environment.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param environmentId - The identifier of the environment.
+   * @param iotOnly - Whether only the IoT devices are requested.
+   * @returns An observable that emits the equipment located in the environment.
+   */
+  getEquipmentByEnvironment(laboratoryId: number, environmentId: number, iotOnly = false): Observable<Equipment[]> {
+    const options = iotOnly ? { params: { iot: 'true' } } : {};
+    return this.http.get<EquipmentResource[]>(this.environmentEquipment(laboratoryId, environmentId), options).pipe(
+      map((resources) => resources.map((resource) => this.assembler.toEntityFromResource(resource))),
+      catchError(this.handleError(`Failed to fetch equipment of environment ${environmentId}`)),
+    );
+  }
+
+  /**
    * Retrieves a single equipment of a laboratory.
    *
    * @param laboratoryId - The identifier of the laboratory.

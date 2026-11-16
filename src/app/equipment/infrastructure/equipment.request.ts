@@ -60,10 +60,40 @@ export interface RegisterIotDeviceRequest {
 }
 
 /**
+ * Body of `POST /laboratories/{laboratoryId}/edge-gateways`.
+ *
+ * @remarks
+ * An Edge Gateway has no firmware version; the cloud registers it as an equipment of type `EDGE_GATEWAY`.
+ *
+ * @example
+ * ```typescript
+ * const request: RegisterEdgeGatewayRequest = {
+ *   name: 'Edge Gateway 1',
+ *   sensorExternalId: 'EDGE-001',
+ *   serialNumber: 'RPI-0001',
+ *   model: 'Raspberry Pi 4'
+ * };
+ * ```
+ */
+export interface RegisterEdgeGatewayRequest {
+  /** The display name of the Edge Gateway. */
+  name: string;
+
+  /** The unique identifier with which the Edge Gateway authenticates in the cloud. */
+  sensorExternalId: string;
+
+  /** The serial number of the Edge Gateway. */
+  serialNumber: string;
+
+  /** The model of the Edge Gateway. */
+  model: string;
+}
+
+/**
  * Body of `POST .../environments/{environmentId}/equipments` (TS33).
  *
  * @remarks
- * Locates an equipment in an environment.
+ * Locates an equipment or an Edge Gateway in an environment.
  */
 export interface AssignEquipmentRequest {
   /** The identifier of the equipment to locate in the environment. */
