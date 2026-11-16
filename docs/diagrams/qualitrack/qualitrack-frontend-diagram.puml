@@ -45,14 +45,13 @@ package "qualitrack-frontend" {
 
     package "presentation.components" {
       class Layout
-      class Toolbar
       class LanguageSwitcher
+      class EnvironmentSelector
     }
 
     package "presentation.views" {
       class Home
       class About
-      class Dashboard
       class PageNotFound
     }
   }
@@ -154,7 +153,7 @@ package "qualitrack-frontend" {
       class "RawMaterialBatch" as InvRawMaterialBatch
       class "InventoryMovement" as InvInventoryMovement
       interface "AvailableReceipt" as InvAvailableReceipt
-      interface "LegacyMaterial" as InvLegacyMaterial
+      class "LegacyMaterial" as InvLegacyMaterial
     }
     package "application" {
       class "InventoryStore" as InvInventoryStore
@@ -254,7 +253,6 @@ package "qualitrack-frontend" {
 
     package "application" {
       class CaStore
-      class NotificationStore
     }
 
     package "infrastructure" {
@@ -303,6 +301,7 @@ package "qualitrack-frontend" {
 
     package "presentation" {
       class RaRoutes <<Routes>>
+      class Dashboard
       class KpiDashboardComponent
       class DeviationTrendChartComponent
       class ReportGenerator
@@ -399,8 +398,7 @@ Layout --> LanguageSwitcher
 Layout --> NotificationBell
 Layout --> UserSessionSection
 UserSessionSection --> ProfileStore
-NotificationBell --> NotificationStore
-NotificationStore --> CaApi
+NotificationBell --> CaStore
 CaApi --> NotificationApiEndpoint
 NotificationApiEndpoint --|> BaseApiEndpoint
 ProfileRoutes ..> Layout
@@ -413,18 +411,9 @@ ProfileStore --> ProfileApi
 ProfileApi --> ProfileApiEndpoint
 ProfileApiEndpoint --> ProfileAssembler
 ProfileAssembler ..> Profile
-Toolbar --> LanguageSwitcher
-Home --> Toolbar
 Home --> AuthenticationSection
 
-Dashboard --> IamStore
-Dashboard --> LaboratoryStore
-Dashboard --> EquipmentStore
-Dashboard --> BatchStore
-Dashboard --> CaStore
-Dashboard --> RaStore
-Dashboard --> TrackingStore
-Dashboard --> SubscriptionStore
+Dashboard --> RaStore : operational overview with its own models (ACL)
 
 authenticationInterceptor --> IamStore
 
@@ -540,7 +529,7 @@ InvRawMaterial ..|> BaseEntity
 InvRawMaterialBatch ..|> BaseEntity
 InvInventoryMovement ..|> BaseEntity
 InvAvailableReceipt --|> BaseEntity
-InvLegacyMaterial --|> BaseEntity
+InvLegacyMaterial ..|> BaseEntity
 InvRawMaterial "1" <-- "0..*" InvRawMaterialBatch : rawMaterialId
 InvRawMaterialBatch "1" <-- "0..*" InvInventoryMovement : receiptId
 
@@ -553,6 +542,13 @@ end note
 note bottom of RawMaterial
   Laboratory legacy model retained for historical records.
   New catalogue, receipts and stock movements belong to Inventory.
+end note
+
+PasswordRecoveryApiEndpoint --|> ErrorHandlingEnabledBaseType
+ReportApiEndpoint --|> ErrorHandlingEnabledBaseType
+note right of AppRoutes
+  Each context defines its routes in presentation/<bc>.routes.ts.
+  Public URLs and guards are preserved.
 end note
 
 @enduml
