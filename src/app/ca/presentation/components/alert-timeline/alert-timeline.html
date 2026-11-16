@@ -1,0 +1,77 @@
+<ol class="timeline">
+  @for (event of events(); track event.kind) {
+    <li>
+      <span class="marker" aria-hidden="true"
+        ><mat-icon>{{ event.icon }}</mat-icon></span
+      >
+      <div class="event">
+        @switch (event.kind) {
+          @case ('detected') {
+            <strong>{{
+              'ca-alerts.detail.step.detected'
+                | translate
+                  : {
+                      value: (alert().recordedValue | number: '1.0-2'),
+                      limit: (alert().thresholdValue | number: '1.0-2'),
+                      unit: alert().unit,
+                    }
+            }}</strong>
+            <small>{{ event.at | dateTime }} · {{ deviceName() }}</small>
+          }
+          @case ('last-deviation') {
+            <strong>{{ 'ca-alerts.detail.step.last-deviation' | translate }}</strong>
+            <small>
+              {{ event.at | dateTime }} ·
+              {{ 'ca-alerts.fields.deviations' | translate: { count: alert().deviationCount } }}
+            </small>
+          }
+          @case ('attending') {
+            <strong>{{
+              'ca-alerts.detail.step.attending' | translate: { name: attendedBy() }
+            }}</strong>
+            <small>
+              {{ event.at | dateTime }} ·
+              {{
+                'ca-alerts.detail.step.later'
+                  | translate: { time: (alert().timestamp | elapsedTime: event.at) }
+              }}
+            </small>
+          }
+          @case ('normalized') {
+            <strong>{{ 'ca-alerts.normalized' | translate }}</strong>
+            <small>{{ event.at | dateTime }}</small>
+          }
+          @case ('resolved') {
+            <strong>{{
+              'ca-alerts.detail.step.resolved' | translate: { name: resolvedBy() }
+            }}</strong>
+            <small>
+              {{ event.at | dateTime }} ·
+              {{
+                'ca-alerts.detail.step.later'
+                  | translate: { time: (alert().timestamp | elapsedTime: event.at) }
+              }}
+            </small>
+            <p class="notes">{{ alert().resolutionNotes }}</p>
+          }
+        }
+      </div>
+    </li>
+  }
+  @if (alert().status === 'UNRESOLVED') {
+    <li class="pending">
+      <span class="marker" aria-hidden="true"></span>
+      <div class="event">
+        <strong>{{ 'ca-alerts.detail.step.waiting-attention' | translate }}</strong>
+      </div>
+    </li>
+  }
+  @if (alert().isOpen) {
+    <li class="pending">
+      <span class="marker" aria-hidden="true"></span>
+      <div class="event">
+        <strong>{{ 'ca-alerts.detail.step.waiting-resolution' | translate }}</strong>
+      </div>
+    </li>
+  }
+</ol>

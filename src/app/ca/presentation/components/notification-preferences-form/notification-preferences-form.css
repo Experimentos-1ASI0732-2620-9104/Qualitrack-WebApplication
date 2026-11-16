@@ -1,44 +1,105 @@
+:host {
+  display: block;
+  color: var(--qt-text);
+}
+
 .preferences {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+.toggle {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--qt-border);
+}
+
 .toggle .hint {
   margin: 4px 0 0 52px;
-  color: #5c7079;
-  font-size: 13px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .severity {
+  width: 100%;
   max-width: 420px;
   margin-top: 4px;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
 }
 
 .error,
 .success {
   margin: 0;
-  padding: 10px 14px;
-  border-left: 4px solid;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .error {
-  background: #fff0f0;
-  color: #9d2424;
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
 }
 
 .success {
-  background: #e7f5ef;
-  color: #19664e;
+  background: var(--qt-success-surface);
+  border-color: var(--qt-success);
+  color: var(--qt-success-text);
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid var(--qt-border);
 }
 
-@media (max-width: 560px) {
+.form-actions button[mat-flat-button] {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+  transition: background-color 0.2s ease;
+}
+
+.form-actions button[mat-flat-button]:hover:not([disabled]) {
+  background: var(--qt-primary-hover);
+}
+
+.form-actions button[mat-flat-button][disabled] {
+  background: var(--qt-border);
+  color: var(--qt-neutral-text);
+}
+
+.form-actions button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
   .toggle .hint {
     margin-left: 0;
+  }
+
+  .form-actions button[mat-flat-button] {
+    width: 100%;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
   }
 }

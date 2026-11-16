@@ -1,0 +1,146 @@
+<article
+  #card
+  class="alert-card"
+  tabindex="-1"
+  [class]="'severity-' + alert().severity.toLowerCase()"
+  [class.is-new]="isNew()"
+>
+  <div class="what">
+    <h2>
+      <a
+        [routerLink]="['/alerts', alert().id]"
+        queryParamsHandling="preserve"
+        (click)="opening.emit()"
+        >{{ title() }}</a
+      >
+    </h2>
+    <p class="origin">
+      <span class="severity">{{ severityChip().labelKey | translate }}</span>
+      @if (environmentLabel(); as environmentLabel) {
+        <span class="environment" [attr.title]="environmentLabel">{{ environmentLabel }}</span>
+      }
+      <span>{{
+        (alert().origin ? 'ca-alerts.origin.' + alert().origin : 'ca-alerts.origin.EQUIPMENT')
+          | translate
+      }}</span>
+      @if (alert().deviationCount > 1) {
+        <span>{{ 'ca-alerts.fields.deviations' | translate: { count: alert().deviationCount } }}</span>
+      }
+      @if (alert().isNormalized) {
+        <span class="normalized">
+          <mat-icon aria-hidden="true">check_circle</mat-icon>{{ 'ca-alerts.normalized' | translate }}
+        </span>
+      }
+    </p>
+  </div>
+
+  <div class="reading">
+    <p>
+      <strong class="value">{{ alert().recordedValue | number: '1.0-2' }} {{ alert().unit }}</strong>
+      <span class="limit">{{
+        'ca-alerts.active.card.limit'
+          | translate: { value: (alert().thresholdValue | number: '1.0-2'), unit: alert().unit }
+      }}</span>
+      @if (alert().thresholdExcess; as excess) {
+        <span class="excess">
+          <mat-icon aria-hidden="true">{{
+            excess.direction === 'above' ? 'arrow_upward' : 'arrow_downward'
+          }}</mat-icon>
+          {{ excess.direction === 'above' ? '+' : '−' }}{{ excess.amount | number: '1.0-1' }}
+          {{ excess.measure === 'percent' ? '%' : alert().unit }}
+        </span>
+      }
+    </p>
+    <!-- How far the reading went past its limit, at a glance; the numbers above say it in words -->
+    <div class="gauge" aria-hidden="true">
+      <span class="fill" [style.width.%]="gauge().value"></span>
+      <span class="limit-mark" [style.left.%]="gauge().limit"></span>
+    </div>
+  </div>
+
+  <p class="meta">
+    <span class="age" [attr.title]="alert().timestamp | dateTime">
+      <mat-icon aria-hidden="true">schedule</mat-icon>
+      {{ 'ca-alerts.active.card.opened' | translate: { time: (alert().timestamp | relativeTime: now()) } }}
+    </span>
+    @if (alert().status === 'UNRESOLVED') {
+      <span class="owner unowned">
+        <mat-icon aria-hidden="true">person_off</mat-icon>{{ 'ca-alerts.active.card.no-owner' | translate }}
+      </span>
+    } @else {
+      <span class="owner">
+        <mat-icon aria-hidden="true">pan_tool</mat-icon>
+        {{
+          (attendedBy() ? 'ca-alerts.active.card.attending-by' : 'ca-alerts.active.card.attending')
+            | translate: { name: attendedBy(), time: (alert().acknowledgedAt | relativeTime: now()) }
+        }}
+      </span>
+    }
+  </p>
+
+  <div class="actions">
+    @if (canAttend()) {
+      @if (alert().status === 'UNRESOLVED') {
+        <button
+          #primaryAction
+          mat-flat-button
+          class="primary-btn"
+          type="button"
+          [attr.aria-label]="('ca-alerts.actions.acknowledge' | translate) + ': ' + title()"
+          (click)="attend.emit()"
+        >
+          {{ 'ca-alerts.actions.acknowledge' | translate }}
+        </button>
+      } @else {
+        <a
+          #primaryAction
+          mat-stroked-button
+          class="primary-btn"
+          [routerLink]="['/alerts', alert().id]"
+          [queryParams]="{ panel: 'resolve' }"
+          queryParamsHandling="merge"
+          [attr.aria-label]="('ca-alerts.active.card.resolve' | translate) + ': ' + title()"
+          (click)="opening.emit()"
+        >
+          {{ 'ca-alerts.active.card.resolve' | translate }}
+        </a>
+      }
+      <button
+        mat-icon-button
+        type="button"
+        class="more"
+        [matMenuTriggerFor]="moreActions"
+        [attr.aria-label]="('ca-alerts.active.card.more' | translate) + ': ' + title()"
+      >
+        <mat-icon aria-hidden="true">more_vert</mat-icon>
+      </button>
+      <mat-menu #moreActions="matMenu" xPosition="before">
+        <a
+          mat-menu-item
+          [routerLink]="['/alerts', alert().id]"
+          queryParamsHandling="preserve"
+          (click)="opening.emit()"
+        >
+          <mat-icon aria-hidden="true">open_in_new</mat-icon>
+          {{ 'ca-alerts.actions.view-details' | translate }}
+        </a>
+        @if (alert().isOpen && alert().severity === 'CRITICAL') {
+          <button mat-menu-item type="button" [disabled]="saving()" (click)="notify.emit()">
+            <mat-icon aria-hidden="true">forward_to_inbox</mat-icon>
+            {{ 'ca-alerts.active.card.notify' | translate }}
+          </button>
+        }
+      </mat-menu>
+    } @else {
+      <a
+        mat-stroked-button
+        [routerLink]="['/alerts', alert().id]"
+        queryParamsHandling="preserve"
+        [attr.aria-label]="('ca-alerts.actions.view-details' | translate) + ': ' + title()"
+        (click)="opening.emit()"
+      >
+        {{ 'ca-alerts.actions.view-details' | translate }}
+      </a>
+    }
+  </div>
+</article>
