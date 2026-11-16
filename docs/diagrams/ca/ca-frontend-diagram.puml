@@ -7,6 +7,7 @@ skinparam classAttributeIconSize 0
 hide empty members
 
 package "shared" {
+  class EnvironmentSelector <<component>>
   interface BaseEntity
   class BaseApi
   class BaseApiEndpoint
@@ -14,7 +15,19 @@ package "shared" {
   interface BaseResource
   interface BaseResponse
   class ApiError
-  class "operations-page.css" as OperationsPage <<stylesheet>>
+  class ActionBanner <<component>>
+  class EmptyState <<component>>
+  class ErrorBanner <<component>>
+  class FilterChip <<component>>
+  class SidePanel <<component>>
+  class PageHeader <<component>>
+  interface PageTab
+  class ListToolbar <<component>>
+  class TablePaginator <<component>>
+  class SetupNotice <<component>>
+  class StatusChip <<component>>
+  class UndoToastOpener <<service>>
+  class "dateTime / relativeTime / elapsedTime" as TimePipes <<pipes>>
 }
 
 package "iam.application" {
@@ -29,22 +42,30 @@ package "@angular/cdk" {
   class CdkConnectedOverlay
 }
 
-package "laboratory" {
-  class EnvironmentStore {
-    +environments: Signal<Environment[]>
-    +preferredEnvironment(usage?, scope?): Environment
-    +rememberEnvironment(id, scope?): void
-  }
-  class EnvironmentSelector <<component>>
-}
-
-package "equipment.infrastructure" {
-  class EquipmentApi {
-    +getEquipment(labId)
+package "shared.infrastructure" {
+  class EnvironmentPreference {
+    +choose(laboratoryId, environments, preferredUsage?)
+    +remember(laboratoryId, environmentId): void
   }
 }
 
 package "ca.domain.model" {
+  class AlertDevice {
+    +id: number
+    +name: string
+  }
+  class AlertEnvironment {
+    +id / code / name
+    +usage: string | null
+  }
+  class AlertPerson {
+    +id: number
+    +name: string
+  }
+  class "compareAlertsByPriority() / compareAlertsByNewest()" as AlertOrder <<functions>>
+  class "filterAlertHistory() / isInPeriod() / periodRangeOf() / matchesChips() / matchesSearch()" as AlertHistoryFilter <<functions>>
+  class "summarizeAlertHistory() / attentionTime() / resolutionTime()" as AlertHistoryMetrics <<functions>>
+  class "countAlertsByWeek()" as AlertHistoryWeeks <<functions>>
   class DeviationAlert {
     +id: number
     +laboratoryId: number | null
@@ -154,35 +175,64 @@ package "ca.application" {
     +getAlertById(id: number)
     +deviceName(equipmentId: number): string | null
     +loadDevices(): void
+    +environments: Signal<AlertEnvironment[]>
+    +environmentsLoaded / environmentsEmpty
+    +loadEnvironments(): Promise<void>
+    +preferredEnvironmentId(): number | null
+    +rememberEnvironment(environmentId): void
     +loadEnvironmentAlerts(environmentId: number, filters?: AlertFilters): void
     +loadAlertById(alertId: number): void
-    +acknowledgeAlert(alertId: number): void
+    +unavailableEnvironmentIds / alertsUpdatedAt / newAlertIds / refreshing
+    +selectedAlertLoading
+    +loadOpenAlerts(environmentId: number | null): void
+    +loadAlertHistory(environmentId: number | null): void
+    +refreshOpenAlerts(environmentId: number | null): void
+    +startAttention(alertId: number): void
+    +confirmAttention(alertId: number): void
+    +undoAttention(alertId: number): void
+    +hasPendingAttention(alertId: number): boolean
+    +clearSelectedAlert(): void
+    +personName(userId: number | null): string | null
+    +loadPeople(): void
     +resolveAlert(alertId: number, request: ResolveAlertRequest): void
     +sendAlertEmailNotification(alertId: number): void
     +loadEquipmentComplianceEvents(equipmentId: number): void
     +loadBatchComplianceEvents(batchId: number): void
     +loadNotificationPreferences(): void
     +updateNotificationPreferences(request: UpdateNotificationPreferenceRequest): Observable<NotificationPreference>
+    +unreadNotifications: Signal<number>
+    +notifications: Signal<Notification[]>
+    +notificationsLoading / notificationsFailed / hasUnreadNotifications
+    +refreshUnreadNotifications(): Observable<number>
+    +loadLatestNotifications(): void
+    +markNotificationAsRead(notification: Notification): void
+    +markAllNotificationsAsRead(): void
   }
   class alertError <<function>>
-
-  class NotificationStore <<root>> {
-    +unreadCount: Signal<number>
-    +notifications: Signal<Notification[]>
-    +loading / failed / hasUnread
-    +refreshUnreadCount(): Observable<number>
-    +loadLatest(): void
-    +markAsRead(notification: Notification): void
-    +markAllAsRead(): void
-  }
 }
 
 package "ca.infrastructure" {
+  class AlertPersonApiEndpoint {
+    +getPeople(laboratoryId)
+  }
+  class AlertPersonAssembler {
+    +toEntities(users, staff, ownProfile): AlertPerson[]
+  }
+  class AlertDeviceApiEndpoint {
+    +getDevices(laboratoryId)
+  }
+  class AlertDeviceAssembler
+  class AlertEnvironmentApiEndpoint {
+    +getEnvironments(laboratoryId)
+  }
+  class AlertEnvironmentAssembler
   class CaApi {
     -_alertEndpoint: AlertApiEndpoint
     -_complianceEventEndpoint: ComplianceEventApiEndpoint
     -_preferenceEndpoint: NotificationPreferenceApiEndpoint
     -_notificationEndpoint: NotificationApiEndpoint
+    -_personEndpoint: AlertPersonApiEndpoint
+    +getAlertPeople(laboratoryId: number)
 
     +getEnvironmentAlerts(laboratoryId: number, environmentId: number, filters?: AlertFilters)
     +getAlertById(alertId: number)
@@ -312,32 +362,106 @@ package "ca.presentation" {
 
   class AlertTable <<component>> {
     +alerts: input<DeviationAlert[]>
-    +emptyKey: input<string>
-    #variable(parameterName): string
+    +now: input<Date>
+    #variableOf(alert): string
+    #resolvedByOf(alert): string | null
+    #initialsOf(name): string
   }
+
+  class AlertHistoryCards <<component>> {
+    +alerts: input<readonly DeviationAlert[]>
+    #summary
+  }
+
+  class AlertWeekChart <<component>> {
+    +weeks: input<readonly AlertWeek[]>
+    #days / data / options
+  }
+
+  class "filterFromQuery() / queryFromFilter() / reportQueryOf()" as AlertHistoryQuery <<functions>>
 
   class AlertDashboard {
     #environmentId: Signal<number | null>
-    #changeEnvironment(environmentId): void
+    #tabs: Signal<PageTab[]>
+    #sortOrder / criticalOnly / attentionFilter / searchTerm
+    #visibleAlerts / groups / chip
+    #stats
+    #chooseEnvironment(environmentId): void
+    #chooseAllEnvironments(): void
     #refresh(): void
+    #selectChip(chip): void
+    #clearFilters(): void
+    #attend(alert): void
+    #notify(alert): void
+    #handleListShortcut(event): void
+  }
+
+  class AlertCard <<component>> {
+    +alert: input<DeviationAlert>
+    +deviceName / environmentLabel / attendedBy
+    +canAttend / saving / isNew / now
+    +attend / notify / opening: output
+    +focus(): void
+    +focusPrimaryAction(): void
+  }
+
+  class "alertTabs()" as AlertTabs <<function>>
+
+  class "alertGauge()" as AlertGaugeFunction <<function>>
+
+  interface AlertGauge {
+    +value: number
+    +limit: number
+  }
+
+  class AlertAttentionFlow <<service>> {
+    +attend(alert, whenFinished?): void
+    +closeUndoWindow(alertId): void
   }
 
   class AlertHistory {
     #environmentId: Signal<number | null>
-    #status
-    #severity
-    #changeEnvironment(environmentId): void
-    #search(): void
+    #tabs: Signal<PageTab[]>
+    #filter: Signal<AlertHistoryFilter>
+    #shownAlerts / activeFilterCount
+    #weeks / reportQuery / narrowsTable / isFiltered
+    #detailOpen
+    #load(): void
+    #chooseEnvironment(environmentId): void
+    #chooseAllEnvironments(): void
+    #choosePeriod(period): void
+    #chooseDay(limit, day): void
+    #toggleSeverity(severity): void
+    #toggleStatus(status): void
+    #toggleOrigin(origin): void
+    #search(search): void
     #clearFilters(): void
+    #countWith(changes): number
   }
 
-  class DeviationDetail {
+  class AlertDetailPanel {
     #alert
-    #resolutionForm
-    #environmentName
-    #acknowledge(): void
-    #sendEmail(): void
-    #resolve(): void
+    #openedToResolve
+    #attendedBy / resolvedBy
+    #close(): void
+    #attend(): void
+    #notify(): void
+    #resolve(resolutionNotes): void
+  }
+
+  class AlertTimeline <<component>> {
+    +alert: input<DeviationAlert>
+    +deviceName / attendedBy / resolvedBy
+    #events
+  }
+
+  class AlertResolutionForm <<component>> {
+    +saving: input<boolean>
+    +resolve: output<string>
+    #templates
+    #useTemplate(template): void
+    +focus(): void
+    +reset(): void
   }
 
   class NotificationBell <<component>> {
@@ -348,6 +472,8 @@ package "ca.presentation" {
     #params(notification): Record<string, unknown>
     #timeAgo(isoDate): string
   }
+
+  class NotificationSettings
 
   class NotificationPreferencesForm <<component>> {
     #form
@@ -384,7 +510,7 @@ NotificationPreferenceResource ..|> BaseResource
 NotificationPreferencesResponse ..|> BaseResponse
 
 CaStore --> CaApi
-CaStore --> EquipmentApi : device names
+CaStore ..> AlertDevice : device names
 CaStore --> IamStore
 CaStore ..> alertError
 alertError ..> ApiError
@@ -405,9 +531,8 @@ NotificationApiEndpoint ..> UnreadNotificationsResource
 NotificationApiEndpoint ..> NotificationsReadResource
 NotificationAssembler ..> Notification
 AlertApiEndpoint ..> AlertEmailNotificationResource
-NotificationStore --> CaApi
-NotificationStore --> IamStore : clears on another sign-in
-NotificationStore ..> Notification
+CaStore --> IamStore : clears the notifications on another sign-in
+CaStore ..> Notification
 note bottom of NotificationApiEndpoint
   GET  /users/me/notifications?unread&limit (US83)
   GET  /users/me/notifications/unread-count
@@ -444,33 +569,77 @@ NotificationPreferenceAssembler ..> NotificationPreference
 NotificationPreferenceAssembler ..> NotificationPreferenceResource
 
 AlertDashboard --> CaStore
-AlertDashboard --> EnvironmentStore
 AlertDashboard ..> EnvironmentSelector
-AlertDashboard *-- AlertTable
+AlertDashboard ..> ActionBanner
+AlertDashboard ..> EmptyState
+AlertDashboard ..> ErrorBanner
+AlertDashboard ..> FilterChip
+AlertDashboard ..> SetupNotice
+AlertDashboard *-- AlertCard
+AlertDashboard ..> PageHeader
+AlertDashboard ..> ListToolbar
+AlertDashboard ..> AlertTabs
+AlertDashboard --> AlertAttentionFlow
+AlertDashboard ..> AlertOrder
+AlertDashboard *-- AlertDetailPanel : child route
+AlertCard ..> StatusChip
+AlertCard ..> TimePipes
+AlertAttentionFlow --> CaStore
+AlertAttentionFlow --> UndoToastOpener
+CaApi --> AlertPersonApiEndpoint
+AlertPersonApiEndpoint --> AlertPersonAssembler
+AlertPersonAssembler ..> AlertPerson
+AlertPerson ..|> BaseEntity
+CaStore --> IamStore : beforeSignOut
+AlertHistory ..> PageHeader
+AlertHistory ..> ListToolbar
+AlertHistory ..> SetupNotice
+AlertHistory ..> AlertTabs
 AlertHistory --> CaStore
-AlertHistory --> EnvironmentStore
 AlertHistory ..> EnvironmentSelector
 AlertHistory *-- AlertTable
+AlertHistory *-- AlertHistoryCards
+AlertHistory *-- AlertWeekChart
+AlertHistory ..> FilterChip
+AlertHistory ..> AlertHistoryQuery
+AlertHistory ..> AlertHistoryFilter
+AlertHistory ..> AlertHistoryWeeks
+AlertHistoryQuery ..> AlertHistoryFilter
+AlertHistoryWeeks ..> AlertHistoryFilter
+AlertHistoryCards ..> AlertHistoryMetrics
+AlertWeekChart ..> AlertHistoryWeeks
 AlertTable --> CaStore
+note bottom of AlertHistory
+  Every alert of one environment or of the whole laboratory, read once and filtered in the
+  browser so each chip can tell its count. The environment, the filter and the page live in
+  the address. "Export report" opens /reports/new with the period and the environment only.
+end note
 
-DeviationDetail --> CaStore
-DeviationDetail --> EnvironmentStore
-note bottom of DeviationDetail
-  Origin, variable, value and limit, follow-up (detected, last deviation,
-  normalized, attended, resolved) and related actions; operators and
-  quality managers register the attention and the resolution, auditors
-  only read. "View conditions" -> /tracking/history?environmentId=&deviceId=.
+AlertDetailPanel --> CaStore
+AlertDetailPanel --> AlertAttentionFlow
+AlertDetailPanel *-- SidePanel
+AlertDetailPanel *-- AlertTimeline
+AlertDetailPanel *-- AlertResolutionForm
+AlertDetailPanel ..> StatusChip
+AlertTimeline ..> TimePipes
+note bottom of AlertDetailPanel
+  Panel over the inbox, which stays as it was: origin, value and limit, timeline
+  and related actions. Operators and quality managers register the attention and
+  the resolution, auditors and a resolved alert only read. panel=resolve starts on
+  the corrective action; closing goes back to where the person came from.
+  "View conditions" -> /tracking/history?environmentId=&deviceId=.
 end note
 note bottom of AlertDashboard
-  Open alerts (active=true) of the environment, remembered with the
-  tracking environment; the history lists every alert with filters.
+  Inbox of the open alerts (active=true) of every environment, or of the one in
+  ?environmentId=; the most urgent first. It refreshes every 30 s while the tab is
+  visible; an environment that fails is named without hiding the others. Attention
+  can be undone for 5 s: nothing reaches the platform until the toast ends, the person
+  moves on, signs out or leaves the page. J and K move through the list and A attends.
+  The history lists every alert with filters, under the same page header.
 end note
 
-AlertDashboard ..> OperationsPage
-AlertHistory ..> OperationsPage
-DeviationDetail ..> OperationsPage
 
-NotificationBell --> NotificationStore
+NotificationBell --> CaStore
 NotificationBell ..> CdkConnectedOverlay : panel over the current view
 note bottom of NotificationBell
   In the toolbar: counts the unread notifications every 30 s and opens
@@ -478,15 +647,58 @@ note bottom of NotificationBell
 end note
 NotificationPreferencesForm --> CaStore
 note bottom of NotificationPreferencesForm
-  Shown in the profile: bell, e-mail of critical alerts and the
+  Shown on the notification settings page: bell, e-mail of critical alerts and the
   lowest alert severity notified (/users/me/notification-preferences).
 end note
 
 CaRoutes ..> AlertDashboard
 CaRoutes ..> AlertHistory
-CaRoutes ..> DeviationDetail
+CaRoutes ..> AlertDetailPanel
 note bottom of CaRoutes
-  /alerts/notification-settings redirects to /profile.
+  /alerts (active), /alerts/history and /alerts/:alertId, a child of the inbox;
+  /alerts/history/:alertId opens the same detail over the history;
+  deviation-detail/:id, which the e-mails link to, redirects.
+  /alerts/notification-settings loads NotificationSettings.
+end note
+
+CaApi --> AlertDeviceApiEndpoint
+AlertDeviceApiEndpoint --> AlertDeviceAssembler
+AlertDeviceAssembler ..> AlertDevice
+CaApi --> AlertEnvironmentApiEndpoint
+AlertEnvironmentApiEndpoint --> AlertEnvironmentAssembler
+AlertEnvironmentAssembler ..> AlertEnvironment
+CaStore --> EnvironmentPreference
+note bottom of AlertEnvironmentApiEndpoint
+  Laboratory -> Compliance & Alerts: GET /laboratories/{id}/environments
+  in the model of CA; the chosen environment is remembered with the
+  monitoring views ("tracking").
+end note
+CaRoutes --> NotificationSettings
+NotificationSettings *-- NotificationPreferencesForm
+NotificationBell ..> NotificationSettings : navigation link
+
+note left of CaRoutes
+  Source: ca/presentation/ca.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+AlertTabs ..> PageTab
+NotificationSettings ..> PageHeader
+NotificationSettings ..> AlertTabs
+AlertTable ..> TablePaginator
+AlertCard ..> AlertGaugeFunction
+AlertDetailPanel ..> AlertGaugeFunction
+AlertGaugeFunction ..> AlertGauge
+AlertGaugeFunction ..> DeviationAlert
+note bottom of AlertTabs
+  Active, History and Preferences are the tabs of the page header of every
+  alerts page; the first two keep the environment chosen.
+end note
+note bottom of AlertGaugeFunction
+  Places the reading and its limit on one bar, from zero or from the lowest
+  value when readings go below zero: the fill ends after the mark when the
+  reading is above its limit and before it when it is below, also with
+  negative temperatures.
 end note
 
 @enduml
