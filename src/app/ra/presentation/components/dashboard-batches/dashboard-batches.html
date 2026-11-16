@@ -1,0 +1,47 @@
+<section class="batches-section" aria-labelledby="batches-title">
+  <header class="section-header">
+    <h2 id="batches-title">
+      <mat-icon>inventory_2</mat-icon>{{ 'dashboard.overview.production' | translate }}
+    </h2>
+    <a
+      mat-icon-button
+      routerLink="/batches"
+      [matTooltip]="'dashboard.cards.batches' | translate"
+      [attr.aria-label]="'dashboard.cards.batches' | translate"
+    >
+      <mat-icon>arrow_forward</mat-icon>
+    </a>
+  </header>
+
+  @if (batchesStatus() === 'loading' || batchesStatus() === 'error') {
+    <app-dashboard-state [state]="batchesStatus()" (retry)="retry.emit()" />
+  } @else if (!totalBatches()) {
+    <p class="empty">{{ 'dashboard.overview.no-batches' | translate }}</p>
+  } @else {
+    <div class="batch-distribution">
+      @for (item of distribution(); track item.status) {
+        <div class="distribution-row">
+          <span>{{ 'dashboard.overview.status.' + item.status | translate }}</span>
+          <meter
+            [class]="item.status"
+            min="0"
+            [max]="totalBatches() || 1"
+            [value]="item.count"
+            [attr.aria-label]="'dashboard.overview.status.' + item.status | translate"
+          ></meter>
+          <strong>{{ item.count }}</strong>
+        </div>
+      }
+    </div>
+
+    @for (batch of recentBatches(); track batch.id) {
+      <a class="record-row batch-row" [routerLink]="batch.detailLink ?? ['/batches', batch.id]">
+        <div class="record-main">
+          <strong>{{ batch.batchNumber }}</strong>
+          <span>{{ batch.productName }}</span>
+        </div>
+        <mat-icon>chevron_right</mat-icon>
+      </a>
+    }
+  }
+</section>

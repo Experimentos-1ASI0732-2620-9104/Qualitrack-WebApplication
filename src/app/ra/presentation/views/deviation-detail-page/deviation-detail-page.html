@@ -1,0 +1,85 @@
+<main class="operations-page">
+  <header class="page-heading">
+    <div>
+      <h1>
+        <mat-icon aria-hidden="true">history</mat-icon>
+        {{ 'reporting.deviations.detail-title' | translate }}
+      </h1>
+      @if (trend(); as t) {
+        <p class="muted">
+          {{ deviceLabel(t.equipmentId) }}
+          {{ 'tracking.metrics.' + t.parameterName | translate }}
+        </p>
+      }
+    </div>
+    <div class="actions">
+      <button mat-stroked-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        {{ 'reporting.deviations.back-to-chart' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  } @else if (store.isLoading()) {
+    <div class="loading"><mat-spinner diameter="40" /></div>
+  } @else {
+    @if (trend(); as t) {
+
+      <!-- Summary -->
+      <div class="detail-summary">
+        <div class="summary-chip">
+          <span class="label">{{ 'reporting.deviations.all-events' | translate }}</span>
+          <strong>{{ counts().total }}</strong>
+        </div>
+        <div class="summary-chip warning">
+          <span class="label">{{ 'tracking.states.WARNING' | translate }}</span>
+          <strong>{{ counts().warning }}</strong>
+        </div>
+        <div class="summary-chip critical">
+          <span class="label">{{ 'tracking.states.CRITICAL' | translate }}</span>
+          <strong>{{ counts().critical }}</strong>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <section class="filters">
+        <mat-form-field appearance="outline" class="date-range-field">
+          <mat-label>{{ 'reporting.deviations.date-range-label' | translate }}</mat-label>
+          <mat-date-range-input #pickerInput [rangePicker]="picker">
+            <input matStartDate [placeholder]="'reporting.deviations.date-start-placeholder' | translate" [ngModel]="fromDate()" />
+            <input matEndDate [placeholder]="'reporting.deviations.date-end-placeholder' | translate" [ngModel]="toDate()" />
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker (closed)="onDateRangeChange(pickerInput.value)"></mat-date-range-picker>
+        </mat-form-field>
+
+        <!-- Alert filter -->
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'reporting.deviations.alert-type' | translate }}</mat-label>
+          <mat-select [ngModel]="alertFilter()" (ngModelChange)="alertFilter.set($event)">
+            <mat-option value="all">{{ 'reporting.deviations.all-alerts' | translate }}</mat-option>
+            <mat-option value="WARNING">{{ 'tracking.states.WARNING' | translate }}</mat-option>
+            <mat-option value="CRITICAL">{{ 'tracking.states.CRITICAL' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button class="clear-btn" (click)="clearFilters()">
+          <mat-icon>filter_alt_off</mat-icon>
+          {{ 'reporting.deviations.clear-filters' | translate }}
+        </button>
+      </section>
+
+      <!-- Event list -->
+      <app-deviation-events [trend]="t" [points]="filteredPoints()" [thresholds]="thresholds()" />
+
+    } @else {
+      <div class="empty-state">
+        <mat-icon>query_stats</mat-icon>
+        <h3>{{ 'reporting.deviations.empty-title' | translate }}</h3>
+        <p>{{ 'reporting.deviations.empty-desc' | translate }}</p>
+      </div>
+    }
+  }
+</main>

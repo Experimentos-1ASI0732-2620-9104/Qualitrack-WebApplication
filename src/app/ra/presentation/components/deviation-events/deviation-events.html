@@ -1,0 +1,25 @@
+<div class="events-card">
+  <h3>{{ 'reporting.deviations.events-title' | translate }}</h3>
+
+  <div class="events-body" [class.empty]="criticalEvents().length === 0">
+    @for (point of criticalEvents(); track $index) {
+      <div class="event-row" [class.critical]="point.state === 'CRITICAL'">
+        <div class="event-icon">
+    <span class="state-chip" [class.critical]="point.state === 'CRITICAL'">
+      <span class="dot" aria-hidden="true"></span>
+      {{ 'tracking.states.' + point.state | translate }}
+    </span>
+        </div>
+        <div class="event-info">
+    <span>{{ point.timestamp | dateTime }} - {{ 'tracking.metrics.' + trend().parameterName | translate }} {{ point.recordedValue | number:'1.0-2' }} {{ trend().unit }}
+      @if (limitOf(point) !== null) {
+        <small>({{ 'reporting.deviations.limit' | translate }} {{ limitOf(point) }} {{ trend().unit }})</small>
+      }
+    </span>
+        </div>
+      </div>
+    } @empty {
+      <p class="muted">{{ 'reporting.deviations.no-events' | translate }}</p>
+    }
+  </div>
+</div>

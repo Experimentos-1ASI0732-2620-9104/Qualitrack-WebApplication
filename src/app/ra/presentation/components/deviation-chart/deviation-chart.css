@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+
+.chart-card {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.chart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  margin: 0 0 4px;
+  color: var(--qt-text);
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.chart-subtitle {
+  margin: 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.chart-header button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-color: var(--qt-border);
+  border-radius: 999px;
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-header button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 350px;
+  margin-bottom: 16px;
+}
+
+.custom-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--qt-border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--qt-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.line-legend {
+  width: 24px;
+  height: 2px;
+  background: var(--qt-primary);
+}
+
+.box-legend {
+  width: 16px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.normal-bg {
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.gray-bg {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.triangle-warning {
+  position: relative;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--qt-warning);
+}
+
+.triangle-warning::after {
+  content: '!';
+  position: absolute;
+  top: 2px;
+  left: -2px;
+  color: var(--qt-warning-text);
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.critical-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--qt-error);
+  border: 2px solid var(--qt-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--qt-error);
+}
+
+@media (max-width: 760px) {
+  .chart-card {
+    padding: 16px;
+  }
+
+  .chart-wrapper {
+    height: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

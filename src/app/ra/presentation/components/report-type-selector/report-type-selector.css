@@ -1,0 +1,130 @@
+:host {
+  display: block;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--qt-primary-strong);
+  border-radius: 50%;
+  color: var(--qt-surface);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.type-card {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.type-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--qt-primary);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.type-card:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.type-card.active {
+  background: var(--qt-primary-surface);
+  border-color: var(--qt-primary);
+  box-shadow: 0 0 0 1px var(--qt-primary);
+}
+
+.type-card.active:hover {
+  box-shadow: 0 0 0 1px var(--qt-primary), 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.icon-box {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--qt-primary-surface);
+  border-radius: 8px;
+  color: var(--qt-primary-strong);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.type-card.active .icon-box {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+.text-box {
+  flex: 1;
+  min-width: 0;
+  padding-right: 24px;
+}
+
+.text-box h3 {
+  margin: 0 0 4px;
+  color: var(--qt-text);
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.text-box p {
+  margin: 0 0 8px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.formats {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.check {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 20px;
+  height: 20px;
+  color: var(--qt-primary-strong);
+  font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

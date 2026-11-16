@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Dashboard subscription section
+   The host element is the card, so it matches the rest of the dashboard.
+   ========================================================================== */
+
+:host {
+  display: block;
+  min-width: 0;
+  padding: 24px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  color: var(--qt-text);
+}
+
+/* --------------------------------------------------------------------------
+   Section header
+   -------------------------------------------------------------------------- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--qt-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+h2 mat-icon {
+  flex-shrink: 0;
+  color: var(--qt-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Plan name and status
+   -------------------------------------------------------------------------- */
+.plan-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+h3 {
+  margin: 0;
+  color: var(--qt-text);
+  font-size: 24px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Status chip (dark text variants for AA contrast) */
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--qt-neutral-surface);
+  color: var(--qt-neutral-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ACTIVE,
+.RELEASED {
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
+}
+
+/* --------------------------------------------------------------------------
+   Subscription details (label on the left, value on the right)
+   -------------------------------------------------------------------------- */
+.subscription-details {
+  margin: 0 0 16px;
+}
+
+.subscription-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--qt-border);
+  font-size: 14px;
+}
+
+.subscription-details div:last-child {
+  border-bottom: none;
+}
+
+dt {
+  color: var(--qt-text-muted);
+}
+
+dd {
+  margin: 0;
+  color: var(--qt-text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   Secondary text and empty state
+   -------------------------------------------------------------------------- */
+.muted {
+  margin: 0 0 16px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.empty {
+  margin: 0 0 16px;
+  padding: 24px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Action: link to billing
+   -------------------------------------------------------------------------- */
+.subscription-section a[mat-stroked-button] {
+  width: 100%;
+  height: 48px; /* minimum touch target */
+  border-radius: 999px;
+  border-color: var(--qt-border);
+  color: var(--qt-text);
+  font-weight: 600;
+}
+
+.subscription-section a[mat-stroked-button]:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  :host {
+    padding: 20px 16px;
+  }
+}

@@ -1,0 +1,94 @@
+:host {
+  display: block;
+}
+
+/* A row opens its variable in the chart. */
+tr.mat-mdc-row {
+  cursor: pointer;
+}
+
+tr.mat-mdc-row.active-row td,
+tr.mat-mdc-row.active-row:hover td {
+  background: var(--qt-primary-surface);
+}
+
+tr.mat-mdc-row.active-row td.mat-mdc-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--qt-primary);
+}
+
+.var-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.var-cell small {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+}
+
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  width: 120px;
+  height: 10px;
+  overflow: hidden;
+  background: var(--qt-border);
+  border-radius: 999px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--qt-success);
+  border-radius: 999px;
+}
+
+.progress-fill.warning {
+  background: var(--qt-warning);
+}
+
+.progress-text {
+  min-width: 50px;
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.critical-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--qt-error-surface);
+  border-radius: 999px;
+  color: var(--qt-error-text);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.critical-badge mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.trend-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-cell mat-icon {
+  color: var(--qt-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

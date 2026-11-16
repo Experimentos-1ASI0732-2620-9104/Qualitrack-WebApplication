@@ -1,0 +1,73 @@
+<section class="operations-page" [attr.aria-busy]="store.staffActivityLoading()">
+  <a class="back-link" [routerLink]="staffId() ? ['/laboratories/staff', staffId()] : ['/laboratories/staff']">
+    {{ 'staff.detail.back' | translate }}
+  </a>
+  @if (store.staffActivityLoading()) {
+    <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
+  } @else if (store.staffActivityError(); as error) {
+    <p class="error" role="alert">{{ error | translate }}</p>
+  } @else if (store.auditedStaffMember(); as current) {
+    <div class="page-heading"><div><h1><mat-icon aria-hidden="true">person</mat-icon>{{ current.fullName }}</h1><p class="muted">{{ current.role }}</p></div></div>
+    <div class="summary-strip">
+      <div>
+        <span>{{ 'staff.detail.activities' | translate }}</span>
+        <strong>{{ store.staffActivity().length }}</strong>
+      </div>
+      <div>
+        <span>{{ 'staff.detail.last-activity' | translate }}</span>
+        <strong>{{ lastActivity() ? (lastActivity() | dateTime) : '—' }}</strong>
+      </div>
+    </div>
+
+    <h2>{{ 'staff.detail.history' | translate }}</h2>
+
+    @if (store.staffActivity().length > 0) {
+      <div class="filters">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'staff.detail.filter' | translate }}</mat-label>
+          <mat-select [value]="entityFilter()" (selectionChange)="entityFilter.set($event.value)">
+            <mat-option value="ALL">{{ 'staff.detail.all-activity' | translate }}</mat-option>
+            @for (type of entityTypes(); track type) {
+              <mat-option [value]="type">
+                @if (entityKey(type); as key) { {{ key | translate }} } @else { {{ type }} }
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'audit-log.table.timestamp' | translate }}</th>
+              <th scope="col">{{ 'audit-log.table.action' | translate }}</th>
+              <th scope="col">{{ 'audit-log.table.entity' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of activityPage.rows(); track entry.id) {
+              <tr>
+                <td [attr.data-label]="'audit-log.table.timestamp' | translate">{{ entry.timestamp | dateTime }}</td>
+                <td [attr.data-label]="'audit-log.table.action' | translate">
+                  @if (actionKey(entry.action); as key) { {{ key | translate }} } @else { {{ entry.action }} }
+                </td>
+                <td [attr.data-label]="'audit-log.table.entity' | translate">
+                  @if (entityKey(entry.entityType); as key) { {{ key | translate }} } @else { {{ entry.entityType }} }
+                  @if (entry.entityType === 'EQUIPMENT') {
+                    <a [routerLink]="['/equipments', entry.entityId]">#{{ entry.entityId }}</a>
+                  } @else {
+                    <span class="muted">#{{ entry.entityId }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <app-table-paginator [page]="activityPage" />
+      </div>
+    } @else {
+      <p class="muted">{{ 'staff.detail.no-activity' | translate }}</p>
+    }
+  }
+</section>

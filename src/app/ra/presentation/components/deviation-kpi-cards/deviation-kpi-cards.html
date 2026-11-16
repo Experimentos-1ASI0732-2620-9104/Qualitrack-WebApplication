@@ -1,0 +1,28 @@
+<div class="kpi-grid">
+  <mat-card class="kpi-card">
+    <span class="label">{{ 'reporting.deviations.kpi.variables' | translate }}</span>
+    <strong class="value">{{ totalVariables() | number }}</strong>
+    <span class="hint">{{ totalEvaluated() | number }} / {{ totalReadings() | number }} {{ 'reporting.summary.readings' | translate }}</span>
+  </mat-card>
+
+  <mat-card class="kpi-card">
+    <span class="label">{{ 'reporting.deviations.kpi.time-in-range' | translate }}</span>
+    @let average = averageTimeInRange();
+    <strong class="value">
+      @if (average === null) { — } @else { {{ average | number:'1.0-1' }} % }
+    </strong>
+    <span class="hint">{{ (average === null ? 'reporting.deviations.not-enough' : 'reporting.deviations.kpi.time-in-range-hint') | translate }}</span>
+  </mat-card>
+
+  <mat-card class="kpi-card">
+    <span class="label">{{ 'reporting.deviations.kpi.deviations' | translate }}</span>
+    <strong class="value">{{ totalDeviations() | number }}</strong>
+    <span class="hint">{{ 'reporting.deviations.kpi.worse-readings' | translate }}</span>
+  </mat-card>
+
+  <mat-card class="kpi-card critical-card">
+    <span class="label">{{ 'reporting.deviations.kpi.critical' | translate }}</span>
+    <strong class="value">{{ totalCritical() | number }}</strong>
+    <span class="hint">{{ 'reporting.deviations.kpi.critical-events' | translate }}</span>
+  </mat-card>
+</div>

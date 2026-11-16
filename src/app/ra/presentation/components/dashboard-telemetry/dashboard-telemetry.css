@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Dashboard telemetry section
+   The host element is the card, so it matches the rest of the dashboard.
+   ========================================================================== */
+
+:host {
+  display: block;
+  min-width: 0;
+  padding: 24px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  color: var(--qt-text);
+}
+
+/* --------------------------------------------------------------------------
+   Section header
+   -------------------------------------------------------------------------- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--qt-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+h2 mat-icon {
+  flex-shrink: 0;
+  color: var(--qt-primary);
+}
+
+/* Link to the tracking view (icon button) */
+.section-header a {
+  color: var(--qt-text);
+}
+
+.section-header a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Filters (equipment and parameter selects)
+   -------------------------------------------------------------------------- */
+.telemetry-filters {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Teal focus ring and label instead of the Material default */
+mat-form-field {
+  width: 100%;
+  min-width: 0;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Latest reading
+   -------------------------------------------------------------------------- */
+.latest-reading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--qt-border);
+  border-radius: 8px;
+  background: var(--qt-background);
+}
+
+.latest-reading span {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.latest-reading strong {
+  display: block;
+  color: var(--qt-primary-strong);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.latest-reading small {
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.latest-reading time {
+  max-width: 45%;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   Chart and summary
+   -------------------------------------------------------------------------- */
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 220px;
+}
+
+.chart-summary {
+  margin: 12px 0 0;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   Empty state
+   -------------------------------------------------------------------------- */
+.empty {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  :host {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .telemetry-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  .chart-wrapper {
+    height: 185px;
+  }
+}
