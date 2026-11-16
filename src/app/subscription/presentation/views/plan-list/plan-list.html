@@ -1,19 +1,48 @@
-<app-toolbar />
 <div class="plans-container">
+  <!-- Page header: title on the left, billing period toggle on the right -->
   <header class="page-header">
     <div>
       <h1>{{ 'subscription.plans.title' | translate }}</h1>
       <p>{{ 'subscription.plans.subtitle' | translate }}</p>
     </div>
-    <button mat-button (click)="signOut()">{{ 'onboarding.sign-out' | translate }}</button>
+
+    <!-- Monthly / Yearly segmented control -->
+    <div class="period-toggle" role="group"
+         [attr.aria-label]="'subscription.plans.period-label' | translate">
+      <button type="button"
+              [attr.aria-pressed]="billingPeriod() === 'MONTHLY'"
+              (click)="choosePeriod('MONTHLY')">
+        {{ 'subscription.plans.toggle-monthly' | translate }}
+      </button>
+      <button type="button"
+              [attr.aria-pressed]="billingPeriod() === 'YEARLY'"
+              (click)="choosePeriod('YEARLY')">
+        {{ 'subscription.plans.toggle-yearly' | translate }}
+      </button>
+    </div>
   </header>
 
+  <!-- Shown when the user already has an active subscription (no plan can be bought) -->
+  @if (subscribed()) {
+    <div class="info-banner" role="status">
+      <mat-icon>info</mat-icon>
+      <p>
+        {{ 'subscription.plans.already-active' | translate }}
+        @if (hasLaboratory()) {
+          <a routerLink="/subscriptions/billing">{{ 'subscription.plans.open-billing' | translate }}</a>
+        }
+      </p>
+    </div>
+  }
+
+  <!-- Loading state -->
   @if (store.isLoading()) {
     <div class="loading-shade">
       <mat-spinner diameter="50"></mat-spinner>
     </div>
   }
 
+  <!-- Error state with retry -->
   @if (store.error()) {
     <div class="error-container">
       <mat-icon>error_outline</mat-icon>
@@ -22,51 +51,93 @@
     </div>
   }
 
-  @if (!store.isLoading() && !store.error() && !store.plans().length) {
+  <!-- Empty state: no plans for the selected billing period -->
+  @if (!store.isLoading() && !store.error() && !visiblePlans().length) {
     <div class="empty-state">
       <mat-icon>payments</mat-icon>
-      <p>{{ 'onboarding.no-plans' | translate }}</p>
+      <h2>{{ 'onboarding.no-plans' | translate }}</h2>
       <button mat-stroked-button (click)="store.loadPlans()">{{ 'onboarding.retry' | translate }}</button>
     </div>
   }
+
+  <!-- Plans grid -->
   @if (!store.isLoading() && !store.error()) {
-  <div class="plans-grid">
-    @for (plan of store.plans(); track plan.id) {
-      <mat-card class="plan-card mat-elevation-z2" [class.highlight]="plan.code === 'ENTERPRISE'">
-        <mat-card-header>
-          <mat-card-title>{{ plan.name }}</mat-card-title>
-          <mat-card-subtitle>{{ plan.description }}</mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-          <div class="price-block">
-            <span class="price">{{ formatPrice(plan) }}</span>
-            <span class="period">
-              / {{ 'subscription.billing-period.' + plan.billingPeriod.toLowerCase() | translate }}
+    <div class="plans-grid">
+      @for (plan of visiblePlans(); track plan.id) {
+        <mat-card class="plan-card" [class.highlight]="plan.code === 'ENTERPRISE'" [class.current]="isCurrent(plan)">
+          <!-- Badge for the plan the laboratory pays for, or for the recommended plan (icon + text, not color only) -->
+          @if (isCurrent(plan)) {
+            <span class="plan-badge">
+              <mat-icon>check_circle</mat-icon>
+              {{ 'subscription.plans.current-plan' | translate }}
             </span>
+          } @else if (plan.code === 'ENTERPRISE') {
+            <span class="plan-badge">
+              <mat-icon>star</mat-icon>
+              {{ 'subscription.plans.recommended' | translate }}
+            </span>
+          }
+
+          <!-- Plan name and description (centered) -->
+          <div class="plan-head">
+            <h2>{{ plan.name }}</h2>
+            <p>{{ plan.description }}</p>
           </div>
 
-          <div class="limits-grid">
-            <div>
-              <span class="label">{{ 'subscription.plans.max-users' | translate }}</span>
-              <strong>{{ plan.maxUsers }}</strong>
+          <mat-card-content>
+            <!-- Price and billing period -->
+            <div class="price-block">
+              <span class="price">{{ formatPrice(plan) }}</span>
+              <span class="period">
+                / {{ 'subscription.billing-period.' + plan.billingPeriod.toLowerCase() | translate }}
+              </span>
             </div>
-            <div>
-              <span class="label">{{ 'subscription.plans.max-equipment' | translate }}</span>
-              <strong>{{ plan.maxEquipment === null ? ('subscription.plans.unlimited' | translate) : plan.maxEquipment }}</strong>
-            </div>
-          </div>
 
-        </mat-card-content>
+            <!-- Primary action: buy the plan, or, while a subscription is active, its state or the way to Billing -->
+            @if (!subscribed()) {
+              <button mat-flat-button class="select-btn" (click)="onSelectPlan(plan)">
+                {{ 'subscription.plans.get' | translate: { name: plan.name } }}
+              </button>
+            } @else if (isCurrent(plan) && currentSubscription(); as current) {
+              <p class="plan-status">
+                <mat-icon>check_circle</mat-icon>
+                <span>
+                  {{ (current.cancelAtPeriodEnd ? 'subscription.plans.current-until' : 'subscription.plans.current-renews')
+                    | translate: { date: (current.currentPeriodEnd | dateOnly) } }}
+                </span>
+              </p>
+            } @else if (hasLaboratory()) {
+              <a mat-stroked-button class="billing-link" routerLink="/subscriptions/billing">
+                {{ 'subscription.plans.manage-in-billing' | translate }}
+                <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+              </a>
+            } @else {
+              <p class="plan-note">{{ 'subscription.plans.unavailable' | translate }}</p>
+            }
 
-        <mat-card-actions>
-          <button mat-raised-button color="primary" (click)="onSelectPlan(plan)"
-            [disabled]="iamStore.onboarding()?.subscriptionStatus === 'ACTIVE'">
-            {{ 'subscription.plans.select' | translate }}
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    }
-  </div>
+            <hr class="divider" />
+
+            <!-- Features list -->
+            <h3 class="features-title">{{ 'subscription.plans.features' | translate }}</h3>
+            <ul class="features-list">
+              <li>
+                <mat-icon>check</mat-icon>
+                <span>
+                  {{ 'subscription.plans.max-users' | translate }}:
+                  <strong>{{ plan.maxUsers }}</strong>
+                </span>
+              </li>
+              <li>
+                <mat-icon>check</mat-icon>
+                <span>
+                  {{ 'subscription.plans.max-equipment' | translate }}:
+                  <strong>{{ plan.maxEquipment === null ? ('subscription.plans.unlimited' | translate) : plan.maxEquipment }}</strong>
+                </span>
+              </li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
   }
 </div>

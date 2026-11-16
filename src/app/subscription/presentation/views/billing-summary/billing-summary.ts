@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { SubscriptionStore } from '../../../application/subscription.store';
 import { IamStore } from '../../../../iam/application/iam.store';
+import { DateOnlyPipe } from '../../../../shared/presentation/pipes/date-only.pipe';
+import { formatDate } from '../../../../shared/presentation/utils/date-time-format';
+import { TablePaginator, paginate } from '../../../../shared/presentation/components/table-paginator/table-paginator';
 
 /**
  * Component responsible for displaying subscription and payment information.
@@ -24,10 +27,10 @@ import { IamStore } from '../../../../iam/application/iam.store';
   selector: 'app-billing-summary',
   standalone: true,
   imports: [
-    CommonModule,
-    DatePipe,
+    TablePaginator, CommonModule,
+    DateOnlyPipe,
     RouterLink,
-    TranslateModule,
+    TranslatePipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -36,9 +39,13 @@ import { IamStore } from '../../../../iam/application/iam.store';
     MatProgressSpinnerModule,
   ],
   templateUrl: './billing-summary.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './billing-summary.css',
 })
 export class BillingSummary implements OnInit {
+  /** Page of the table shown; ten rows unless the person chooses more. */
+  protected readonly paymentPage = paginate(() => this.store.payments());
+
   /**
    * Store responsible for subscription and payment state.
    */
@@ -86,9 +93,9 @@ export class BillingSummary implements OnInit {
     const subscription = this.store.currentSubscription();
 
     if (!subscription || subscription.cancelAtPeriodEnd) return;
-    const end = subscription.currentPeriodEnd
-      ? new Date(subscription.currentPeriodEnd).toLocaleDateString(this.translate.currentLang || 'en') : '';
-    if (!confirm(this.translate.instant('subscription.billing.cancel-renewal-confirm', { end }))) return;
+    const end = formatDate(subscription.currentPeriodEnd, this.translate.currentLang() || 'en');
+    if (!confirm(this.translate.instant('subscription.billing.cancel-renewal-confirm', { end })))
+      return;
 
     this.store.cancelRenewal(subscription.id);
   }
