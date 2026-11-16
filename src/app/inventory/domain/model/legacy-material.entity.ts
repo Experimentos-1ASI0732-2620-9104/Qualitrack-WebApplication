@@ -11,12 +11,12 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  * units, available balance, supplier details, batch information,
  * and expiration date.
  *
- * This interface extends BaseEntity to maintain a consistent
+ * This class implements BaseEntity to maintain a consistent
  * entity structure across the domain.
  *
  * @example
  * ```TypeScript
- * const material: LegacyMaterial = {
+ * const material = new LegacyMaterial({
  *   id: 1,
  *   code: 'MAT-001',
  *   name: 'Wheat Flour',
@@ -25,12 +25,12 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
  *   supplier: 'Food Supplies S.A.',
  *   batchNumber: 'LOT-2026-001',
  *   expiresOn: '2026-12-31'
- * };
+ * });
  *
  * console.log(material.name); // 'Wheat Flour'
  * ```
  */
-export interface LegacyMaterial extends BaseEntity {
+export class LegacyMaterial implements BaseEntity {
   /**
    * The unique identifier of the raw material.
    */
@@ -93,4 +93,24 @@ export interface LegacyMaterial extends BaseEntity {
    * '2026-12-31'
    */
   expiresOn: string;
+
+  constructor(params: {
+    id: number;
+    code: string;
+    name: string;
+    unit: string;
+    balance: number;
+    supplier: string;
+    batchNumber: string;
+    expiresOn: string;
+  }) {
+    this.id = params.id;
+    this.code = params.code;
+    this.name = params.name;
+    this.unit = params.unit;
+    this.balance = params.balance;
+    this.supplier = params.supplier;
+    this.batchNumber = params.batchNumber;
+    this.expiresOn = params.expiresOn;
+  }
 }

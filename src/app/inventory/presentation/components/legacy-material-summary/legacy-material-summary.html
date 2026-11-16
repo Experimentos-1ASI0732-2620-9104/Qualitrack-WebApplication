@@ -1,0 +1,16 @@
+<section class="stock-summary" [attr.aria-label]="'material-history.summary' | translate">
+  <div class="stock-total">
+    <span>{{ 'material-history.available' | translate }}</span>
+    <strong [class.low]="material().quantityInStock <= material().minimumStock">{{ material().quantityInStock | number:'1.0-3' }} <small>{{ material().unit }}</small></strong>
+    @if (material().quantityInStock <= material().minimumStock) {
+      <span class="warning">{{ 'raw-material-list.lowStock' | translate }}</span>
+    }
+  </div>
+  <dl>
+    <div><dt>{{ 'raw-material-list.code' | translate }}</dt><dd>{{ material().code }}</dd></div>
+    <div><dt>{{ 'raw-material-list.supplier' | translate }}</dt><dd>{{ material().supplier }}</dd></div>
+    <div><dt>{{ 'material-history.supplier-batch' | translate }}</dt><dd>{{ material().batchNumber }}</dd></div>
+    <div><dt>{{ 'raw-material-list.expiration' | translate }}</dt><dd>{{ material().expirationDate | dateOnly }}</dd></div>
+    <div><dt>{{ 'material-history.minimum' | translate }}</dt><dd>{{ material().minimumStock | number:'1.0-3' }} {{ material().unit }}</dd></div>
+  </dl>
+</section>

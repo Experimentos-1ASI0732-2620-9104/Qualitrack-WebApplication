@@ -1,0 +1,36 @@
+<section class="review" role="region" [attr.aria-label]="'inventory.review' | translate">
+  <h2>{{ 'inventory.review' | translate }} · {{ receipt().batchNumber }}</h2>
+  <form [formGroup]="form()" (ngSubmit)="confirmRequested.emit()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.decision' | translate }}</mat-label>
+        <mat-select formControlName="status">
+          @if (receipt().status === 'QUARANTINED' && receipt().availability !== 'EXPIRED') {
+            <mat-option value="RELEASED">{{ 'inventory.status.RELEASED' | translate }}</mat-option>
+          }
+          @if (receipt().status === 'RELEASED') {
+            <mat-option value="OBSERVED">{{ 'inventory.status.OBSERVED' | translate }}</mat-option>
+          }
+          <mat-option value="REJECTED">{{ 'inventory.status.REJECTED' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.reason' | translate }}</mat-label>
+        <textarea matInput formControlName="reason" maxlength="500" rows="3"></textarea>
+        @if (form().controls.reason.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.reason.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <div class="actions">
+      <button mat-button type="button" (click)="cancelRequested.emit()" [disabled]="saving()">
+        {{ 'inventory.cancel' | translate }}
+      </button>
+      <button mat-flat-button class="primary-btn" type="submit" [disabled]="saving()">
+        <mat-icon>fact_check</mat-icon>{{ 'inventory.confirmReview' | translate }}
+      </button>
+    </div>
+  </form>
+</section>

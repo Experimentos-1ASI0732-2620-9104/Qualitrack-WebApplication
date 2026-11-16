@@ -1,0 +1,52 @@
+<section class="editor">
+  <h2>{{ 'inventory.edit' | translate }}</h2>
+  <form [formGroup]="form()" (ngSubmit)="saveRequested.emit()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.code' | translate }}</mat-label>
+        <input matInput formControlName="code" maxlength="50" autocomplete="off" />
+        @if (form().controls.code.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.code.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        } @else if (form().controls.code.hasError('code')) {
+          <mat-error>{{ 'common.invalidCode' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.name' | translate }}</mat-label>
+        <input matInput formControlName="name" maxlength="150" />
+        @if (form().controls.name.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.name.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.minimum' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="minimumStock"
+          min="0"
+          [max]="maxStock"
+          step="0.001"
+        />
+        <span matTextSuffix>{{ unit() }}</span>
+        @if (form().controls.minimumStock.hasError('max')) {
+          <mat-error>{{ 'inventory.quantityTooLarge' | translate }}</mat-error>
+        } @else {
+          <mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <div class="actions">
+      <button mat-button type="button" (click)="cancelRequested.emit()" [disabled]="saving()">
+        {{ 'inventory.cancel' | translate }}
+      </button>
+      <button mat-flat-button class="primary-btn" type="submit" [disabled]="saving()">
+        <mat-icon>save</mat-icon>{{ 'inventory.save' | translate }}
+      </button>
+    </div>
+  </form>
+</section>
