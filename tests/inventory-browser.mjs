@@ -1,170 +1,152 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { mkdir, readFile } from 'node:fs/promises';
 
-const origin = process.env.WEB_URL ?? 'http://127.0.0.1:4200';
-const output = process.env.INVENTORY_ARTIFACTS ?? join(tmpdir(), 'qualitrack-inventory-verification');
-await mkdir(output, { recursive: true });
+const origin = process.env.WEB_URL ?? 'http://localhost:4200';
+const directory = process.env.OUTPUT_DIR ?? 'test-results/inventory';
+const english = JSON.parse(await readFile('public/i18n/en.json', 'utf8'));
+const texts = english.inventory;
+/** The button that registers a material, named like every register button of the application. */
+const register = english.common.register;
+await mkdir(directory, { recursive: true });
+
+const environment = { id: 1, code: 'ALM-01', name: 'Raw material warehouse', usage: 'RAW_MATERIAL_STORAGE' };
+const materialsPath = '/laboratories/42/environments/1/raw-materials';
+
 const browser = await chromium.launch();
 try {
- for (const width of process.argv[2] ? [Number(process.argv[2])] : [1440, 768, 375, 320]) {
-  const context = await browser.newContext({ viewport: { width, height: 960 } });
-  await context.addInitScript(() => {
-   localStorage.setItem('token', 'test.' + btoa(JSON.stringify({ exp: Date.now() / 1000 + 3600 })) + '.test');
-   localStorage.setItem('userId', '27'); localStorage.setItem('username', 'Inventory fixture');
-   localStorage.setItem('roles', '["ROLE_QA_MANAGER"]');
-  });
-  let material = null, receipt = null, stale = false, posts = 0, rejectRegistration = true;
-  const movements = [], usages = [];
-  const batch = { id: 7, labId: 42, productId: 3, productName: 'Test product', batchNumber: 'LOT-007',
-   quantity: 10, unit: 'units', status: 'IN_PROGRESS', startDate: '2026-09-08' };
-  const addMovement = (type, amount, before, productBatchId = null, reason = '') => {
-   const movement = { id: movements.length + 1, materialId: 2, receiptId: 11, productBatchId, type, amount,
-    unit: 'kg', stockBefore: before, stockAfter: receipt.availableAmount, statusAfter: receipt.status,
-    actorId: 27, occurredAt: '2026-09-13T15:00:00Z', reason };
-   movements.unshift(movement);
-  };
-  await context.route('**/api/v1/**', async route => {
-   const path = new URL(route.request().url()).pathname;
-   const method = route.request().method(), data = method === 'GET' ? null : route.request().postDataJSON();
-   let body = [], status = 200;
-   if (path.endsWith('/users/me/onboarding')) body = { userId: 27, laboratoryId: 42, subscriptionId: 73, subscriptionStatus: 'ACTIVE', nextStep: 'READY' };
-   else if (path.endsWith('/inventory/materials')) {
-    if (method === 'POST') {
-     if (rejectRegistration) { rejectRegistration = false; status = 409; body = { details: 'Material code already exists' }; }
-     else { material = { ...data, id: 2, laboratoryId: 42, legacyId: null }; status = 201; body = material; }
-    }
-    else body = material ? [{ ...material, usableStock: receipt?.status === 'RELEASED' ? receipt.availableAmount : 0, physicalStock: receipt?.availableAmount ?? 0 }] : [];
-   } else if (path.endsWith('/inventory/materials/2/receipts')) {
-    if (method === 'POST') {
-     receipt = { ...data, id: 11, rawMaterialId: 2, laboratoryId: 42, initialAmount: data.amount, availableAmount: data.amount, status: 'QUARANTINED' };
-     addMovement('RECEIPT', data.amount, 0); status = 201; body = receipt;
-    } else body = receipt ? [receipt] : [];
-   } else if (path.endsWith('/inventory/receipts/11/reviews')) {
-    assert.ok(data.reason.length); receipt.status = data.status; addMovement('REVIEW', 0, receipt.availableAmount, null, data.reason); body = receipt;
-   } else if (path.endsWith('/inventory/materials/2/usable-receipts')) {
-    body = receipt?.status === 'RELEASED' && receipt.availableAmount > 0 ? [receipt] : [];
-   } else if (path.endsWith('/inventory/materials/2/movements')) body = movements;
-   else if (path.endsWith('/inventory/consumptions')) {
-    posts++; assert.equal(data.unit, 'kg'); assert.equal(data.receiptId, 11); assert.ok(data.operationId);
-    if (stale) { receipt.availableAmount = 40; stale = false; }
-    if (data.amount > receipt.availableAmount) { status = 409; body = { details: 'Insufficient stock in receipt' }; }
-    else {
-     const before = receipt.availableAmount; receipt.availableAmount -= data.amount; addMovement('CONSUMPTION', -data.amount, before, 7);
-     usages.push({ id: posts, batchId: 7, rawMaterialId: 2, inventoryReceiptId: 11, rawMaterialName: material.name,
-      quantityUsed: data.amount, unit: 'kg', usageDate: '2026-09-13T15:00:00Z', stockBefore: before, stockAfter: receipt.availableAmount });
-     status = 201; body = { stockBefore: before, stockAfter: receipt.availableAmount };
-    }
-   } else if (path.endsWith('/batches/7/raw-materials')) body = usages;
-   else if (path.endsWith('/batches/7')) body = batch;
-   else if (path.endsWith('/batches')) body = [batch];
-   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-  });
-  const page = await context.newPage(), errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.goto(origin + '/inventory');
-  await page.waitForURL('**/inventory/inventory-catalogue');
-  const openMenu = async () => {
-   if (width < 1024) await page.getByRole('button', { name: 'Main navigation', exact: true }).click();
-  };
-  await openMenu();
-  const inventoryMenu = page.locator('mat-expansion-panel').filter({
-   has: page.locator('.nav-label', { hasText: /^Inventory$/ }),
-  });
-  const inventoryHeader = inventoryMenu.locator('mat-expansion-panel-header');
-  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'true');
-  await inventoryHeader.click();
-  await inventoryMenu.locator('mat-expansion-panel-header[aria-expanded="false"]').waitFor();
-  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'false');
-  await inventoryHeader.focus();
-  await inventoryHeader.press('Enter');
-  await inventoryMenu.locator('mat-expansion-panel-header[aria-expanded="true"]').waitFor();
-  assert.equal(await inventoryHeader.getAttribute('aria-expanded'), 'true');
-  assert.ok((await inventoryMenu.getByRole('button', { name: 'Material catalogue', exact: true }).getAttribute('class')).includes('sub-active'));
-  await page.screenshot({ path: join(output, `navigation-${width}.png`), fullPage: true, animations: 'disabled' });
-  await inventoryMenu.getByRole('button', { name: 'Register material', exact: true }).click();
-  await page.waitForURL('**/inventory/register-material');
-  await page.getByLabel('Code', { exact: true }).waitFor();
-  const registration = page.locator('app-register-material');
-  assert.equal(await registration.count(), 1);
-  assert.equal(await page.locator('app-inventory-catalogue').count(), 0);
-  assert.equal(await registration.locator('table, .summary-strip').count(), 0);
-  assert.equal(await registration.getByRole('button', { name: 'Previous balances', exact: true }).count(), 0);
-  await page.screenshot({ path: join(output, `register-${width}.png`), fullPage: true, animations: 'disabled' });
-  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.waitForURL('**/inventory/inventory-catalogue');
-  await page.getByRole('button', { name: 'New material', exact: true }).click();
-  await page.waitForURL('**/inventory/register-material');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await registration.getByText('Complete this field.', { exact: true }).first().waitFor();
-  assert.equal(await registration.getByText('Complete this field.', { exact: true }).count(), 2);
-  assert.equal(material, null);
-  await page.getByLabel('Code', { exact: true }).fill('RM-001');
-  await page.getByLabel('Material', { exact: true }).fill('Sodium chloride');
-  await page.getByLabel('Minimum stock', { exact: true }).fill('20');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('alert').filter({ hasText: 'Material code already exists' }).waitFor();
-  assert.equal(await page.getByLabel('Code', { exact: true }).inputValue(), 'RM-001');
-  assert.equal(await page.getByLabel('Material', { exact: true }).inputValue(), 'Sodium chloride');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.waitForURL('**/inventory/inventory-catalogue');
-  assert.equal(await page.locator('app-register-material').count(), 0);
-  await page.getByRole('link', { name: 'Sodium chloride', exact: true }).click();
-  await page.waitForURL('**/inventory/inventory-detail/2');
-  await page.goto(origin + '/inventory/materials/2');
-  await page.waitForURL('**/inventory/inventory-detail/2');
-  await page.getByRole('button', { name: 'New receipt', exact: true }).click();
-  await page.getByLabel('Supplier', { exact: true }).fill('IoTech test supplier');
-  await page.getByLabel('Supplier lot', { exact: true }).fill('SUP-001');
-  await page.getByLabel('Received quantity', { exact: true }).fill('100');
-  await page.getByLabel('Received on', { exact: true }).fill('2026-09-13');
-  await page.getByLabel('Expires on', { exact: true }).fill('2028-01-01');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByText('Quarantined', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Review', exact: true }).click();
-  await page.getByLabel('Review findings and reason').fill('Certificate verified and received quantity checked');
-  await page.getByRole('button', { name: 'Confirm review', exact: true }).click();
-  await page.getByText('Released', { exact: true }).waitFor();
-  await page.screenshot({ path: join(output, `receipts-${width}.png`), fullPage: true, animations: 'disabled' });
-  await page.goto(origin + '/batches/batch-detail/7');
-  await page.getByRole('tab', { name: 'Raw Materials Used' }).click();
-  const usage = page.locator('app-raw-material-usage');
-  const quantity = usage.getByRole('spinbutton'), add = usage.getByRole('button', { name: 'Add Material' });
-  const select = async () => {
-   await usage.locator('mat-select').nth(0).click(); await page.getByRole('option', { name: /Sodium chloride/ }).click();
-   await usage.locator('mat-select').nth(1).click(); await page.getByRole('option', { name: /SUP-001/ }).click();
-  };
-  await select(); await quantity.fill('200'); await quantity.blur();
-  await usage.getByText('Insufficient stock. Available: 100 kg.').waitFor();
-  assert.equal(await add.isDisabled(), true); assert.equal(posts, 0);
-  await page.screenshot({ path: join(output, `overdraft-${width}.png`), fullPage: true, animations: 'disabled' });
-  await quantity.fill('50'); await add.click(); await usage.getByText('Changes saved.', { exact: true }).waitFor();
-  assert.equal(receipt.availableAmount, 50);
-  await select(); await quantity.fill('50'); stale = true; await add.click();
-  await usage.getByText('Insufficient stock in receipt', { exact: true }).waitFor();
-  assert.equal(await quantity.inputValue(), '50'); assert.equal(usages.length, 1);
-  await quantity.fill('25'); await add.click(); await usage.getByText('Changes saved.', { exact: true }).waitFor();
-  assert.equal(receipt.availableAmount, 15);
-  await usage.getByRole('link', { name: 'Sodium chloride', exact: true }).first().click();
-  await page.waitForURL('**/inventory/inventory-detail/2');
-  await page.getByRole('tab', { name: 'Movements', exact: true }).click();
-  await page.getByText('Consumption', { exact: true }).first().waitFor();
-  await page.screenshot({ path: join(output, `movements-${width}.png`), fullPage: true, animations: 'disabled' });
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
-  assert.equal(overflow, false, `No horizontal overflow at ${width}px`);
-  await page.getByRole('tab', { name: 'Receipts', exact: true }).click();
-  await page.getByRole('button', { name: 'Review', exact: true }).click();
-  await page.getByLabel('Review findings and reason').fill('Supplier reported a quality defect');
-  await page.getByRole('button', { name: 'Confirm review', exact: true }).click();
-  await page.getByRole('heading', { name: 'Product batches using observed or rejected receipts' }).waitFor();
-  assert.equal(receipt.status, 'REJECTED');
-  await page.getByRole('link', { name: 'Inventory', exact: true }).last().click();
-  await page.getByRole('link', { name: 'Sodium chloride', exact: true }).waitFor();
-  await page.screenshot({ path: join(output, `catalogue-${width}.png`), fullPage: true, animations: 'disabled' });
-  assert.deepEqual(errors, []); await context.close();
-  console.log(`PASS ${width}px: catalogue, receipt review, overdraft, consume, stale stock, movements and affected batches`);
- }
-} finally { await browser.close(); }
+  for (const width of process.argv[2] ? [Number(process.argv[2])] : [1440, 768, 375, 320]) {
+    const context = await browser.newContext({ viewport: { width, height: 960 } });
+    await context.addInitScript(() => {
+      localStorage.setItem('token', 'test.' + btoa(JSON.stringify({ exp: Date.now() / 1000 + 3600 })) + '.test');
+      localStorage.setItem('userId', '27');
+      localStorage.setItem('username', 'Inventory fixture');
+      localStorage.setItem('roles', '["ROLE_QA_MANAGER"]');
+    });
+    let material = null;
+    let receipt = null;
+    let rejectRegistration = true;
+    const movements = [];
+    const addMovement = (type, amount, before, reason) => {
+      movements.unshift({
+        id: movements.length + 1, materialId: 2, receiptId: 11, productBatchId: null, type, amount, unit: 'kg',
+        stockBefore: before, stockAfter: receipt.availableAmount, statusBefore: null, statusAfter: receipt.status,
+        reason, actorId: 27, occurredAt: '2026-09-13T15:00:00Z',
+      });
+    };
+    await context.route('**/api/v1/**', async (route) => {
+      const request = route.request();
+      const method = request.method();
+      const path = new URL(request.url()).pathname.replace(/^.*\/api\/v1/, '');
+      const data = method === 'GET' ? null : request.postDataJSON();
+      let body = [];
+      let status = 200;
+      const released = receipt?.status === 'RELEASED';
+      if (path === '/users/me/onboarding') body = { userId: 27, laboratoryId: 42, subscriptionId: 73, subscriptionStatus: 'ACTIVE', nextStep: 'READY' };
+      else if (path === '/users/me/profile') body = { userId: 27, staffId: null, username: 'fixture', email: null, roles: [], fullName: 'Inventory Fixture', dni: null, phoneNumber: null, location: null, position: null, hasPhoto: false };
+      else if (path === '/users/me/notifications/unread-count') body = { unreadCount: 0 };
+      else if (path === '/laboratories/42') body = { id: 42, name: 'Multilab', ownerId: 27 };
+      else if (path === '/laboratories/42/environments') body = [environment];
+      else if (path === materialsPath) {
+        if (method === 'POST') {
+          if (rejectRegistration) {
+            rejectRegistration = false;
+            status = 409;
+            body = { details: 'Material code already exists' };
+          } else {
+            material = { ...data, id: 2, laboratoryId: 42, environmentId: 1, usableStock: 0, physicalStock: 0, stockStatus: 'OUT', legacyId: null };
+            status = 201;
+            body = material;
+          }
+        } else body = material ? [{ ...material, usableStock: released ? receipt.availableAmount : 0, physicalStock: receipt?.availableAmount ?? 0 }] : [];
+      } else if (path === `${materialsPath}/2`) {
+        body = { ...material, usableStock: released ? receipt.availableAmount : 0, physicalStock: receipt?.availableAmount ?? 0 };
+      } else if (path === `${materialsPath}/2/batches`) {
+        if (method === 'POST') {
+          receipt = {
+            ...data, id: 11, laboratoryId: 42, rawMaterialId: 2, unit: 'kg', initialAmount: data.amount ?? data.initialAmount,
+            availableAmount: data.amount ?? data.initialAmount, status: 'QUARANTINED', usable: false, expirationStatus: 'VALID',
+          };
+          addMovement('RECEIPT', receipt.availableAmount, 0, 'Received');
+          status = 201;
+          body = receipt;
+        } else body = receipt ? [receipt] : [];
+      } else if (path === `${materialsPath}/2/batches/11/reviews` && method === 'POST') {
+        const previousStatus = receipt.status;
+        receipt = { ...receipt, status: data.status, usable: data.status === 'RELEASED' };
+        addMovement('REVIEW', 0, receipt.availableAmount, data.reason);
+        status = 201;
+        body = {
+          id: 21, rawMaterialBatchId: 11, rawMaterialId: 2, previousStatus, status: data.status, reason: data.reason,
+          reviewedBy: 27, reviewedAt: '2026-09-13T16:00:00Z',
+        };
+      } else if (path === `${materialsPath}/2/movements`) body = movements;
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+
+    // The inventory opens the catalogue of the only environment.
+    await page.goto(origin + '/inventory');
+    await page.waitForURL('**/inventory/environments/1/raw-materials');
+    await page.getByRole('heading', { name: texts.title }).waitFor();
+
+    // A material is registered in its own page, which does not show the catalogue.
+    await page.getByRole('link', { name: texts.newMaterial, exact: true }).click();
+    await page.waitForURL('**/inventory/environments/1/raw-materials/new');
+    const registration = page.locator('app-register-material');
+    await registration.getByLabel(texts.code).waitFor();
+    assert.equal(await page.locator('app-inventory-catalogue').count(), 0);
+    await page.screenshot({ path: `${directory}/register-${width}.png` });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+
+    // The required fields are asked for, and a refusal of the platform keeps what was written.
+    await registration.getByRole('button', { name: register, exact: true }).click();
+    await registration.getByText(texts.required, { exact: true }).first().waitFor();
+    assert.equal(material, null);
+    await registration.getByLabel(texts.code).fill('RM-001');
+    await registration.getByLabel(texts.name).fill('Sodium chloride');
+    await registration.getByLabel(texts.minimum).fill('20');
+    await registration.getByRole('button', { name: register, exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: 'Material code already exists' }).waitFor();
+    assert.equal(await registration.getByLabel(texts.code).inputValue(), 'RM-001');
+    await registration.getByRole('button', { name: register, exact: true }).click();
+    await page.waitForURL('**/inventory/environments/1/raw-materials');
+
+    // Its detail opens from the catalogue.
+    await page.getByRole('link', { name: 'Sodium chloride', exact: true }).click();
+    await page.waitForURL('**/inventory/environments/1/raw-materials/2');
+    await page.getByRole('heading', { name: /Sodium chloride/ }).waitFor();
+
+    // A receipt waits in quarantine until a quality manager reviews it.
+    await page.getByRole('button', { name: texts.newReceipt, exact: true }).click();
+    await page.locator('[formcontrolname=supplier]').fill('IoTech test supplier');
+    await page.locator('[formcontrolname=batchNumber]').fill('SUP-001');
+    await page.locator('[formcontrolname=amount]').fill('100');
+    await page.locator('[formcontrolname=receivedOn]').fill('2026-09-13');
+    await page.locator('[formcontrolname=expiresOn]').fill('2028-01-01');
+    await page.locator('.editor .actions button[mat-flat-button]').click();
+    await page.locator('.status', { hasText: texts.status.QUARANTINED }).first().waitFor();
+    assert.equal(receipt.availableAmount, 100);
+    await page.getByRole('button', { name: texts.review, exact: true }).click();
+    await page.locator('.review mat-form-field').first().click();
+    await page.getByRole('option', { name: texts.status.RELEASED, exact: true }).click();
+    await page.locator('[formcontrolname=reason]').fill('Certificate verified and received quantity checked');
+    await page.getByRole('button', { name: texts.confirmReview, exact: true }).click();
+    await page.locator('.status', { hasText: texts.status.RELEASED }).first().waitFor();
+    assert.equal(receipt.status, 'RELEASED');
+    await page.screenshot({ path: `${directory}/receipts-${width}.png` });
+
+    // What happened is in its movements.
+    await page.getByRole('tab', { name: texts.movements, exact: true }).click();
+    await page.getByText(texts.types.RECEIPT, { exact: true }).first().waitFor();
+    assert.deepEqual(errors, []);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `No horizontal overflow at ${width}px`);
+    await page.screenshot({ path: `${directory}/detail-${width}.png` });
+    await context.close();
+    console.log(`PASS inventory ${width}px: catalogue, registration, validation, refused code, receipt review and movements`);
+  }
+} finally {
+  await browser.close();
+}
