@@ -1,0 +1,76 @@
+:host {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 280px;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius-medium);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+h2 {
+  margin: 0;
+  color: var(--qt-text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.chart {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 220px;
+}
+
+.chart canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 760px) {
+  .chart-card {
+    min-height: 260px;
+    padding: 16px;
+  }
+
+  .chart {
+    min-height: 210px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card {
+    min-height: 240px;
+  }
+
+  .chart {
+    min-height: 190px;
+  }
+}

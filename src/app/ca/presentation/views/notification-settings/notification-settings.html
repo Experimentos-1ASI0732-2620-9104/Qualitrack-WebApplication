@@ -1,0 +1,14 @@
+<main class="operations-page qt-theme">
+  <app-page-header
+    icon="notifications_active"
+    titleKey="ca-alerts.page.title"
+    subtitleKey="profile.notifications.subtitle"
+    [tabs]="tabs"
+    activeTab="/alerts/notification-settings"
+    [refreshable]="false"
+  >
+    <section class="preferences">
+      <div class="settings-card"><app-notification-preferences-form /></div>
+    </section>
+  </app-page-header>
+</main>

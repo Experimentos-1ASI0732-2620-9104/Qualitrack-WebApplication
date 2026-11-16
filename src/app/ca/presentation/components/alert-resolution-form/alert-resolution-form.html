@@ -1,0 +1,30 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <h3>{{ 'ca-alerts.detail.corrective-action' | translate }}</h3>
+
+  <div
+    class="templates"
+    role="group"
+    [attr.aria-label]="'ca-alerts.detail.templates.label' | translate"
+  >
+    @for (template of templates; track template) {
+      <button class="template" type="button" (click)="useTemplate(template)">
+        {{ 'ca-alerts.detail.templates.' + template + '.label' | translate }}
+      </button>
+    }
+  </div>
+
+  <mat-form-field appearance="outline" class="notes">
+    <mat-label>{{ 'ca-alerts.fields.resolution-notes' | translate }}</mat-label>
+    <textarea #notesInput matInput rows="4" formControlName="notes"></textarea>
+    <mat-hint>{{ 'ca-alerts.detail.resolution-hint' | translate }}</mat-hint>
+    <mat-hint align="end">{{ writtenNotes().length }}/{{ maxNotesLength }}</mat-hint>
+    <mat-error>{{ 'ca-alerts.detail.resolution-required' | translate }}</mat-error>
+  </mat-form-field>
+
+  <div class="actions">
+    <button mat-flat-button class="primary-btn" type="submit" [disabled]="saving()">
+      <mat-icon aria-hidden="true">task_alt</mat-icon
+      >{{ 'ca-alerts.active.card.resolve' | translate }}
+    </button>
+  </div>
+</form>

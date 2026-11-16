@@ -1,0 +1,31 @@
+<section class="chart-card" aria-labelledby="alert-week-chart-title">
+  <h2 id="alert-week-chart-title">{{ 'ca-alerts.history.chart.title' | translate }}</h2>
+  <div class="chart" aria-hidden="true">
+    <canvas baseChart type="bar" [data]="data()" [options]="options"></canvas>
+  </div>
+  <table class="visually-hidden">
+    <caption>
+      {{
+        'ca-alerts.history.chart.title' | translate
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'ca-alerts.history.chart.week' | translate }}</th>
+        @for (severity of severities; track severity) {
+          <th scope="col">{{ severityChips[severity].labelKey | translate }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (week of weeks(); track week.start; let index = $index) {
+        <tr>
+          <th scope="row">{{ days()[index] }}</th>
+          @for (severity of severities; track severity) {
+            <td>{{ week.bySeverity[severity] }}</td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
