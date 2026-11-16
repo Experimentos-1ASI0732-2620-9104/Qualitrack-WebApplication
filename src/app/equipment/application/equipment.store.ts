@@ -5,10 +5,15 @@ import { IamStore } from '../../iam/application/iam.store';
 import { ApiError } from '../../shared/infrastructure/api-error';
 import { EquipmentApi } from '../infrastructure/equipment-api';
 import { Equipment } from '../domain/model/equipment.entity';
+import { InstallationEnvironment } from '../domain/model/installation-environment.entity';
+import { MaintenanceTechnician } from '../domain/model/maintenance-technician.entity';
 import { BpmParameterConfig } from '../domain/model/bpm-parameter-config.entity';
 import { MaintenanceRecord } from '../domain/model/maintenance-record.entity';
 import { RegisterEquipmentCommand } from '../domain/model/register-equipment.command';
 import { RegisterIotDeviceCommand } from '../domain/model/register-iot-device.command';
+import { RegisterEdgeGatewayCommand } from '../domain/model/register-edge-gateway.command';
+import { EdgeGatewayApiKey } from '../domain/model/edge-gateway-api-key';
+import { EdgeGatewayCoverage } from '../domain/model/edge-gateway-coverage.entity';
 import { ChangeEquipmentStatusCommand } from '../domain/model/change-equipment-status.command';
 import { ConfigureBpmCommand } from '../domain/model/configure-bpm.command';
 import { RegisterMaintenanceCommand } from '../domain/model/register-maintenance.command';
@@ -50,7 +55,8 @@ export function equipmentError(error: unknown): string {
  * @remarks
  * Equipment belongs to the laboratory; once located in an environment, its status changes and
  * maintenance are registered there. IoT devices (environmental devices and container monitors)
- * are the only equipment shown in the tracking views.
+ * are the only equipment shown in the tracking views. Edge Gateways are registered and located like
+ * equipment; the API key of an Edge Gateway is handed to the caller and never kept in the store.
  *
  * The state is exposed through read-only signals. Operations that save data share a single
  * `saving` flag, and failures are exposed through the `error` signal.
@@ -109,6 +115,9 @@ export class EquipmentStore {
   /** Translation key of the last success message, or `null` if there is none. */
   private readonly _successMsg = signal<string | null>(null);
 
+  /** Environments of the laboratory where equipment can be installed. */
+  private readonly _environments = signal<InstallationEnvironment[]>([]);
+
   /** Equipment and IoT devices of the laboratory (read-only). */
   readonly equipmentList = this._equipmentList.asReadonly();
 
@@ -133,6 +142,9 @@ export class EquipmentStore {
   /** Translation key of the last success message (read-only). */
   readonly successMsg = this._successMsg.asReadonly();
 
+  /** Environments of the laboratory where equipment can be installed (read-only). */
+  readonly environments = this._environments.asReadonly();
+
   /** Equipment and devices are registered and located by quality managers and administrators (US45, US47). */
   readonly canManage = this.iam.canManageQuality;
 
@@ -142,8 +154,13 @@ export class EquipmentStore {
   /** IoT devices of the laboratory, the only equipment that sends telemetry. */
   readonly iotDevices = computed(() => this._equipmentList().filter((equipment) => equipment.isIotDevice));
 
-  /** Equipment that is not an IoT device, used in manufacturing processes. */
-  readonly processEquipment = computed(() => this._equipmentList().filter((equipment) => !equipment.isIotDevice));
+  /** Edge Gateways of the laboratory, which send the telemetry of the IoT devices to the cloud. */
+  readonly edgeGateways = computed(() => this._equipmentList().filter((equipment) => equipment.isEdgeGateway));
+
+  /** Equipment that is neither an IoT device nor an Edge Gateway, used in manufacturing processes. */
+  readonly processEquipment = computed(() =>
+    this._equipmentList().filter((equipment) => !equipment.isIotDevice && !equipment.isEdgeGateway),
+  );
 
   /** Equipment whose status is `OPERATIONAL`. */
   readonly operationalEquipment = computed(() =>
@@ -166,6 +183,29 @@ export class EquipmentStore {
    */
   loadEquipment(labId: number = this.laboratoryId): void {
     void this.refresh(labId);
+  }
+
+  /**
+   * Reads the environments of the laboratory where equipment can be installed (Laboratory → Equipment).
+   *
+   * @remarks
+   * On failure the previous list is kept, so the views show the identifier of the environment instead of its name.
+   */
+  async loadEnvironments(): Promise<void> {
+    try {
+      this._environments.set(await firstValueFrom(this.api.getEnvironments(this.laboratoryId)));
+    } catch {
+      // The environments only name where equipment is; the equipment views keep working without them.
+    }
+  }
+
+  /**
+   * Reads the staff of the laboratory who can be chosen as the technician of a maintenance (Laboratory → Equipment).
+   *
+   * @returns The staff members of the laboratory of the session.
+   */
+  async loadTechnicians(): Promise<MaintenanceTechnician[]> {
+    return firstValueFrom(this.api.getTechnicians(this.laboratoryId));
   }
 
   /**
@@ -244,6 +284,89 @@ export class EquipmentStore {
     });
     if (!device || environmentId === null) return device;
     return (await this.assignToEnvironment(device, environmentId)) ?? device;
+  }
+
+  /**
+   * Registers an Edge Gateway and, when an environment is given, locates it in that environment.
+   *
+   * @remarks
+   * The text fields of the command are trimmed before being sent.
+   *
+   * @param command - The data of the Edge Gateway to register.
+   * @param environmentId - The environment the Edge Gateway will serve, or `null` to leave it unlocated.
+   * @returns The Edge Gateway, or null when it could not be registered. When the location fails the
+   * Edge Gateway stays registered and the error explains why it was not located.
+   */
+  async registerEdgeGateway(command: RegisterEdgeGatewayCommand, environmentId: number | null): Promise<Equipment | null> {
+    const gateway = await this.save(async () => {
+      const registered = await firstValueFrom(this.api.registerEdgeGateway(this.laboratoryId, {
+        name: command.name.trim(),
+        sensorExternalId: command.sensorExternalId.trim(),
+        serialNumber: command.serialNumber.trim(),
+        model: command.model.trim(),
+      }));
+      this.replace(registered);
+      return registered;
+    });
+    if (!gateway || environmentId === null) return gateway;
+    return (await this.assignToEnvironment(gateway, environmentId)) ?? gateway;
+  }
+
+  /**
+   * Reads whether an Edge Gateway already has an API key.
+   *
+   * @param equipmentId - The equipment identifier of the Edge Gateway.
+   * @returns `true` or `false`, or `null` when the status could not be read.
+   */
+  async loadEdgeGatewayApiKeyStatus(equipmentId: number): Promise<boolean | null> {
+    try {
+      return await firstValueFrom(this.api.getEdgeGatewayApiKeyStatus(this.laboratoryId, equipmentId));
+    } catch {
+      // The status only decides what the detail offers; the detail keeps working without it.
+      return null;
+    }
+  }
+
+  /**
+   * Issues the API key of an Edge Gateway.
+   *
+   * @remarks
+   * The cloud answers with the key only this once. The key is returned to the caller and is not kept
+   * in the store. The cloud rejects the request when the Edge Gateway is not located in an environment,
+   * is not operational or already has a key; the reason is exposed through `error`.
+   *
+   * @param equipmentId - The equipment identifier of the Edge Gateway.
+   * @returns The identifier of the Edge Gateway and its API key, or `null` when it could not be issued.
+   */
+  async issueEdgeGatewayApiKey(equipmentId: number): Promise<EdgeGatewayApiKey | null> {
+    return this.save(() => firstValueFrom(this.api.issueEdgeGatewayApiKey(this.laboratoryId, equipmentId)));
+  }
+
+  /**
+   * Reads the equipment, IoT devices and Edge Gateways located in an environment.
+   *
+   * @remarks
+   * The result is returned to the view of the environment and does not replace the equipment list
+   * of the laboratory. A failure is thrown, so the view can show it with `equipmentError`.
+   *
+   * @param environmentId - The identifier of the environment.
+   * @returns What is located in the environment.
+   */
+  async loadEnvironmentEquipment(environmentId: number): Promise<Equipment[]> {
+    return firstValueFrom(this.api.getEquipmentByEnvironment(this.laboratoryId, environmentId));
+  }
+
+  /**
+   * Reads how the Edge Gateways of an environment cover its IoT devices.
+   *
+   * @remarks
+   * A failure is thrown, so the view can show it with `equipmentError`.
+   *
+   * @param environmentId - The identifier of the environment.
+   * @returns The coverage of the environment.
+   */
+  async loadEdgeGatewayCoverage(environmentId: number): Promise<EdgeGatewayCoverage> {
+    return firstValueFrom(this.api.getEdgeGatewayCoverage(this.laboratoryId, environmentId));
   }
 
   /**
