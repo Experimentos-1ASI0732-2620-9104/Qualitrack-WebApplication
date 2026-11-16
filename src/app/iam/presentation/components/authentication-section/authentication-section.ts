@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [RouterLink, TranslatePipe, MatButtonModule, MatIconModule],
   templateUrl: './authentication-section.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './authentication-section.css',
 })
 export class AuthenticationSection {}
