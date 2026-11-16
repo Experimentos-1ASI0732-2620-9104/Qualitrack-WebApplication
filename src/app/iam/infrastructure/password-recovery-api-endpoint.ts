@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError } from 'rxjs';
+import { ErrorHandlingEnabledBaseType } from '../../shared/infrastructure/error-handling-enabled-base-type';
 import { environment } from '../../../environments/environment';
 import { PasswordRecoveryRequest, PasswordResetRequest } from './password-recovery.request';
 import { PasswordRecoveryAcceptedResource, PasswordResetCompletedResource } from './password-recovery-response';
@@ -11,13 +12,13 @@ import { PasswordRecoveryAcceptedResource, PasswordResetCompletedResource } from
  * @remarks
  * They are under `/authentication/`, so the authentication interceptor does not add the session token.
  */
-export class PasswordRecoveryApiEndpoint {
+export class PasswordRecoveryApiEndpoint extends ErrorHandlingEnabledBaseType {
   /**
    * Creates the endpoint client.
    *
    * @param http - Angular HttpClient used for the requests
    */
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { super(); }
 
   /**
    * Asks the platform to e-mail a verification code to the account (TS05).
@@ -28,7 +29,7 @@ export class PasswordRecoveryApiEndpoint {
    */
   requestRecovery(request: PasswordRecoveryRequest): Observable<PasswordRecoveryAcceptedResource> {
     return this.http.post<PasswordRecoveryAcceptedResource>(
-      `${environment.serverBasePath}${environment.iamPasswordRecoveryRequestsEndpointPath}`, request);
+      `${environment.serverBasePath}${environment.iamPasswordRecoveryRequestsEndpointPath}`, request).pipe(catchError(this.handleError('Failed to request password recovery')));
   }
 
   /**
@@ -39,6 +40,6 @@ export class PasswordRecoveryApiEndpoint {
    */
   resetPassword(request: PasswordResetRequest): Observable<PasswordResetCompletedResource> {
     return this.http.post<PasswordResetCompletedResource>(
-      `${environment.serverBasePath}${environment.iamPasswordResetsEndpointPath}`, request);
+      `${environment.serverBasePath}${environment.iamPasswordResetsEndpointPath}`, request).pipe(catchError(this.handleError('Failed to reset the password')));
   }
 }

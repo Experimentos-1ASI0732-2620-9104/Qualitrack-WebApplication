@@ -20,3 +20,17 @@ export const iamGuard: CanActivateFn = (_route, state) => {
 
   return router.createUrlTree(['/iam/sign-in'], { queryParams: { returnUrl: state.url } });
 };
+
+/**
+ * Route guard of the pages meant for visitors: the home page, sign-in, sign-up and password recovery.
+ *
+ * @remarks
+ * A session survives closing the browser, so whoever still has one goes to the dashboard, which takes them to the
+ * pending step of their onboarding. Otherwise these pages would offer to sign in next to the signed-in user.
+ */
+export const visitorGuard: CanActivateFn = () => {
+  const store = inject(IamStore);
+  const router = inject(Router);
+
+  return store.isSignedIn() ? router.createUrlTree(['/dashboard']) : true;
+};
