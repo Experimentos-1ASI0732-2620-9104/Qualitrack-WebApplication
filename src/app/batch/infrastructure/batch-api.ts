@@ -13,9 +13,19 @@ import {
 } from '../domain/model/batch-participation.entity';
 import { PharmaceuticalProduct } from '../domain/model/pharmaceutical-product.entity';
 import { RawMaterialUsage } from '../domain/model/raw-material-usage.entity';
-import { BatchApiEndpoint, BatchPath } from './batch-api-endpoint';
+import { BatchApiEndpoint } from './batch-api-endpoint';
+import { BatchPath } from '../domain/model/batch-path';
 import { ProductApiEndpoint } from './product-api-endpoint';
 import { RawMaterialUsageApiEndpoint } from './raw-material-usage-api-endpoint';
+import { ProductionEquipmentApiEndpoint } from './production-equipment-api-endpoint';
+import { ProductionEquipment } from '../domain/model/production-equipment.entity';
+import { ProductionEnvironmentApiEndpoint } from './production-environment-api-endpoint';
+import { ProductionEnvironment } from '../domain/model/production-environment.entity';
+import { ProductionStaffMemberApiEndpoint } from './production-staff-member-api-endpoint';
+import { ProductionStaffMember } from '../domain/model/production-staff-member.entity';
+import { ConsumableStockApiEndpoint } from './consumable-stock-api-endpoint';
+import { ConsumableRawMaterial } from '../domain/model/consumable-raw-material.entity';
+import { ConsumableLot } from '../domain/model/consumable-lot.entity';
 import {
   CreateBatchRequest,
   RejectBatchRequest,
@@ -47,6 +57,10 @@ export class BatchApi extends BaseApi {
   private readonly batchEndpoint: BatchApiEndpoint;
   private readonly productEndpoint: ProductApiEndpoint;
   private readonly usageEndpoint: RawMaterialUsageApiEndpoint;
+  private readonly equipmentEndpoint: ProductionEquipmentApiEndpoint;
+  private readonly environmentEndpoint: ProductionEnvironmentApiEndpoint;
+  private readonly staffEndpoint: ProductionStaffMemberApiEndpoint;
+  private readonly stockEndpoint: ConsumableStockApiEndpoint;
 
   /**
    * Creates a new BatchApi instance.
@@ -58,6 +72,63 @@ export class BatchApi extends BaseApi {
     this.batchEndpoint = new BatchApiEndpoint(http);
     this.productEndpoint = new ProductApiEndpoint(http);
     this.usageEndpoint = new RawMaterialUsageApiEndpoint(http);
+    this.equipmentEndpoint = new ProductionEquipmentApiEndpoint(http);
+    this.environmentEndpoint = new ProductionEnvironmentApiEndpoint(http);
+    this.staffEndpoint = new ProductionStaffMemberApiEndpoint(http);
+    this.stockEndpoint = new ConsumableStockApiEndpoint(http);
+  }
+
+  /**
+   * Retrieves the environments of a laboratory, as Product Batch Management uses them.
+   *
+   * @param laboratoryId - The ID of the laboratory.
+   * @returns An Observable of the environments.
+   */
+  getEnvironments(laboratoryId: number): Observable<ProductionEnvironment[]> {
+    return this.environmentEndpoint.getEnvironments(laboratoryId);
+  }
+
+  /**
+   * Retrieves the staff of a laboratory, as Product Batch Management assigns them to batches.
+   *
+   * @param laboratoryId - The ID of the laboratory.
+   * @returns An Observable of the staff members.
+   */
+  getStaff(laboratoryId: number): Observable<ProductionStaffMember[]> {
+    return this.staffEndpoint.getStaff(laboratoryId);
+  }
+
+  /**
+   * Retrieves the raw materials that a batch can consume from an environment.
+   *
+   * @param laboratoryId - The ID of the laboratory.
+   * @param environmentId - The environment where the raw materials are kept.
+   * @returns An Observable of the raw materials with their usable stock.
+   */
+  getConsumableRawMaterials(laboratoryId: number, environmentId: number): Observable<ConsumableRawMaterial[]> {
+    return this.stockEndpoint.getRawMaterials(laboratoryId, environmentId);
+  }
+
+  /**
+   * Retrieves the usable lots of a raw material: released, not expired and with stock.
+   *
+   * @param laboratoryId - The ID of the laboratory.
+   * @param environmentId - The environment where the raw material is kept.
+   * @param rawMaterialId - The ID of the raw material.
+   * @returns An Observable of the lots.
+   */
+  getConsumableLots(laboratoryId: number, environmentId: number, rawMaterialId: number): Observable<ConsumableLot[]> {
+    return this.stockEndpoint.getUsableLots(laboratoryId, environmentId, rawMaterialId);
+  }
+
+  /**
+   * Retrieves the equipment and IoT devices of a laboratory, as Product Batch Management uses them.
+   *
+   * @param laboratoryId - The ID of the laboratory.
+   * @returns An Observable of the equipment.
+   */
+  getProductionEquipment(laboratoryId: number): Observable<ProductionEquipment[]> {
+    return this.equipmentEndpoint.getEquipment(laboratoryId);
   }
 
   /**
