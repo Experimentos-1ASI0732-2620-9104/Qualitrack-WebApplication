@@ -1,0 +1,54 @@
+.undo-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.undo-action {
+  font-weight: 600;
+}
+
+.countdown {
+  display: none;
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 0 0 4px 4px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--qt-primary-soft);
+  transform-origin: left;
+  animation-name: undo-window-drain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.progress-bar.paused {
+  animation-play-state: paused;
+}
+
+@keyframes undo-window-drain {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    display: none;
+  }
+
+  .countdown {
+    display: inline;
+  }
+}

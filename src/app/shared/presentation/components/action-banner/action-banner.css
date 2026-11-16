@@ -1,0 +1,70 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.action-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: var(--qt-radius-medium);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.tone-danger {
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
+}
+
+.tone-warning {
+  background: var(--qt-warning-surface);
+  border-color: var(--qt-warning);
+  color: var(--qt-warning-text);
+}
+
+.action-banner > mat-icon {
+  flex: none;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+button {
+  flex: none;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--qt-radius-pill);
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  --mat-button-outlined-label-text-color: currentColor;
+  --mat-button-outlined-outline-color: currentColor;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .action-banner {
+    flex-wrap: wrap;
+  }
+
+  .message {
+    flex-basis: calc(100% - 36px);
+  }
+
+  button {
+    width: 100%;
+  }
+}

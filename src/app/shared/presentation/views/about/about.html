@@ -1,5 +1,4 @@
 <div class="about-page">
-  <app-toolbar />
 
   <main class="about-content">
     <section class="hero-section">
@@ -65,7 +64,7 @@
       <div class="value-grid">
         @for (item of valueItems; track item.title) {
           <article class="value-card">
-            <span class="material-symbols-outlined value-icon">{{ item.icon }}</span>
+            <span class="material-icons value-icon" aria-hidden="true">{{ item.icon }}</span>
             <h3>{{ item.title | translate }}</h3>
             <p>{{ item.description | translate }}</p>
           </article>

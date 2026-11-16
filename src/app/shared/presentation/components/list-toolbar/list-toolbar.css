@@ -1,0 +1,155 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.row[hidden] {
+  display: none;
+}
+
+/* What the list shows on the left, the buttons to create at the right end */
+.context {
+  min-width: 0;
+}
+
+.context:empty {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.actions ::ng-deep > a,
+.actions ::ng-deep > button {
+  min-height: 40px;
+  border-radius: var(--qt-radius-pill);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.actions ::ng-deep > [mat-stroked-button] {
+  border-color: var(--qt-border);
+  color: var(--qt-text);
+}
+
+.toggle .count {
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  background: var(--qt-primary-strong);
+  border-radius: var(--qt-radius-pill);
+  color: var(--qt-surface);
+  font-size: 12px;
+  text-align: center;
+}
+
+.toggle .chevron {
+  margin-right: -4px;
+  margin-left: 4px;
+}
+
+.toggle[aria-expanded='true'] {
+  background: var(--qt-primary-surface);
+  border-color: var(--qt-primary);
+  color: var(--qt-primary-strong);
+}
+
+/* The filters with their counts, then the search and the order at the right end */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chips:empty {
+  display: none;
+}
+
+.find {
+  display: flex;
+  flex: 1 1 240px;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.find:empty {
+  display: none;
+}
+
+.search {
+  flex: 1 1 200px;
+  max-width: 340px;
+  min-width: 0;
+}
+
+.find ::ng-deep > :not(.search) {
+  flex: 0 0 auto;
+}
+
+.more {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.more:empty {
+  display: none;
+}
+
+.clear {
+  color: var(--qt-text-muted);
+}
+
+@media (max-width: 760px) {
+  .context {
+    flex: 1 1 100%;
+  }
+
+  .actions {
+    flex: 1 1 100%;
+    justify-content: stretch;
+  }
+
+  .actions ::ng-deep > a,
+  .actions ::ng-deep > button {
+    flex: 1 1 auto;
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  .find {
+    flex-basis: 100%;
+  }
+
+  .search {
+    max-width: none;
+  }
+}
+
+/* The field already has its own × to clear it */
+.search input::-webkit-search-cancel-button {
+  appearance: none;
+}

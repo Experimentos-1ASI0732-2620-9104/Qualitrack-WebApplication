@@ -1,25 +1,15 @@
 <div class="landing-container">
-  <app-toolbar></app-toolbar>
-
   <main class="landing-content">
-
     <div class="text-section">
       <h1 class="main-title">{{ 'home.title' | translate }}</h1>
       <p class="sub-title">{{ 'home.content' | translate }}</p>
 
-      <app-authentication-section></app-authentication-section>
+      <ng-container *ngComponentOutlet="authComponent" />
     </div>
 
     <div class="image-section">
-      <img
-        src="/two-female-pharmacists-checking-inventory-with-clipboard.jpg"
-        [alt]="'home.heroImageAlt' | translate"
-        width="450"
-        height="300"
-        decoding="async"
-        class="hero-image"
-        />
+      <img src="/two-female-pharmacists-checking-inventory-with-clipboard.jpg"
+           [alt]="'home.heroImageAlt' | translate" width="450" height="300" decoding="async" class="hero-image" />
     </div>
-
   </main>
 </div>
