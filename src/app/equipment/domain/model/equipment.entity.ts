@@ -2,13 +2,17 @@ import { BaseEntity } from '../../../shared/domain/model/base-entity';
 import { EquipmentStatus } from './equipment-status';
 import { IotDeviceType } from './iot-device-type';
 
+/** Type the cloud gives to the equipment that is an Edge Gateway. */
+export const EDGE_GATEWAY_TYPE = 'EDGE_GATEWAY';
+
 /**
  * Equipment registered in a laboratory (US45, US46).
  *
  * @remarks
  * An IoT device is an equipment with a device type and the identity Edge uses to recognise it;
- * only IoT devices send telemetry and appear in the tracking views. Equipment is located in one
- * environment of the laboratory once it is associated with it (US47).
+ * only IoT devices send telemetry and appear in the tracking views. An Edge Gateway is an equipment of
+ * type `EDGE_GATEWAY` with no device type: it sends the telemetry of the IoT devices of its environment
+ * to the cloud. Equipment is located in one environment of the laboratory once it is associated with it (US47).
  *
  * @example
  * ```typescript
@@ -57,6 +61,9 @@ export class Equipment implements BaseEntity {
 
   /**
    * The type or category of the equipment.
+   *
+   * @remarks
+   * It is free text, except for an Edge Gateway, whose type is always `EDGE_GATEWAY`.
    */
   type: string;
 
@@ -87,10 +94,11 @@ export class Equipment implements BaseEntity {
   deviceType: IotDeviceType | null;
 
   /**
-   * The identifier with which Edge recognises the device.
+   * The identifier with which Edge recognises the device, or with which an Edge Gateway
+   * authenticates in the cloud.
    *
    * @remarks
-   * It is `null` for equipment that is not an IoT device.
+   * It is `null` for equipment that is neither an IoT device nor an Edge Gateway.
    */
   sensorExternalId: string | null;
 
@@ -159,6 +167,15 @@ export class Equipment implements BaseEntity {
    */
   get isIotDevice(): boolean {
     return this.deviceType !== null;
+  }
+
+  /**
+   * Whether the equipment is an Edge Gateway.
+   *
+   * @returns `true` if the type of the equipment is `EDGE_GATEWAY`; otherwise `false`.
+   */
+  get isEdgeGateway(): boolean {
+    return this.type === EDGE_GATEWAY_TYPE;
   }
 
   /**
