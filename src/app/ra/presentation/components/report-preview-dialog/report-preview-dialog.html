@@ -1,0 +1,16 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ data.title | translate }} · {{ 'report-generator.preview' | translate }}</h2>
+  <div class="dialog-actions">
+    <button mat-flat-button type="button" (click)="download()">
+      <mat-icon aria-hidden="true">download</mat-icon>{{ 'common.download' | translate }}
+    </button>
+    <button mat-icon-button type="button" (click)="close()"
+            [attr.aria-label]="'common.close' | translate" [matTooltip]="'common.close' | translate">
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </div>
+</div>
+
+<mat-dialog-content class="dialog-content">
+  <iframe [src]="pdfUrl" [title]="data.title | translate" width="100%" height="100%"></iframe>
+</mat-dialog-content>

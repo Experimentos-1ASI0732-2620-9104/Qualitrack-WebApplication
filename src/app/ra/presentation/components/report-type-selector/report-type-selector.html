@@ -1,0 +1,19 @@
+<h2 class="section-title"><span class="badge">1</span> {{ 'report-generator.step-1' | translate }}</h2>
+
+<div class="cards-list">
+  @for (type of options; track type.id) {
+    <div class="type-card" [class.active]="state.type() === type.id" (click)="state.setType(type.id)">
+      <div class="icon-box" [ngClass]="type.id">
+        <mat-icon>{{ type.icon }}</mat-icon>
+      </div>
+      <div class="text-box">
+        <h3>{{ type.titleKey | translate }}</h3>
+        <p>{{ type.descKey | translate }}</p>
+        <span class="formats">{{ type.format }}</span>
+      </div>
+      @if (state.type() === type.id) {
+        <mat-icon class="check">check_circle</mat-icon>
+      }
+    </div>
+  }
+</div>

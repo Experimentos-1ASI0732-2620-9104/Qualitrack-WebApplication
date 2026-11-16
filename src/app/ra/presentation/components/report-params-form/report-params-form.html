@@ -1,0 +1,132 @@
+<div class="form-wrapper">
+  <h2 class="section-title">
+    <span class="badge">2</span> {{ 'report-generator.step-2' | translate }} • {{ getTitle() | translate }}
+  </h2>
+
+  <div class="card-body">
+    <div class="form-and-info">
+      <div class="form-column">
+        @if (state.type() === 'batch') {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ 'report-generator.select-batch' | translate }}</mat-label>
+            <mat-select [ngModel]="state.form().batchId" (ngModelChange)="state.updateForm({batchId: $event})">
+              @for (batch of batches(); track batch.id) {
+                <mat-option [value]="batch.id">{{ batch.batchNumber }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        @if (state.type() === 'compliance' || state.type() === 'inventory') {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ 'report-generator.select-environment' | translate }}</mat-label>
+            <mat-select [ngModel]="state.form().environmentId" (ngModelChange)="state.updateForm({environmentId: $event})">
+              <mat-option [value]="0">{{ 'report-generator.all-environments' | translate }}</mat-option>
+              @for (env of store.environments(); track env.id) {
+                <mat-option [value]="env.id">{{ env.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        @if (state.type() === 'equipment') {
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ 'report-generator.select-equipment' | translate }}</mat-label>
+            <mat-select [ngModel]="state.form().equipmentId" (ngModelChange)="state.updateForm({equipmentId: $event})">
+              @for (eq of locatedEquipment(); track eq.id) {
+                <mat-option [value]="eq.id">{{ eq.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        @if (state.type() === 'compliance' || state.type() === 'equipment') {
+          <div class="period-section">
+            <label class="input-label">{{ 'report-generator.period' | translate }}</label>
+            <div class="quick-chips">
+              <button type="button" class="chip" (click)="setQuickDate(7)">{{ 'report-generator.last-7-days' | translate }}</button>
+              <button type="button" class="chip" (click)="setQuickDate(30)">{{ 'report-generator.last-30-days' | translate }}</button>
+            </div>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-date-range-input [rangePicker]="picker">
+                <input matStartDate [placeholder]="'report-generator.start-date' | translate" [ngModel]="state.form().startDate" (ngModelChange)="state.updateForm({startDate: $event})">
+                <input matEndDate [placeholder]="'report-generator.end-date' | translate" [ngModel]="state.form().endDate" (ngModelChange)="state.updateForm({endDate: $event})">
+              </mat-date-range-input>
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-date-range-picker #picker></mat-date-range-picker>
+            </mat-form-field>
+            <span class="hint">{{ 'report-generator.max-days-hint' | translate }}</span>
+          </div>
+        }
+
+        <div class="format-section">
+          <label class="input-label">{{ 'report-generator.format' | translate }}</label>
+          <mat-button-toggle-group class="w-full" [hideSingleSelectionIndicator]="true" [ngModel]="state.form().format" (ngModelChange)="state.updateForm({format: $event})">
+            <mat-button-toggle value="PDF"><mat-icon>picture_as_pdf</mat-icon> PDF</mat-button-toggle>
+            <mat-button-toggle value="CSV"><mat-icon>table_chart</mat-icon> CSV</mat-button-toggle>
+          </mat-button-toggle-group>
+          <span class="hint">{{ 'report-generator.format-hint' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="info-column">
+        <div class="info-box">
+          <h4>{{ 'report-generator.report-content' | translate }}</h4>
+          <ul>
+            @switch (state.type()) {
+              @case ('batch') {
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.batch.general' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.batch.traceability' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.batch.equipment' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.batch.storage' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.batch.deviations' | translate }}</li>
+              }
+              @case ('compliance') {
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.compliance.summary' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.compliance.readings' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.compliance.time-in-range' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.compliance.alerts' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.compliance.actions' | translate }}</li>
+              }
+              @case ('inventory') {
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.inventory.date' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.inventory.environment' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.inventory.stock' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.inventory.expiration' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.inventory.author' | translate }}</li>
+              }
+              @case ('equipment') {
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.equipment.general' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.equipment.limits' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.equipment.maintenance' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.equipment.audit' | translate }}</li>
+                <li><mat-icon>check_circle</mat-icon> {{ 'report-generator.contents.equipment.scope' | translate }}</li>
+              }
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    @if (periodErrorKey(); as errorKey) {
+      <p class="period-error" role="alert">{{ errorKey | translate }}</p>
+    }
+
+    <div class="panel-footer">
+      <div class="actions">
+        @if (state.form().format === 'PDF') {
+          <button mat-icon-button class="preview-btn" type="button" (click)="onPreview()" [disabled]="!isValid() || store.isLoading()"
+                  [attr.aria-label]="'report-generator.preview' | translate"
+                  [matTooltip]="'report-generator.preview' | translate">
+            <mat-icon aria-hidden="true">visibility</mat-icon>
+          </button>
+        }
+
+        <button mat-flat-button class="primary-btn" type="button" (click)="onGenerate()" [disabled]="!isValid() || store.isLoading()">
+          <mat-icon>download</mat-icon>
+          {{ state.form().format === 'PDF' ? ('report-generator.generate-pdf' | translate) : ('report-generator.generate-excel' | translate) }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,60 @@
+<div class="table-card">
+  <table mat-table [dataSource]="trendPage.rows()" class="data-table">
+
+    <ng-container matColumnDef="variable">
+      <th mat-header-cell *matHeaderCellDef>{{ 'reporting.fields.variable' | translate }}</th>
+      <td mat-cell [attr.data-label]="'reporting.fields.variable' | translate" *matCellDef="let trend">
+        <div class="var-cell">
+          <strong>{{ 'tracking.metrics.' + trend.parameterName | translate }}</strong>
+          <small>{{ deviceLabel()(trend.equipmentId) }}</small>
+        </div>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="timeInRange">
+      <th mat-header-cell *matHeaderCellDef>{{ 'reporting.fields.time-in-range' | translate }}</th>
+      <td mat-cell [attr.data-label]="'reporting.fields.time-in-range' | translate" *matCellDef="let trend">
+        @if (trend.timeInRangePercent === null) {
+          <span class="progress-text">{{ 'reporting.deviations.not-enough' | translate }}</span>
+        } @else {
+          <div class="progress-cell">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="trend.timeInRangePercent" [class.warning]="trend.timeInRangePercent < 100"></div>
+            </div>
+            <span class="progress-text">{{ trend.timeInRangePercent | number:'1.0-1' }} %</span>
+          </div>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="deviations">
+      <th mat-header-cell *matHeaderCellDef>{{ 'reporting.fields.deviations' | translate }}</th>
+      <td mat-cell [attr.data-label]="'reporting.fields.deviations' | translate" *matCellDef="let trend">{{ trend.deviationCount | number }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="critical">
+      <th mat-header-cell *matHeaderCellDef>{{ 'reporting.fields.critical' | translate }}</th>
+      <td mat-cell [attr.data-label]="'reporting.fields.critical' | translate" *matCellDef="let trend">
+        @if (trend.criticalDeviationCount > 0) {
+          <span class="critical-badge"><mat-icon>error</mat-icon> {{ trend.criticalDeviationCount }} {{ 'reporting.deviations.critical-label' | translate }}</span>
+        } @else {
+          <span>—</span>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="trend">
+      <th mat-header-cell *matHeaderCellDef>{{ 'reporting.fields.trend' | translate }}</th>
+      <td mat-cell [attr.data-label]="'reporting.fields.trend' | translate" *matCellDef="let trend">
+            <span class="trend-cell">
+              <mat-icon>{{ trendIcon()(trend.trendDirection) }}</mat-icon>
+              {{ 'trend-direction.' + trend.trendDirection | translate }}
+            </span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns" (click)="select.emit(row)" [class.active-row]="isActive()(row)"></tr>
+  </table>
+  <app-table-paginator [page]="trendPage" />
+</div>

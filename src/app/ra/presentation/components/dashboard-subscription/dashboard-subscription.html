@@ -1,0 +1,51 @@
+<section class="subscription-section" aria-labelledby="subscription-title" data-testid="subscription">
+  <header class="section-header">
+    <h2 id="subscription-title">
+      <mat-icon>credit_card</mat-icon>{{ 'dashboard.subscription.title' | translate }}
+    </h2>
+  </header>
+
+  @if (status() === 'loading' || status() === 'error') {
+    <app-dashboard-state [state]="status()" (retry)="retry.emit()" />
+  } @else if (subscription(); as active) {
+    <div class="plan-heading">
+      <h3>{{ currentPlan()?.name || active.planCode }}</h3>
+      <span class="status ACTIVE">
+        {{ 'dashboard.overview.status.' + active.status | translate }}
+      </span>
+    </div>
+    <dl class="subscription-details">
+      <div>
+        <dt>{{ 'dashboard.overview.cycle' | translate }}</dt>
+        <dd>
+          {{ 'subscription.billing-period.' + active.billingCycle.toLowerCase() | translate }}
+        </dd>
+      </div>
+      @if (active.currentPeriodEnd; as periodEnd) {
+        <div>
+          <dt>{{ 'dashboard.overview.period-end' | translate }}</dt>
+          <dd>{{ formatDate()(periodEnd) }}</dd>
+        </div>
+      }
+      @if (currentPlan(); as plan) {
+        <div>
+          <dt>{{ 'dashboard.overview.catalog-price' | translate }}</dt>
+          <dd>{{ plan.priceAmount | currency: plan.currency : 'code' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'dashboard.overview.equipment-limit' | translate }}</dt>
+          <dd>{{ plan.maxEquipment ?? ('subscription.plans.unlimited' | translate) }}</dd>
+        </div>
+      }
+    </dl>
+    @if (plansStatus() === 'error') {
+      <p class="muted">{{ 'dashboard.overview.plan-unavailable' | translate }}</p>
+    }
+  } @else {
+    <p class="empty">{{ 'dashboard.cards.no-subscription' | translate }}</p>
+  }
+
+  <a mat-stroked-button routerLink="/subscriptions/billing">
+    <mat-icon>receipt_long</mat-icon>{{ 'dashboard.overview.manage-billing' | translate }}
+  </a>
+</section>

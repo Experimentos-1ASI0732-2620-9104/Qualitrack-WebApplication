@@ -1,0 +1,93 @@
+<section class="telemetry-section" aria-labelledby="telemetry-title" data-testid="telemetry">
+  <header class="section-header">
+    <h2 id="telemetry-title">
+      <mat-icon>sensors</mat-icon>{{ 'dashboard.overview.telemetry' | translate }}
+    </h2>
+    <a
+      mat-icon-button
+      routerLink="/tracking/monitoring"
+      [matTooltip]="'nav.tracking' | translate"
+      [attr.aria-label]="'nav.tracking' | translate"
+    >
+      <mat-icon>arrow_forward</mat-icon>
+    </a>
+  </header>
+
+  @if (equipmentStatus() === 'loading' || equipmentStatus() === 'error') {
+    <app-dashboard-state [state]="equipmentStatus()" (retry)="retry.emit()" />
+  } @else if (!devices().length) {
+    <p class="empty">{{ 'dashboard.overview.no-devices' | translate }}</p>
+  } @else {
+
+    <div class="telemetry-filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'dashboard.overview.equipment' | translate }}</mat-label>
+        <mat-select
+          [value]="selectedDeviceId()"
+          (selectionChange)="deviceChange.emit($event.value)"
+        >
+          @for (equipment of devices(); track equipment.id) {
+            <mat-option [value]="equipment.id">{{ equipment.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'dashboard.overview.parameter' | translate }}</mat-label>
+        <mat-select
+          [value]="activeSeries()?.key || ''"
+          [disabled]="!series().length"
+          (selectionChange)="seriesChange.emit($event.value)"
+        >
+          @for (item of series(); track item.key) {
+            <mat-option [value]="item.key">
+              {{ 'tracking.metrics.' + item.parameter | translate }} ({{ item.unit }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (measurementsStatus() === 'loading' || measurementsStatus() === 'error') {
+      <app-dashboard-state [state]="measurementsStatus()" (retry)="retry.emit()" />
+    } @else if (latestReading(); as latest) {
+      <div class="latest-reading">
+        <div>
+          <span>{{ 'dashboard.overview.latest' | translate }}</span>
+          <strong>{{ latest.value | number: '1.0-2' }} <small>{{ latest.unit }}</small></strong>
+        </div>
+        <time [attr.datetime]="latest.measuredAt">{{ formatDate()(latest.measuredAt) }}</time>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas
+          baseChart
+          type="line"
+          [data]="chartData()"
+          [options]="chartOptions()"
+          role="img"
+          [attr.aria-label]="
+            ('dashboard.overview.telemetry' | translate) + ': ' +
+            ('tracking.metrics.' + (activeSeries()?.parameter || '') | translate)
+          "
+          aria-describedby="telemetry-summary"
+        ></canvas>
+      </div>
+
+      <p id="telemetry-summary" class="chart-summary">
+        {{
+          'dashboard.overview.reading-summary'
+            | translate
+            : {
+              count: readings().length,
+              min: (readingRange()?.min || 0 | number: '1.0-2'),
+              max: (readingRange()?.max || 0 | number: '1.0-2'),
+              unit: latest.unit,
+            }
+        }}
+      </p>
+    } @else {
+      <p class="empty">{{ 'dashboard.overview.no-readings' | translate }}</p>
+    }
+  }
+</section>

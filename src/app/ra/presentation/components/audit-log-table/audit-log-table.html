@@ -1,0 +1,66 @@
+<div class="table-card">
+  <table mat-table [dataSource]="rowPage.rows()" class="data-table">
+    <!-- timestamp -->
+    <ng-container matColumnDef="timestamp">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ 'audit-log.table.timestamp' | translate }}
+      </th>
+      <td mat-cell [attr.data-label]="'audit-log.table.timestamp' | translate" *matCellDef="let row" class="date-cell">
+        <div class="date-time-container">
+          <strong>{{ row.dateLabel }}</strong>
+          <span class="time-text">{{ row.timeLabel }}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- action -->
+    <ng-container matColumnDef="action">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ 'audit-log.table.action' | translate }}
+      </th>
+      <td mat-cell [attr.data-label]="'audit-log.table.action' | translate" *matCellDef="let row">
+        <span class="action-badge" [ngClass]="row.badgeClass">{{ row.action }}</span>
+      </td>
+    </ng-container>
+
+    <!-- entity -->
+    <ng-container matColumnDef="entity">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ 'audit-log.table.entity' | translate }}
+      </th>
+      <td mat-cell [attr.data-label]="'audit-log.table.entity' | translate" *matCellDef="let row">
+        <div class="entity-info">
+          <span class="entity-type">{{ row.entityType }}</span>
+          <span class="entity-id">{{ row.entityId }}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- performedBy -->
+    <ng-container matColumnDef="performedBy">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ 'audit-log.table.performed-by' | translate }}
+      </th>
+      <td mat-cell [attr.data-label]="'audit-log.table.performed-by' | translate" *matCellDef="let row">
+        <div class="user-chip">
+          <mat-icon class="user-icon">account_circle</mat-icon>
+          {{ row.performedBy }}
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns" class="catalog-row"></tr>
+  </table>
+  <app-table-paginator [page]="rowPage" />
+
+  @if (loading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="50" />
+    </div>
+  }
+
+  @if (!loading() && rows().length === 0) {
+    <app-empty-state icon="manage_search" messageKey="audit-log.empty" />
+  }
+</div>

@@ -1,0 +1,68 @@
+<main class="dashboard">
+  <header class="page-header">
+    <h1>
+      <mat-icon aria-hidden="true">dashboard</mat-icon>
+      {{ store.overviewLaboratory().data?.name || ('dashboard.fallback-title' | translate) }}
+    </h1>
+    <button
+      mat-icon-button
+      type="button"
+      (click)="store.reloadOverview()"
+      [disabled]="store.overviewLoading()"
+      [matTooltip]="'dashboard.overview.refresh' | translate"
+      [attr.aria-label]="'dashboard.overview.refresh' | translate"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  <app-dashboard-summary [cards]="summaryCards()" />
+
+  <div class="overview-grid">
+      <app-dashboard-telemetry
+        [equipmentStatus]="store.overviewEquipment().status"
+        [devices]="store.overviewDevices()"
+        [selectedDeviceId]="store.overviewDeviceId()"
+        [series]="store.overviewSeries()"
+        [activeSeries]="store.overviewActiveSeries()"
+        [measurementsStatus]="store.overviewMeasurements().status"
+        [latestReading]="store.overviewLatestReading()"
+        [readings]="store.overviewReadings()"
+        [readingRange]="store.overviewReadingRange()"
+        [chartData]="chartData()"
+        [chartOptions]="chartOptions()"
+        [formatDate]="formatDate.bind(this)"
+        (deviceChange)="store.selectOverviewDevice($event)"
+        (seriesChange)="store.selectOverviewSeries($event)"
+        (retry)="retryTelemetry()"
+      />
+    @if (store.managesSubscription()) {
+      <app-dashboard-subscription
+        [status]="store.overviewSubscription().status"
+        [subscription]="store.overviewSubscription().data"
+        [currentPlan]="store.overviewCurrentPlan()"
+        [plansStatus]="store.overviewPlans().status"
+        [formatDate]="formatDate.bind(this)"
+        (retry)="retrySubscription()"
+      />
+    }
+
+    <app-dashboard-alerts
+      [alertsStatus]="store.overviewAlerts().status"
+      [openAlerts]="store.overviewOpenAlerts()"
+      [equipmentName]="store.overviewEquipmentName.bind(store)"
+      [formatDate]="formatDate.bind(this)"
+      (retry)="retryAlerts()"
+    />
+
+    <app-dashboard-batches
+      [batchesStatus]="store.overviewBatches().status"
+      [totalBatches]="store.overviewBatches().data?.length || 0"
+      [distribution]="batchDistribution()"
+      [recentBatches]="recentBatches()"
+      (retry)="reloadAll()"
+    />
+  </div>
+</main>
+
+<ng-container *ngComponentOutlet="noticeComponent" />

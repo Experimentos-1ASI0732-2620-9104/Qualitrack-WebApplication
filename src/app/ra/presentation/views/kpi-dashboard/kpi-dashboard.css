@@ -1,0 +1,252 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+/* The environment and the query, then what they show */
+app-list-toolbar {
+  margin-bottom: 16px;
+}
+
+.hint {
+  margin: 0 0 8px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+h3 {
+  margin: 24px 0 16px;
+  color: var(--qt-text);
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+mat-form-field {
+  min-width: 0;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
+}
+
+.date-range {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 32px 0 16px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--qt-primary-surface);
+  border-radius: 999px;
+  color: var(--qt-primary-strong);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.formula {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+mat-button-toggle-group {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 999px;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle + .mat-button-toggle {
+  border-left: none;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: var(--qt-background);
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+  font-weight: 600;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  padding: 0 24px;
+  line-height: 44px;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-focus-overlay {
+  display: none;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: -3px;
+  border-radius: 999px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  max-width: 880px;
+  margin: 0 0 24px;
+  padding: 16px;
+  background: var(--qt-error-surface);
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  color: var(--qt-error-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  padding: 64px 24px;
+  background: var(--qt-surface);
+  border: 1px dashed var(--qt-border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 16px;
+  color: var(--qt-text-subtle);
+  font-size: 40px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+}
+
+.empty-state p {
+  max-width: 400px;
+  margin: 0 0 24px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.empty-state button {
+  min-height: 48px;
+  padding: 8px 24px;
+  border-color: var(--qt-border);
+  border-radius: 999px;
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.empty-state button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* Responsive */
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 16px;
+  }
+
+  mat-button-toggle-group {
+    display: flex;
+    width: 100%;
+  }
+
+  mat-button-toggle-group ::ng-deep .mat-button-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  mat-button-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    padding: 0 12px;
+  }
+
+  .date-range {
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-header mat-button-toggle-group {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+.period-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

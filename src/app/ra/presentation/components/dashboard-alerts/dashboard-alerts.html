@@ -1,0 +1,38 @@
+<section class="alerts-section" aria-labelledby="alerts-title" data-testid="alerts">
+  <header class="section-header">
+    <h2 id="alerts-title">
+      <mat-icon>warning_amber</mat-icon>{{ 'dashboard.overview.attention' | translate }}
+    </h2>
+    <a
+      mat-icon-button
+      routerLink="/alerts"
+      [matTooltip]="'nav.alerts' | translate"
+      [attr.aria-label]="'nav.alerts' | translate"
+    >
+      <mat-icon>arrow_forward</mat-icon>
+    </a>
+  </header>
+
+  @if (alertsStatus() === 'loading' || alertsStatus() === 'error') {
+    <app-dashboard-state [state]="alertsStatus()" (retry)="retry.emit()" />
+  } @else {
+    @for (alert of openAlerts().slice(0, 4); track alert.id) {
+      <a class="record-row" [routerLink]="['/alerts', alert.id]">
+        <span class="severity-mark" [class.critical]="alert.severity === 'CRITICAL'"></span>
+        <div class="record-main">
+          <strong>{{ equipmentName()(alert.equipmentId) }}</strong>
+          <span>{{ alert.parameterName }}: {{ alert.recordedValue }} {{ alert.unit }}</span>
+          <small>{{ formatDate()(alert.timestamp) }}</small>
+        </div>
+        <div class="record-status">
+          <span class="status" [class]="alert.severity + ' status'">
+            {{ 'dashboard.overview.status.' + alert.severity | translate }}
+          </span>
+          <small>{{ 'dashboard.overview.status.' + alert.status | translate }}</small>
+        </div>
+      </a>
+    } @empty {
+      <p class="empty">{{ 'dashboard.overview.no-alerts' | translate }}</p>
+    }
+  }
+</section>

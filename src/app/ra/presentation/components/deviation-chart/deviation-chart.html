@@ -1,0 +1,36 @@
+<div class="chart-card">
+  <div class="chart-header">
+    <div>
+      <h3>{{ deviceLabel()(trend().equipmentId) }} · {{ 'tracking.metrics.' + trend().parameterName | translate }}</h3>
+      <p class="chart-subtitle">
+        {{ trend().dataPoints.length }} {{ 'reporting.deviations.readings' | translate }}
+      </p>
+    </div>
+    <button mat-stroked-button type="button" (click)="openDetail.emit()">
+      <mat-icon>open_in_new</mat-icon>
+      {{ 'reporting.deviations.view-detail' | translate }}
+    </button>
+  </div>
+
+  <div class="chart-wrapper">
+    <canvas baseChart
+            type="line"
+            [data]="chartData()"
+            [options]="chartOptions()">
+    </canvas>
+  </div>
+
+  <div class="custom-legend">
+    <span class="legend-item"><span class="line-legend"></span> {{ 'reporting.deviations.legend-reading' | translate }}</span>
+    @for (entry of legend(); track $index) {
+      <span class="legend-item">
+        <span [class]="entry.marker"></span>
+        {{ entry.key | translate: entry.params }}
+      </span>
+    } @empty {
+      @if (!thresholdsPending()) {
+        <span class="legend-item">{{ 'reporting.deviations.no-thresholds' | translate }}</span>
+      }
+    }
+  </div>
+</div>

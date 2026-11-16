@@ -1,3 +1,5 @@
+import { AuditedStaffMember } from '../domain/model/audited-staff-member.entity';
+import { AuditedStaffMemberApiEndpoint } from './audited-staff-member-api-endpoint';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -11,6 +13,16 @@ import { KpiApiEndpoint } from './kpi-api-endpoint';
 import { DeviationTrendApiEndpoint } from './deviation-trend-api-endpoint';
 import { AuditLogApiEndpoint } from './audit-log-api-endpoint';
 import { ReportApiEndpoint } from './report-api-endpoint';
+import { OperationalOverviewApiEndpoint } from './operational-overview-api-endpoint';
+import { OverviewLaboratory } from '../domain/model/overview-laboratory.entity';
+import { OverviewEnvironment } from '../domain/model/overview-environment.entity';
+import { OverviewRawMaterial } from '../domain/model/overview-raw-material.entity';
+import { OverviewBatch } from '../domain/model/overview-batch.entity';
+import { OverviewEquipment } from '../domain/model/overview-equipment.entity';
+import { OverviewAlert } from '../domain/model/overview-alert.entity';
+import { OverviewReading } from '../domain/model/overview-reading.entity';
+import { OverviewSubscription } from '../domain/model/overview-subscription.entity';
+import { OverviewPlan } from '../domain/model/overview-plan.entity';
 import { IndicatorPeriod } from '../domain/model/indicator-period';
 
 import {
@@ -19,6 +31,7 @@ import {
   ExportEquipmentLogRequest,
   GenerateInventoryReportRequest,
 } from './report.request';
+import { OverviewEnvironmentalProfile } from '../domain/model/overview-environmental-profile.entity';
 
 /**
  * Infrastructure service facade for Reporting and Analysis (RA) external API operations.
@@ -56,6 +69,10 @@ export class RaApi extends BaseApi {
    */
   private readonly _reportEndpoint: ReportApiEndpoint;
 
+  private readonly _auditedStaffEndpoint: AuditedStaffMemberApiEndpoint;
+
+  private readonly _overviewEndpoint: OperationalOverviewApiEndpoint;
+
   /**
    * Creates an instance of RaApi.
    *
@@ -71,6 +88,8 @@ export class RaApi extends BaseApi {
     this._deviationTrendEndpoint = new DeviationTrendApiEndpoint(http);
     this._auditLogEndpoint = new AuditLogApiEndpoint(http);
     this._reportEndpoint = new ReportApiEndpoint(http);
+    this._auditedStaffEndpoint = new AuditedStaffMemberApiEndpoint(http);
+    this._overviewEndpoint = new OperationalOverviewApiEndpoint(http);
   }
 
   /**
@@ -148,6 +167,21 @@ export class RaApi extends BaseApi {
     return this._auditLogEndpoint.getStaffActivity(laboratoryId, staffId);
   }
 
+  /** Reads the staff identity used as the activity heading. */
+  getAuditedStaffMember(laboratoryId: number, staffId: number): Observable<AuditedStaffMember> {
+    return this._auditedStaffEndpoint.getStaffMember(laboratoryId, staffId);
+  }
+
+  /**
+   * Requests the generation of a production batch report (US96).
+   *
+   * @param request - DTO containing the batch ID, whether to include deviations, and the output format.
+   * @returns Observable stream emitting the generated document as a binary {@link Blob}.
+   *
+   * @remarks
+   * Delegates the request to {@link ReportApiEndpoint}, which calls:
+   * `POST /reports/batches`.
+   */
   generateBatchReport(request: GenerateBatchReportRequest): Observable<Blob> {
     return this._reportEndpoint.generateBatchReport(request);
   }
@@ -182,5 +216,93 @@ export class RaApi extends BaseApi {
 
   exportEquipmentLog(request: ExportEquipmentLogRequest): Observable<Blob> {
     return this._reportEndpoint.exportEquipmentLog(request);
+  }
+
+  /** Laboratory shown by the operational overview. */
+  getOverviewLaboratory(laboratoryId: number): Observable<OverviewLaboratory> {
+    return this._overviewEndpoint.getLaboratory(laboratoryId);
+  }
+
+  /** Environments of the laboratory: what indicators and reports cover, and where alerts and stock are read. */
+  getOverviewEnvironments(laboratoryId: number): Observable<OverviewEnvironment[]> {
+    return this._overviewEndpoint.getEnvironments(laboratoryId);
+  }
+
+  /** Raw materials of an environment whose usable stock is low. */
+  getOverviewLowStockMaterials(laboratoryId: number, environmentId: number): Observable<OverviewRawMaterial[]> {
+    return this._overviewEndpoint.getLowStockMaterials(laboratoryId, environmentId);
+  }
+
+  /** Production batches of the laboratory. */
+  getOverviewBatches(laboratoryId: number): Observable<OverviewBatch[]> {
+    return this._overviewEndpoint.getBatches(laboratoryId);
+  }
+
+  /** Equipment and IoT devices of the laboratory. */
+  getOverviewEquipment(laboratoryId: number): Observable<OverviewEquipment[]> {
+    return this._overviewEndpoint.getEquipment(laboratoryId);
+  }
+
+  /** Open alerts of an environment. */
+  getOverviewOpenAlerts(laboratoryId: number, environmentId: number): Observable<OverviewAlert[]> {
+    return this._overviewEndpoint.getOpenAlerts(laboratoryId, environmentId);
+  }
+
+  /** Readings of an environment, or of one container monitor, in a period. */
+  getOverviewReadings(
+    laboratoryId: number,
+    environmentId: number,
+    containerMonitorId: number | null,
+    period: IndicatorPeriod,
+  ): Observable<OverviewReading[]> {
+    return this._overviewEndpoint.getReadings(laboratoryId, environmentId, containerMonitorId, period);
+  }
+
+  /** Active subscription of the laboratory, or null when it has none. */
+  getOverviewSubscription(laboratoryId: number): Observable<OverviewSubscription | null> {
+    return this._overviewEndpoint.getActiveSubscription(laboratoryId);
+  }
+
+  /** Subscription plans, to show the name, price and equipment limit of the current one. */
+  getOverviewPlans(): Observable<OverviewPlan[]> {
+    return this._overviewEndpoint.getPlans();
+  }
+
+  /**
+   * Retrieves the environmental profile (thresholds) configured for a specific environment.
+   *
+   * @param laboratoryId - The laboratory identifier.
+   * @param environmentId - The environment identifier.
+   * @returns Observable stream emitting the environmental profile, or null if it is not configured yet.
+   *
+   * @remarks
+   * This profile is used by the KPI Dashboard to evaluate and color-code the readings
+   * of environmental devices. If the API returns a 404, the endpoint resolves to `null`.
+   */
+  getOverviewEnvironmentalProfile(
+    laboratoryId: number,
+    environmentId: number,
+  ): Observable<OverviewEnvironmentalProfile | null> {
+    return this._overviewEndpoint.getEnvironmentalProfile(laboratoryId, environmentId);
+  }
+
+  /**
+   * Retrieves the environmental profile (thresholds) configured for a specific container monitor.
+   *
+   * @param laboratoryId - The laboratory identifier.
+   * @param environmentId - The environment identifier where the container is located.
+   * @param deviceId - The container monitor identifier.
+   * @returns Observable stream emitting the container's environmental profile, or null if it is not configured yet.
+   *
+   * @remarks
+   * Container monitors have independent thresholds from the environment.
+   * This profile is used by the KPI Dashboard to evaluate readings from specific containers.
+   */
+  getOverviewContainerMonitorProfile(
+    laboratoryId: number,
+    environmentId: number,
+    deviceId: number,
+  ): Observable<OverviewEnvironmentalProfile | null> {
+    return this._overviewEndpoint.getContainerMonitorProfile(laboratoryId, environmentId, deviceId);
   }
 }
