@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { Layout } from '../../shared/presentation/components/layout/layout';
 
 const environmentalMonitoring = () =>
   import('./views/environmental-monitoring/environmental-monitoring').then((m) => m.EnvironmentalMonitoring);
@@ -15,18 +14,14 @@ const environmentalProfiles = () =>
  * profiles (thresholds and actuation rules).
  */
 const trackingRoutes: Routes = [
-  {
-    path: '',
-    component: Layout,
-    children: [
-      { path: 'dashboard', loadComponent: environmentalMonitoring },
-      { path: 'history', loadComponent: telemetryHistory },
-      { path: 'profiles', loadComponent: environmentalProfiles },
-      // The analysis chart is part of the history of each device.
-      { path: 'analysis', redirectTo: 'history', pathMatch: 'full' },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-    ],
-  },
+  { path: 'monitoring', loadComponent: environmentalMonitoring, title: 'page-titles.monitoring' },
+  { path: 'history', loadComponent: telemetryHistory, title: 'page-titles.telemetry-history' },
+  { path: 'profiles', loadComponent: environmentalProfiles, title: 'page-titles.environmental-profiles' },
+  // The analysis chart is part of the history of each device.
+  { path: 'analysis', redirectTo: 'history', pathMatch: 'full' },
+  // View-named path used before semantic routes.
+  { path: 'dashboard', redirectTo: 'monitoring', pathMatch: 'full' },
+  { path: '', redirectTo: 'monitoring', pathMatch: 'full' },
 ];
 
 export { trackingRoutes };

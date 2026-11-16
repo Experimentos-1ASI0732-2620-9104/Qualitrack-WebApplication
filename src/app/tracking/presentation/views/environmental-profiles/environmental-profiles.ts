@@ -1,13 +1,11 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, OnInit, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { TrackingStore } from '../../../application/tracking.store';
-import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
-import { EnvironmentSelector } from '../../../../laboratory/presentation/components/environment-selector/environment-selector';
+import { EnvironmentSelector } from '../../../../shared/presentation/components/environment-selector/environment-selector';
 import { ThresholdEditor } from '../../components/threshold-editor/threshold-editor';
 import { ActuationRulesEditor } from '../../components/actuation-rules-editor/actuation-rules-editor';
 import { configurableMetricsOf, MonitoredMetric } from '../../../domain/model/monitored-metric';
@@ -17,6 +15,12 @@ import {
   EnvironmentalThreshold,
   ThresholdInput,
 } from '../../../domain/model/environmental-profile.entity';
+import { DateTimePipe } from '../../../../shared/presentation/pipes/date-time.pipe';
+import { SetupNotice } from '../../../../shared/presentation/components/setup-notice/setup-notice';
+import { IamStore } from '../../../../iam/application/iam.store';
+import { PageHeader } from '../../../../shared/presentation/components/page-header/page-header';
+import { ListToolbar } from '../../../../shared/presentation/components/list-toolbar/list-toolbar';
+import { TRACKING_TABS } from '../../tracking-tabs';
 
 /**
  * Represents stable empty collections used as default values.
@@ -52,9 +56,12 @@ const NO_METRICS: MonitoredMetric[] = [];
   selector: 'app-environmental-profiles',
   standalone: true,
   imports: [
-    DatePipe,
+    PageHeader,
+    ListToolbar,
+    SetupNotice,
+    DateTimePipe,
     RouterLink,
-    TranslateModule,
+    TranslatePipe,
     MatIconModule,
     MatProgressSpinnerModule,
     EnvironmentSelector,
@@ -62,22 +69,24 @@ const NO_METRICS: MonitoredMetric[] = [];
     ActuationRulesEditor,
   ],
   templateUrl: './environmental-profiles.html',
-  styleUrls: [
-    '../../../../shared/presentation/styles/operations-page.css',
-    '../tracking-views.css',
-  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './environmental-profiles.css',
 })
 export class EnvironmentalProfiles implements OnInit {
+  /** Operations of the tracking module. */
+  protected readonly tabs = TRACKING_TABS;
+
+  /** Reads the profiles of the environment again. */
+  protected reload(): void {
+    void this.store.loadProfiles();
+  }
+
   /**
    * Application store responsible for environmental profiles,
    * thresholds and actuation rule state management.
    */
   protected readonly store = inject(TrackingStore);
-
-  /**
-   * Store responsible for environment selection and user preferences.
-   */
-  protected readonly environments = inject(EnvironmentStore);
+  protected readonly iam = inject(IamStore);
 
   /**
    * Metrics configurable for environmental devices.
@@ -121,10 +130,10 @@ export class EnvironmentalProfiles implements OnInit {
    * its active environmental profiles.
    */
   async ngOnInit(): Promise<void> {
-    if (!this.environments.loaded()) await this.environments.loadEnvironments();
+    await this.store.loadEnvironments();
     const current =
       this.store.environmentId() ??
-      this.environments.preferredEnvironment(undefined, 'tracking')?.id ??
+      this.store.preferredEnvironmentId() ??
       null;
     if (current !== null) await this.changeEnvironment(current);
   }
@@ -141,7 +150,7 @@ export class EnvironmentalProfiles implements OnInit {
    * @param environmentId Identifier of the selected environment.
    */
   protected async changeEnvironment(environmentId: number): Promise<void> {
-    this.environments.rememberEnvironment(environmentId, 'tracking');
+    this.store.rememberEnvironment(environmentId);
     if (this.store.environmentId() !== environmentId || !this.store.devices().length) {
       await this.store.selectEnvironment(environmentId);
     }

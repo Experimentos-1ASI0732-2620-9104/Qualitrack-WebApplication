@@ -7,14 +7,16 @@ import { DeviceConnection } from '../domain/model/device-connection.entity';
 import { ActuationEvent } from '../domain/model/actuation-event.entity';
 import { ActuationRule, EnvironmentalProfile, ThresholdInput } from '../domain/model/environmental-profile.entity';
 import { MonitoredMetric } from '../domain/model/monitored-metric';
+import { MonitoredDevice } from '../domain/model/monitored-device.entity';
+import { MonitoredEnvironment } from '../domain/model/monitored-environment.entity';
 import { DeviceConnectionApiEndpoint } from './device-connection-api-endpoint';
-import {
-  ActuationEventApiEndpoint,
-  DeviceTarget,
-  EnvironmentalProfileApiEndpoint,
-  MeasurementApiEndpoint,
-  TelemetryPeriod,
-} from './tracking-api-endpoints';
+import { MonitoredDeviceApiEndpoint } from './monitored-device-api-endpoint';
+import { MonitoredEnvironmentApiEndpoint } from './monitored-environment-api-endpoint';
+import { ActuationEventApiEndpoint } from './actuation-event-api-endpoint';
+import { EnvironmentalProfileApiEndpoint } from './environmental-profile-api-endpoint';
+import { MeasurementApiEndpoint } from './measurement-api-endpoint';
+import { DeviceTarget } from './device-target';
+import { TelemetryPeriod } from './telemetry-period';
 
 /**
  * Facade responsible for providing access to Tracking & Telemetry API operations.
@@ -55,6 +57,12 @@ export class TrackingApi extends BaseApi {
    */
   private readonly deviceConnectionEndpoint: DeviceConnectionApiEndpoint;
 
+  /** Reads the IoT devices of Equipment Management that Tracking follows (Anti-Corruption Layer). */
+  private readonly deviceEndpoint: MonitoredDeviceApiEndpoint;
+
+  /** Reads the environments of Laboratory Management. */
+  private readonly environmentEndpoint: MonitoredEnvironmentApiEndpoint;
+
   /**
    * Initializes Tracking API endpoint handlers.
    *
@@ -69,6 +77,29 @@ export class TrackingApi extends BaseApi {
     this.actuationEventEndpoint = new ActuationEventApiEndpoint(http);
     this.profileEndpoint = new EnvironmentalProfileApiEndpoint(http);
     this.deviceConnectionEndpoint = new DeviceConnectionApiEndpoint(http);
+    this.deviceEndpoint = new MonitoredDeviceApiEndpoint(http);
+    this.environmentEndpoint = new MonitoredEnvironmentApiEndpoint(http);
+  }
+
+  /**
+   * Retrieves the environments of the laboratory.
+   *
+   * @param laboratoryId Laboratory identifier.
+   * @returns Observable containing the environments.
+   */
+  getEnvironments(laboratoryId: number): Observable<MonitoredEnvironment[]> {
+    return this.environmentEndpoint.getEnvironments(laboratoryId);
+  }
+
+  /**
+   * Retrieves the IoT devices located in an environment.
+   *
+   * @param laboratoryId Laboratory identifier.
+   * @param environmentId Environment identifier.
+   * @returns Observable containing the environmental device and the container monitors.
+   */
+  getDevices(laboratoryId: number, environmentId: number): Observable<MonitoredDevice[]> {
+    return this.deviceEndpoint.getDevices(laboratoryId, environmentId);
   }
 
   /**
