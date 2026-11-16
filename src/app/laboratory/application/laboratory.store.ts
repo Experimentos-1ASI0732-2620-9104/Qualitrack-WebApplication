@@ -1,23 +1,35 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { Observable, finalize, retry, tap } from 'rxjs';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, finalize, firstValueFrom, retry, tap } from 'rxjs';
 
+import { IamStore } from '../../iam/application/iam.store';
+import { ApiError } from '../../shared/infrastructure/api-error';
 import { LaboratoryApi } from '../infrastructure/laboratory-api';
 
 import { Laboratory } from '../domain/model/laboratory.entity';
 import { StaffMember } from '../domain/model/staff-member.entity';
+import { Environment } from '../domain/model/environment.entity';
+import { EnvironmentUsage } from '../domain/model/environment-usage';
 
 import { CreateLaboratoryCommand } from '../domain/model/create-laboratory.command';
 import { UpdateLaboratoryCommand } from '../domain/model/update-laboratory.command';
 import { RegisterStaffCommand, RegisteredStaff } from '../domain/model/register-staff.command';
+import { RegisterEnvironmentCommand } from '../domain/model/register-environment.command';
+import { UpdateEnvironmentCommand } from '../domain/model/update-environment.command';
+
+export { errorStatus } from '../../shared/infrastructure/api-error';
 
 /**
  * Application store for managing Laboratory bounded context state.
  *
  * @remarks
  * This store coordinates the presentation layer with the Laboratory API facade.
- * It exposes readonly Angular signals for laboratory profile data, staff,
+ * It exposes readonly Angular signals for laboratory profile data, staff, environments,
  * loading state, and user-facing messages. Products belong to Product Batch Management and
  * raw materials to Inventory Management.
+ *
+ * Environments always belong to the laboratory of the authenticated session; their write
+ * operations are only offered to quality managers and administrators, as enforced by the
+ * backend (TS15-TS18). The other bounded contexts read the environments through their own models.
  */
 @Injectable({ providedIn: 'root' })
 export class LaboratoryStore {
@@ -75,6 +87,61 @@ export class LaboratoryStore {
    * Computed signal exposing only active staff members.
    */
   readonly activeStaff = computed(() => this._staffList().filter((staff) => staff.active));
+
+  /**
+   * Store that exposes the authenticated session and the current laboratory.
+   */
+  private readonly iam = inject(IamStore);
+
+  /**
+   * Internal signal containing the environments of the current laboratory.
+   */
+  private readonly _environments = signal<Environment[]>([]);
+
+  /**
+   * Internal signal indicating whether an environment operation is running.
+   */
+  private readonly _environmentsLoading = signal<boolean>(false);
+
+  /**
+   * Internal signal containing the latest environment error message, if any.
+   */
+  private readonly _environmentError = signal<string | null>(null);
+
+  /**
+   * Internal signal indicating whether the environments have been loaded at least once.
+   */
+  private readonly _environmentsLoaded = signal<boolean>(false);
+
+  /**
+   * Environments of the current laboratory ordered by code.
+   */
+  readonly environments = this._environments.asReadonly();
+
+  /**
+   * Indicates whether an environment operation is running.
+   */
+  readonly environmentsLoading = this._environmentsLoading.asReadonly();
+
+  /**
+   * Latest user-facing error message of an environment operation, if any.
+   */
+  readonly environmentError = this._environmentError.asReadonly();
+
+  /**
+   * Indicates whether the environments have been loaded at least once.
+   */
+  readonly environmentsLoaded = this._environmentsLoaded.asReadonly();
+
+  /**
+   * Indicates whether the current user can register, update and classify environments.
+   */
+  readonly canManageEnvironments = this.iam.canManageQuality;
+
+  /**
+   * Indicates whether the laboratory has no environments after loading.
+   */
+  readonly environmentsEmpty = computed(() => this._environmentsLoaded() && this._environments().length === 0);
 
   /**
    * Creates a new LaboratoryStore.
@@ -179,6 +246,17 @@ export class LaboratoryStore {
   }
 
   /**
+   * Reads one staff member of a laboratory.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @param staffId - Numeric identifier of the staff member
+   * @returns Observable emitting the staff member
+   */
+  staffMember(laboratoryId: number, staffId: number): Observable<StaffMember> {
+    return this.api.getStaffMember(laboratoryId, staffId);
+  }
+
+  /**
    * Registers a new staff member under a laboratory; the platform creates their account.
    *
    * @remarks
@@ -217,6 +295,130 @@ export class LaboratoryStore {
   }
 
   /**
+   * Loads the environments of the current laboratory.
+   *
+   * @remarks
+   * On failure the error is exposed through {@link LaboratoryStore.environmentError} and the
+   * previous list is kept.
+   *
+   * @returns A promise that resolves when the operation finishes
+   */
+  async loadEnvironments(): Promise<void> {
+    this.startEnvironmentOperation();
+    try {
+      this._environments.set(await firstValueFrom(this.api.getEnvironments(this.laboratoryId)));
+      this._environmentsLoaded.set(true);
+    } catch (error) {
+      this.failEnvironmentOperation(error, 'Failed to load environments');
+    } finally {
+      this._environmentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Loads one environment of the current laboratory.
+   *
+   * @param environmentId - Numeric identifier of the environment
+   * @returns The environment, or `null` when it cannot be loaded
+   */
+  async loadEnvironment(environmentId: number): Promise<Environment | null> {
+    this.startEnvironmentOperation();
+    try {
+      return await firstValueFrom(this.api.getEnvironment(this.laboratoryId, environmentId));
+    } catch (error) {
+      this.failEnvironmentOperation(error, 'Failed to load environment');
+      return null;
+    } finally {
+      this._environmentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Registers an environment and, when requested, assigns its usage.
+   *
+   * @remarks
+   * The usage is assigned in a second request. The list is refreshed even when that
+   * request fails, so an environment created without its usage is still shown.
+   *
+   * @param command - Command with the environment data and optional usage
+   * @returns `true` when the environment (and its usage) were saved
+   */
+  async registerEnvironment(command: RegisterEnvironmentCommand): Promise<boolean> {
+    this.startEnvironmentOperation();
+    try {
+      const created = await firstValueFrom(
+        this.api.createEnvironment(this.laboratoryId, {
+          code: command.code,
+          name: command.name,
+          description: command.description,
+        }),
+      );
+      if (command.usage) {
+        await firstValueFrom(
+          this.api.assignEnvironmentUsage(this.laboratoryId, created.id, { usage: command.usage }),
+        );
+      }
+      await this.refreshEnvironments();
+      return true;
+    } catch (error) {
+      this.failEnvironmentOperation(error, 'Failed to register environment');
+      await this.refreshEnvironments();
+      return false;
+    } finally {
+      this._environmentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Updates the identification data of an environment.
+   *
+   * @param environmentId - Numeric identifier of the environment
+   * @param command - Command with the new data
+   * @returns `true` when the environment was updated
+   */
+  async updateEnvironment(environmentId: number, command: UpdateEnvironmentCommand): Promise<boolean> {
+    this.startEnvironmentOperation();
+    try {
+      await firstValueFrom(this.api.updateEnvironment(this.laboratoryId, environmentId, command));
+      await this.refreshEnvironments();
+      return true;
+    } catch (error) {
+      this.failEnvironmentOperation(error, 'Failed to update environment');
+      return false;
+    } finally {
+      this._environmentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Assigns the main use of an environment.
+   *
+   * @param environmentId - Numeric identifier of the environment
+   * @param usage - Usage to assign
+   * @returns `true` when the usage was assigned
+   */
+  async assignEnvironmentUsage(environmentId: number, usage: EnvironmentUsage): Promise<boolean> {
+    this.startEnvironmentOperation();
+    try {
+      await firstValueFrom(this.api.assignEnvironmentUsage(this.laboratoryId, environmentId, { usage }));
+      await this.refreshEnvironments();
+      return true;
+    } catch (error) {
+      this.failEnvironmentOperation(error, 'Failed to assign environment usage');
+      return false;
+    } finally {
+      this._environmentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Clears the latest error message of an environment operation.
+   */
+  clearEnvironmentError(): void {
+    this._environmentError.set(null);
+  }
+
+  /**
    * Clears active user-facing messages from the store.
    */
   clearMessages(): void {
@@ -249,6 +451,53 @@ export class LaboratoryStore {
   private failOperation(error: unknown, fallback: string): void {
     this._error.set(this.formatError(error, fallback));
     this._isLoading.set(false);
+  }
+
+  /**
+   * Identifier of the laboratory of the authenticated session.
+   *
+   * @throws Error when the user has not set up a laboratory yet
+   */
+  private get laboratoryId(): number {
+    return this.iam.requireLaboratoryId();
+  }
+
+  /**
+   * Reloads the environments after a write operation without reporting errors.
+   *
+   * @returns A promise that resolves when the reload finishes
+   */
+  private async refreshEnvironments(): Promise<void> {
+    try {
+      this._environments.set(await firstValueFrom(this.api.getEnvironments(this.laboratoryId)));
+      this._environmentsLoaded.set(true);
+    } catch {
+      // The original operation result is already reported; a failed refresh keeps the previous list.
+    }
+  }
+
+  /**
+   * Initializes the environment state before an API call.
+   */
+  private startEnvironmentOperation(): void {
+    this._environmentsLoading.set(true);
+    this._environmentError.set(null);
+  }
+
+  /**
+   * Stores a user-facing message for a failed environment operation.
+   *
+   * @param error - Error value thrown by the failed operation
+   * @param fallback - Message used when the error carries no message
+   */
+  private failEnvironmentOperation(error: unknown, fallback: string): void {
+    if (error instanceof ApiError) {
+      this._environmentError.set(error.details ?? error.message);
+    } else if (error instanceof Error) {
+      this._environmentError.set(error.message);
+    } else {
+      this._environmentError.set(fallback);
+    }
   }
 
   /**
