@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
-import { OnboardingState } from '../domain/model/onboarding-state';
+import { OnboardingState, onboardingDestination } from '../domain/model/onboarding-state';
 
 import { User } from '../domain/model/user.entity';
 import { SignInCommand } from '../domain/model/sign-in.command';
@@ -14,6 +14,8 @@ import { IamApi } from '../infrastructure/iam-api';
 import { SignInRequest } from '../infrastructure/sign-in.request';
 import { SignUpRequest } from '../infrastructure/sign-up.request';
 import { SignInResource } from '../infrastructure/sign-in-response';
+
+export { errorStatus } from '../../shared/infrastructure/api-error';
 
 /**
  * Signal-based application store for Identity and Access Management.
@@ -36,6 +38,7 @@ export class IamStore {
   private readonly currentUsernameSignal = signal<string | null>(null);
   /** Numeric id of the signed-in user. */
   private readonly currentUserIdSignal = signal<number | null>(null);
+  private readonly beforeSignOutTasks: (() => void)[] = [];
   /** Numeric id of the laboratory of the signed-in user, or null before it is set up. */
   private readonly currentLaboratoryIdSignal = signal<number | null>(null);
   /** Roles of the signed-in user (e.g. `ROLE_QA_MANAGER`). */
@@ -256,18 +259,42 @@ export class IamStore {
   }
 
   /**
+   * Registers work to run right before the person signs out, while the session token is still valid.
+   *
+   * @param task - The work; it starts its requests synchronously, because the session ends right after it
+   */
+  beforeSignOut(task: () => void): void {
+    this.beforeSignOutTasks.push(task);
+  }
+
+  /**
    * Ends the session and goes to the home page.
+   *
+   * @remarks
+   * The stores of every context live in root, so the page is loaded again: nothing of this person stays in memory
+   * for the next one.
    *
    * @param router - Router used to go to `/home`
    */
   signOut(router: Router): void {
+    this.beforeSignOutTasks.forEach((task) => task());
     this.clearSession();
-    router.navigate(['/home']).then();
+    router.navigate(['/home']).then(() => window.location.reload());
   }
 
   /** Clears the latest sign-in or sign-up error. */
   clearError(): void {
     this._errorSignal.set(null);
+  }
+
+  /**
+   * Resolves the view that the signed-in user must see next.
+   *
+   * @param state - Onboarding state returned by {@link loadOnboarding}
+   * @returns The URL of the next view, for the roles of the session
+   */
+  nextViewOf(state: OnboardingState): string {
+    return onboardingDestination(state, this.canManageQuality());
   }
 
   /**
