@@ -1,145 +1,166 @@
-.staff-container {
-  padding: 24px;
-  position: relative;
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
 }
 
-.section-header {
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+/* The toolbar, the messages and the table, one under the other */
+.staff {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
-.title-group {
+.status-chips {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.title-icon {
-  color: #1a3a5c;
-  font-size: 32px;
-  width: 32px;
-  height: 32px;
-}
-
-.title-group h2 {
-  margin: 0;
-  font-weight: 700;
-  color: #1a3a5c;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .table-card {
   position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  background: white;
-  border: 1px solid #e0e0e0;
+}
+
+.data-table td.empty-cell {
+  padding: 32px 16px;
+  color: var(--qt-text-muted);
+  text-align: center;
+}
+
+.error {
+  margin: 0;
+  padding: 16px;
+  background: var(--qt-error-surface);
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  color: var(--qt-error-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .loading-overlay {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.full-width-table {
-  width: 100%;
-}
-
-.staff-row:hover {
-  background-color: #f8fafc;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .name-cell {
-  font-weight: 500;
-  color: #1a3a5c;
-}
-
-.role-tag {
-  background: #f0f2f5;
-  color: #476282;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  min-width: 160px;
   font-weight: 600;
-  white-space: nowrap;
-}
-
-.chip-active {
-  background-color: #e6f4ea !important;
-  color: #1e7e34 !important;
-}
-
-.chip-inactive {
-  background-color: #fce8e6 !important;
-  color: #d93025 !important;
-}
-
-.empty-state {
-  padding: 48px;
-  text-align: center;
-  color: #5f6368;
-}
-
-.empty-state mat-icon {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-@media (max-width: 768px) {
-  .staff-container {
-    padding: 16px;
-  }
-
-  .section-header {
-    align-items: stretch;
-  }
-
-  .section-header button {
-    width: 100%;
-  }
-
-  .table-card {
-    overflow-x: auto;
-  }
-
-  .full-width-table {
-    min-width: 720px;
-  }
-}
-
-.hint,
-.muted {
-  color: #5f6368;
-}
-
-.hint {
-  margin: -12px 0 16px;
 }
 
 .name-cell a {
-  color: #006e76;
-  font-weight: 600;
+  color: var(--qt-primary-strong);
+  text-decoration: none;
 }
 
-.error-box {
-  background: #fff5f5;
-  color: #c53030;
-  padding: 12px;
-  border-radius: 8px;
+.name-cell a:hover {
+  text-decoration: underline;
+}
+
+.name-cell a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* A long job title goes on two lines, between its words, so the table fits beside the side menu. */
+.role-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--qt-neutral-surface);
+  border-radius: var(--qt-radius-medium);
+  color: var(--qt-neutral-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.muted-text {
+  color: var(--qt-text-muted);
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--qt-success-surface);
+  border-radius: 999px;
+  color: var(--qt-success-text);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status.inactive {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+.row-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  border: 1px solid #fc8181;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.danger-icon {
+  color: var(--qt-text-muted);
+}
+
+.danger-icon:hover:not([disabled]) {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+.danger-icon:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.empty-state {
+  padding: 48px 24px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+  font-size: 40px;
+  color: var(--qt-text-subtle);
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+
+  .data-table td.name-cell {
+    padding: 8px 4px 12px;
+    font-size: 16px;
+  }
+
+  .row-actions {
+    min-height: 36px;
+  }
 }

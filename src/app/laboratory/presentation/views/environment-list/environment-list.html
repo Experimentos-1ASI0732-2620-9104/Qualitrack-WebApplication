@@ -1,100 +1,144 @@
-<div class="environments-container">
-  <div class="section-header">
-    <div class="title-group">
-      <mat-icon class="title-icon" aria-hidden="true">meeting_room</mat-icon>
-      <div>
-        <h2>{{ 'environments.title' | translate }}</h2>
-        <p class="subtitle">{{ 'environments.subtitle' | translate }}</p>
-      </div>
-    </div>
-
-    @if (store.canManage()) {
-      <button mat-flat-button color="primary" type="button" (click)="onRegister()">
-        <mat-icon>add_location_alt</mat-icon>
-        {{ 'environments.register' | translate }}
-      </button>
-    }
-  </div>
-
-  @if (store.error()) {
-    <div class="error-box" role="alert">
-      <mat-icon aria-hidden="true">error_outline</mat-icon>
-      <span>{{ store.error() }}</span>
-      <button mat-icon-button type="button" (click)="store.clearError()"
-              [attr.aria-label]="'common.actions.cancel' | translate">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-  }
-
-  <div class="table-card mat-elevation-z2" [attr.aria-busy]="store.isLoading()">
-    @if (store.isLoading()) {
-      <div class="loading-overlay">
-        <mat-spinner diameter="40" [attr.aria-label]="'common.status-loading' | translate"></mat-spinner>
-      </div>
-    }
-
-    <table mat-table [dataSource]="store.environments()" class="full-width-table"
-           [attr.aria-label]="'environments.title' | translate">
-      <ng-container matColumnDef="code">
-        <th mat-header-cell *matHeaderCellDef>{{ 'environments.code' | translate }}</th>
-        <td mat-cell *matCellDef="let environment" class="code-cell">{{ environment.code }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>{{ 'environments.name' | translate }}</th>
-        <td mat-cell *matCellDef="let environment">{{ environment.name }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="usage">
-        <th mat-header-cell *matHeaderCellDef>{{ 'environments.usage' | translate }}</th>
-        <td mat-cell *matCellDef="let environment">
-          <span class="usage-tag" [class.usage-missing]="!environment.usage">
-            {{ usageKey(environment.usage) | translate }}
-          </span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef>{{ 'environments.description' | translate }}</th>
-        <td mat-cell *matCellDef="let environment" class="description-cell">
-          {{ environment.description ?? '—' }}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'common.actions.label' | translate }}</th>
-        <td mat-cell *matCellDef="let environment">
-          <button mat-icon-button type="button" (click)="onEdit(environment)"
-                  [matTooltip]="'common.actions.edit' | translate"
-                  [attr.aria-label]="('common.actions.edit' | translate) + ' ' + environment.code">
-            <mat-icon>edit</mat-icon>
+<main class="operations-page">
+  <app-page-header
+    icon="meeting_room"
+    titleKey="environments.title"
+    subtitleKey="environments.subtitle"
+    [tabs]="tabs"
+    activeTab="/laboratories/environments"
+    [loading]="store.environmentsLoading()"
+    (refresh)="refresh()"
+  >
+    <div class="environments">
+      <!-- How to register at the right end; then the usages with their counts, and the search -->
+      <app-list-toolbar
+        searchKey="environments.search"
+        [search]="search()"
+        [activeFilters]="(usage() === 'all' ? 0 : 1) + (search().trim() ? 1 : 0)"
+        (searchChange)="search.set($event)"
+      >
+        @if (store.canManageEnvironments()) {
+          <button toolbarActions mat-flat-button type="button" (click)="onRegister()">
+            <mat-icon>add_location_alt</mat-icon>
+            {{ 'environments.register' | translate }}
           </button>
-          <button mat-icon-button type="button" [matMenuTriggerFor]="usageMenu"
-                  [matTooltip]="'environments.assign-usage' | translate"
-                  [attr.aria-label]="('environments.assign-usage' | translate) + ' ' + environment.code">
-            <mat-icon>category</mat-icon>
+        }
+        <div toolbarFilters class="usage-chips" role="group" [attr.aria-label]="'environments.usage' | translate">
+          @for (option of usageOptions(); track option.value) {
+            <app-filter-chip
+              [labelKey]="option.labelKey"
+              [count]="option.count"
+              [pressed]="usage() === option.value"
+              (toggled)="usage.set(usage() === option.value ? 'all' : option.value)"
+            />
+          }
+        </div>
+      </app-list-toolbar>
+
+      @if (store.environmentError()) {
+        <div class="error" role="alert">
+          <span>{{ store.environmentError() }}</span>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="store.clearEnvironmentError()"
+            [attr.aria-label]="'common.actions.cancel' | translate"
+          >
+            <mat-icon>close</mat-icon>
           </button>
-          <mat-menu #usageMenu="matMenu">
-            @for (usage of usages; track usage) {
-              <button mat-menu-item type="button" [disabled]="usage === environment.usage"
-                      (click)="onAssignUsage(environment, usage)">
-                {{ 'environment-usage.' + usage | translate }}
-              </button>
-            }
-          </mat-menu>
-        </td>
-      </ng-container>
+        </div>
+      }
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="environment-row"></tr>
-    </table>
+      @if (store.environmentsLoading()) {
+        <p role="status">{{ 'common.status-loading' | translate }}</p>
+      } @else {
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th>{{ 'environments.code' | translate }}</th>
+              <th>{{ 'environments.name' | translate }}</th>
+              <th>{{ 'environments.usage' | translate }}</th>
+              <th>{{ 'environments.description' | translate }}</th>
+              @if (store.canManageEnvironments()) {
+                <th>{{ 'common.actions.label' | translate }}</th>
+              }
+            </tr>
+            </thead>
 
-    @if (store.isEmpty()) {
-      <div class="empty-state">
-        <mat-icon aria-hidden="true">location_off</mat-icon>
-        <p>{{ 'environments.empty' | translate }}</p>
-      </div>
-    }
-  </div>
-</div>
+            <tbody>
+              @for (environment of environmentPage.rows(); track environment.id) {
+                <tr>
+                  <td>
+                    <a
+                      class="environment-code"
+                      [routerLink]="['/equipments/environments', environment.id]"
+                      [matTooltip]="'environment-equipment.open' | translate"
+                    >{{ environment.code }}</a>
+                  </td>
+
+                  <td [attr.data-label]="'environments.name' | translate">
+                    {{ environment.name }}
+                  </td>
+
+                  <td [attr.data-label]="'environments.usage' | translate">
+                    <span class="usage-tag" [class.usage-missing]="!environment.usage">
+                      {{ usageKey(environment.usage) | translate }}
+                    </span>
+                  </td>
+
+                  <td [attr.data-label]="'environments.description' | translate">
+                    {{ environment.description ?? '—' }}
+                  </td>
+
+                  @if (store.canManageEnvironments()) {
+                    <td [attr.data-label]="'common.actions.label' | translate">
+                      <div class="row-actions">
+                        <button
+                          mat-icon-button
+                          type="button"
+                          (click)="onEdit(environment)"
+                          [matTooltip]="'common.actions.edit' | translate"
+                          [attr.aria-label]="('common.actions.edit' | translate) + ' ' + environment.code"
+                        >
+                          <mat-icon>edit</mat-icon>
+                        </button>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          [matMenuTriggerFor]="usageMenu"
+                          [matTooltip]="'environments.assign-usage' | translate"
+                          [attr.aria-label]="('environments.assign-usage' | translate) + ' ' + environment.code"
+                        >
+                          <mat-icon>category</mat-icon>
+                        </button>
+
+                        <mat-menu #usageMenu="matMenu">
+                          @for (usage of usages; track usage) {
+                            <button
+                              mat-menu-item
+                              type="button"
+                              [disabled]="usage === environment.usage"
+                              (click)="onAssignUsage(environment, usage)"
+                            >
+                              {{ 'environment-usage.' + usage | translate }}
+                            </button>
+                          }
+                        </mat-menu>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="store.canManageEnvironments() ? 5 : 4">{{ 'environments.empty' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="environmentPage" />
+        </div>
+      }
+    </div>
+  </app-page-header>
+</main>

@@ -1,9 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { Toolbar } from '../../../../shared/presentation/components/toolbar/toolbar';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,6 +14,14 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { LaboratoryStore } from '../../../application/laboratory.store';
 import { CreateLaboratoryCommand } from '../../../domain/model/create-laboratory.command';
+import { DigitsOnly } from '../../../../shared/presentation/directives/digits-only.directive';
+import { PhoneInput } from '../../../../shared/presentation/directives/phone-input.directive';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
+import {
+  normalizePhone,
+  phoneValidator,
+} from '../../../../shared/presentation/validators/phone.validator';
+import { rucValidator } from '../../../../shared/presentation/validators/ruc.validator';
 
 /**
  * Component responsible for creating a new laboratory.
@@ -26,10 +33,9 @@ import { CreateLaboratoryCommand } from '../../../domain/model/create-laboratory
 @Component({
   selector: 'app-lab-form',
   standalone: true,
-  providers: [LaboratoryStore],
   imports: [
     ReactiveFormsModule,
-    TranslateModule,
+    TranslatePipe,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -37,9 +43,11 @@ import { CreateLaboratoryCommand } from '../../../domain/model/create-laboratory
     MatProgressSpinnerModule,
     MatCardModule,
     MatIconModule,
-    Toolbar,
+    DigitsOnly,
+    PhoneInput,
   ],
   templateUrl: './lab-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './lab-form.css',
 })
 export class LabForm {
@@ -72,10 +80,10 @@ export class LabForm {
    * Reactive form used to capture laboratory registration data.
    */
   protected readonly form: FormGroup = this.fb.group({
-    name: ['', [Validators.required, Validators.maxLength(150)]],
-    ruc: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
-    address: ['', Validators.required],
-    phone: ['', Validators.required],
+    name: ['', [Validators.required, notBlankValidator, Validators.maxLength(100)]],
+    ruc: ['', [Validators.required, rucValidator]],
+    address: ['', [Validators.required, notBlankValidator, Validators.maxLength(250)]],
+    phone: ['', [Validators.required, phoneValidator]],
     applicableRegulations: [[], Validators.required],
   });
 
@@ -92,7 +100,14 @@ export class LabForm {
       return;
     }
 
-    const command: CreateLaboratoryCommand = this.form.getRawValue();
+    const value = this.form.getRawValue();
+    const command: CreateLaboratoryCommand = {
+      ...value,
+      name: value.name.trim(),
+      ruc: value.ruc.trim(),
+      address: value.address.trim(),
+      phone: normalizePhone(value.phone) ?? value.phone,
+    };
     this.store.createLaboratory(command, () => {
       this.iam.invalidateOnboarding();
       void this.router.navigate(['/iam/onboarding']);
