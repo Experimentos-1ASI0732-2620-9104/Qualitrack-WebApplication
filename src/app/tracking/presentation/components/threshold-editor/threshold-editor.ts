@@ -1,12 +1,23 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 
 import { MetricDefinition, MonitoredMetric } from '../../../domain/model/monitored-metric';
-import { EnvironmentalThreshold, ThresholdInput } from '../../../domain/model/environmental-profile.entity';
+import {
+  EnvironmentalThreshold,
+  ThresholdInput,
+} from '../../../domain/model/environmental-profile.entity';
 
 /**
  * Represents an editable threshold configuration row in the UI.
@@ -14,13 +25,21 @@ import { EnvironmentalThreshold, ThresholdInput } from '../../../domain/model/en
  * This structure combines metric metadata with the temporary values
  * entered by the user before submitting the configuration.
  */
-interface ThresholdRow {
+export interface ThresholdRow {
   definition: MetricDefinition;
   enabled: boolean;
   normalMin: number | null;
   normalMax: number | null;
   criticalMin: number | null;
   criticalMax: number | null;
+}
+
+/**
+ * Problem found in a threshold row: the translation key of its message and the values the message shows.
+ */
+export interface ThresholdProblem {
+  key: string;
+  params?: Record<string, string | number>;
 }
 
 /**
@@ -45,14 +64,16 @@ interface ThresholdRow {
 @Component({
   selector: 'app-threshold-editor',
   standalone: true,
-  imports: [FormsModule, TranslateModule, MatButtonModule, MatCheckboxModule, MatIconModule],
+  imports: [FormsModule, TranslatePipe, MatButtonModule, MatCheckboxModule, MatIconModule],
   templateUrl: './threshold-editor.html',
-  styleUrls: [
-    '../../../../shared/presentation/styles/operations-page.css',
-    '../../views/tracking-views.css',
-  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './threshold-editor.css',
 })
 export class ThresholdEditor {
+  private readonly translate = inject(TranslateService);
+  protected readonly fieldMin = (definition: MetricDefinition) => definition.range?.min;
+  protected readonly fieldMax = (definition: MetricDefinition) => definition.range?.max;
+
   readonly metrics = input.required<MetricDefinition[]>();
   readonly thresholds = input<EnvironmentalThreshold[]>([]);
   readonly readonly = input(false);
@@ -60,7 +81,7 @@ export class ThresholdEditor {
   readonly save = output<ThresholdInput[]>();
 
   protected readonly rows = signal<ThresholdRow[]>([]);
-  protected readonly error = signal<string | null>(null);
+  protected readonly error = signal<ThresholdProblem | null>(null);
 
   /**
    * Synchronizes editable threshold rows whenever the input metrics
@@ -105,7 +126,18 @@ export class ThresholdEditor {
     for (const row of this.rows().filter((item) => item.enabled)) {
       const problem = validate(row);
       if (problem) {
-        this.error.set(problem);
+        const metric = problem.params?.['metric'];
+        this.error.set(
+          metric === undefined
+            ? problem
+            : {
+                ...problem,
+                params: {
+                  ...problem.params,
+                  metric: this.translate.instant(`tracking.metrics.${metric}`),
+                },
+              },
+        );
         return;
       }
       thresholds.push({
@@ -138,24 +170,49 @@ function number(value: number | null | string): number | null {
  * Validates threshold configuration according to platform business rules.
  *
  * Validation ensures:
+ * - Every limit is a finite number inside the plausible range of the metric.
  * - Both normal and critical boundaries are configured consistently.
  * - At least one limit exists.
  * - Critical limits remain outside the normal operating range.
  * - Normal ranges are logically ordered.
  *
  * @param row Threshold configuration row.
- * @returns Translation key describing the validation error,
- * or null when the configuration is valid.
+ * @returns The problem found, with its translation key and the values it shows, or null when the configuration is valid.
  */
-function validate(row: ThresholdRow): string | null {
-  const [normalMin, normalMax, criticalMin, criticalMax] =
-    [row.normalMin, row.normalMax, row.criticalMin, row.criticalMax].map(number);
-  if ((normalMin === null) !== (criticalMin === null) || (normalMax === null) !== (criticalMax === null)) {
-    return 'tracking.profiles.errors.incomplete';
+export function validate(row: ThresholdRow): ThresholdProblem | null {
+  const values = [row.normalMin, row.normalMax, row.criticalMin, row.criticalMax].map(number);
+  const [normalMin, normalMax, criticalMin, criticalMax] = values;
+  const range = row.definition.range;
+  if (
+    values.some(
+      (value) =>
+        value !== null &&
+        (!Number.isFinite(value) || (range && (value < range.min || value > range.max))),
+    )
+  ) {
+    return {
+      key: 'tracking.profiles.errors.out-of-range',
+      params: {
+        metric: row.definition.metric,
+        min: range?.min ?? '',
+        max: range?.max ?? '',
+        unit: row.definition.unit,
+      },
+    };
   }
-  if (normalMin === null && normalMax === null) return 'tracking.profiles.errors.no-limits';
-  if (normalMin !== null && criticalMin !== null && criticalMin >= normalMin) return 'tracking.profiles.errors.critical-min';
-  if (normalMax !== null && criticalMax !== null && criticalMax <= normalMax) return 'tracking.profiles.errors.critical-max';
-  if (normalMin !== null && normalMax !== null && normalMin >= normalMax) return 'tracking.profiles.errors.normal-range';
+  if (
+    (normalMin === null) !== (criticalMin === null) ||
+    (normalMax === null) !== (criticalMax === null)
+  ) {
+    return { key: 'tracking.profiles.errors.incomplete' };
+  }
+  if (normalMin === null && normalMax === null)
+    return { key: 'tracking.profiles.errors.no-limits' };
+  if (normalMin !== null && criticalMin !== null && criticalMin >= normalMin)
+    return { key: 'tracking.profiles.errors.critical-min' };
+  if (normalMax !== null && criticalMax !== null && criticalMax <= normalMax)
+    return { key: 'tracking.profiles.errors.critical-max' };
+  if (normalMin !== null && normalMax !== null && normalMin >= normalMax)
+    return { key: 'tracking.profiles.errors.normal-range' };
   return null;
 }
