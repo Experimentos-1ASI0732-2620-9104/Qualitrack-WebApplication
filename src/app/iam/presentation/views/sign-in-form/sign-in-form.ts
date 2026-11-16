@@ -1,14 +1,16 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 
 import { SignInCommand } from '../../../domain/model/sign-in.command';
 import { IamStore } from '../../../application/iam.store';
-import { Toolbar } from '../../../../shared/presentation/components/toolbar/toolbar';
 
 /**
  * Component responsible for rendering and processing the sign-in form.
@@ -21,8 +23,16 @@ import { Toolbar } from '../../../../shared/presentation/components/toolbar/tool
 @Component({
   selector: 'app-sign-in',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, MatProgressSpinnerModule, MatIconModule, RouterLink, Toolbar],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    TranslatePipe,
+    MatProgressSpinnerModule,
+    MatIconModule, MatFormFieldModule, MatInputModule, MatButtonModule,
+    RouterLink,
+  ],
   templateUrl: './sign-in-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sign-in-form.css'],
 })
 export class SignInForm {
@@ -66,7 +76,8 @@ export class SignInForm {
    * and the username, which is filled in.
    */
   constructor() {
-    const state = this.router.currentNavigation()?.extras.state as { passwordReset?: boolean; username?: string } | undefined;
+    const state = this.router.currentNavigation()?.extras.state as
+      { passwordReset?: boolean; username?: string } | undefined;
     this.passwordReset = !!state?.passwordReset;
     if (state?.username) this.form.controls.username.setValue(state.username);
   }

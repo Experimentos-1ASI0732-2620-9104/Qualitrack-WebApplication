@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { iamGuard } from '../infrastructure/iam-guard';
+import { iamGuard, visitorGuard } from '../infrastructure/iam-guard';
 import { passwordChangeGuard } from '../infrastructure/onboarding-guard';
 
 /**
@@ -19,7 +19,6 @@ const signUpForm = () => import('./views/sign-up-form/sign-up-form').then((m) =>
 /**
  * Base title used by IAM routes.
  */
-const baseTitle = 'QualiTrack';
 
 /**
  * Routing configuration for the Identity and Access Management bounded context.
@@ -30,12 +29,12 @@ const baseTitle = 'QualiTrack';
  * layout because authentication screens render their own public toolbar.
  */
 export const iamRoutes: Routes = [
-  { path: 'onboarding', canActivate: [iamGuard],
+  { path: 'onboarding', canActivate: [iamGuard], title: 'page-titles.onboarding',
     loadComponent: () => import('./views/onboarding/onboarding').then((m) => m.Onboarding) },
-  { path: 'sign-in', loadComponent: signInForm, title: `Sign In | ${baseTitle}` },
-  { path: 'sign-up', loadComponent: signUpForm, title: `Sign Up | ${baseTitle}` },
-  { path: 'password-recovery', title: `Password Recovery | ${baseTitle}`,
+  { path: 'sign-in', loadComponent: signInForm, canActivate: [visitorGuard], title: 'page-titles.sign-in' },
+  { path: 'sign-up', loadComponent: signUpForm, canActivate: [visitorGuard], title: 'page-titles.sign-up' },
+  { path: 'password-recovery', canActivate: [visitorGuard], title: 'page-titles.password-recovery',
     loadComponent: () => import('./views/password-recovery/password-recovery').then((m) => m.PasswordRecovery) },
-  { path: 'change-password', canActivate: [iamGuard, passwordChangeGuard], title: `Change Password | ${baseTitle}`,
+  { path: 'change-password', canActivate: [iamGuard, passwordChangeGuard], title: 'page-titles.change-password',
     loadComponent: () => import('./views/change-password-form/change-password-form').then((m) => m.ChangePasswordForm) },
 ];
