@@ -1,1 +1,18 @@
-<router-outlet></router-outlet>
+<app-layout
+  [isSignedIn]="iam.isSignedIn()"
+  [hasOperationalAccess]="iam.onboarding()?.nextStep === 'READY'"
+  [canManageQuality]="iam.canManageQuality()"
+>
+  <!-- Projected content is created even where the Layout does not show it: create each widget only when it applies. -->
+  @if (iam.onboarding()?.nextStep === 'READY') {
+    <app-notification-bell notificationBell />
+  }
+  @if (iam.isSignedIn()) {
+    <app-user-profile-badge profileBadge />
+  }
+  @if (iam.isSignedIn()) {
+    <app-user-session-section userSession />
+  }
+
+  <router-outlet />
+</app-layout>
