@@ -85,10 +85,17 @@ export class AlertApiEndpoint extends BaseApiEndpoint<
    *
    * @param alertId - The unique numeric identifier of the deviation alert
    * @returns Observable emitting the updated alert, without the related actuations of the detail
+   *
+   * @remarks
+   * The request is kept alive so that it still arrives when it is sent while the page is closing.
    */
   acknowledgeAlert(alertId: number): Observable<DeviationAlert> {
     return this.http
-      .post<AlertResource>(`${this.endpointUrl}/${alertId}${environment.deviationAlertAcknowledgementsEndpointPath}`, null)
+      .post<AlertResource>(
+        `${this.endpointUrl}/${alertId}${environment.deviationAlertAcknowledgementsEndpointPath}`,
+        null,
+        { keepalive: true },
+      )
       .pipe(
         map((resource) => this.assembler.toEntityFromResource(resource)),
         catchError(this.handleError(`Failed to acknowledge deviation alert ${alertId}`)),
