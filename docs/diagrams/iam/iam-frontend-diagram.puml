@@ -12,7 +12,6 @@ package "shared" <<External>> {
   interface BaseResource
   abstract class BaseApi
   abstract class ErrorHandlingEnabledBaseType
-  class Toolbar
 }
 
 package "angular" <<External>> {
@@ -92,6 +91,7 @@ package "iam.application" {
     + isAuditor: Signal<boolean>
     + canOperate: Signal<boolean>
     + loadOnboarding(force?: boolean): Observable<OnboardingState>
+    + nextViewOf(state: OnboardingState): string
     + invalidateOnboarding(): void
     + changePassword(currentPassword: string, newPassword: string): Observable<void>
     + updateAccount(command: UpdateAccountCommand): Observable<void>
@@ -165,6 +165,7 @@ package "iam.infrastructure" {
     + currentPassword: string
   }
   class iamGuard <<CanActivateFn>>
+  class visitorGuard <<CanActivateFn>>
   class onboardingGuard <<CanActivateFn>>
   class laboratorySetupGuard <<CanActivateFn>>
   class subscriptionGuard <<CanActivateFn>>
@@ -305,6 +306,11 @@ authenticationInterceptor ..|> HttpInterceptorFn
 authenticationInterceptor --> IamStore
 IamApi ..> ChangePasswordRequest
 iamGuard --> IamStore
+visitorGuard --> IamStore
+note bottom of visitorGuard
+  /home, sign-in, sign-up and password recovery are for visitors. A session survives
+  closing the browser, so whoever still has one goes to /dashboard.
+end note
 onboardingGuard --> IamStore
 laboratorySetupGuard --> IamStore
 subscriptionGuard --> IamStore
@@ -374,7 +380,6 @@ ChangePasswordForm --> IamStore
 PasswordRecovery --> IamStore
 PasswordRecovery --> Router
 PasswordRecovery ..> ResetPasswordCommand
-PasswordRecovery ..> Toolbar
 note bottom of PasswordRecovery
   US16/US17: username or e-mail -> 6-digit code by e-mail (15 minutes,
   one per minute) -> code and new password -> sign in with a notice and
@@ -386,30 +391,17 @@ package "iam.presentation.components.authentication-section" {
   }
 }
 
-package "profile.application" <<External>> {
-  class ProfileStore {
-    + photoUrl: Signal<string | null>
-    + displayName: Signal<string>
-    + initials: Signal<string>
-    + ensureLoaded(): void
-  }
-}
-
 package "iam.presentation.components.user-session-section" {
   class UserSessionSection {
-    # canOpenProfile: Signal<boolean>
-    # roleKey: Signal<string | null>
     # signOut(): void
   }
 }
 
 UserSessionSection --> IamStore
-UserSessionSection --> ProfileStore : photo and full name
 note bottom of UserSessionSection
-  In the toolbar: the photo and name open /profile once the
-  account finished its setup; the sign-out button stays beside.
-  On phones the toolbar hides the brand and keeps the photo,
-  name and role in a smaller size.
+  IAM only shows the sign-out action while signed in.
+  The shared layout places it beside the Profile badge;
+  IAM does not import or load Profile data.
 end note
 
 AuthenticationSection ..> Router
@@ -437,7 +429,6 @@ SignInForm --> FormGroup
 SignInForm --> FormControl
 SignInForm ..> Validators
 SignInForm ..> SignInCommand
-SignInForm ..> Toolbar
 
 package "iam.presentation.views.sign-up-form" {
   class SignUpForm {
@@ -469,11 +460,12 @@ SignUpForm --> FormGroup
 SignUpForm --> FormControl
 SignUpForm ..> Validators
 SignUpForm ..> SignUpCommand
-SignUpForm ..> Toolbar
 note bottom of SignUpForm
   Public registration creates quality manager accounts only; operators and
   auditors receive the account their quality manager creates. The e-mail is
   required (recovery codes) and the password has 8 to 72 letters and numbers.
 end note
+
+PasswordRecoveryApiEndpoint --|> ErrorHandlingEnabledBaseType
 
 @enduml
