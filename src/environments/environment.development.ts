@@ -48,6 +48,10 @@ export const environment = {
   devicesEndpointPath: '/devices',
   environmentalDevicesEndpointPath: '/environmental-devices',
   containerMonitorsEndpointPath: '/container-monitors',
+  // Edge Gateways, under /laboratories/{laboratoryId}; their coverage, under .../environments/{environmentId}
+  edgeGatewaysEndpointPath: '/edge-gateways',
+  edgeGatewayApiKeyEndpointPath: '/api-key',
+  edgeGatewayCoverageEndpointPath: '/edge-gateway-coverage',
   // Records of an equipment, under /laboratories/{laboratoryId}/equipments/{equipmentId}
   equipmentBpmConfigEndpointPath: '/bpm-configs',
   equipmentComplianceEventsEndpointPath: '/compliance-events',
