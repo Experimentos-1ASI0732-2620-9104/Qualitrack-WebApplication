@@ -1,0 +1,58 @@
+:host {
+  display: block;
+}
+
+.empty-state {
+  padding: 32px 20px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+  color: var(--qt-text-subtle);
+  font-size: 40px;
+}
+
+.empty-state.positive mat-icon {
+  color: var(--qt-success);
+}
+
+.empty-state h2 {
+  margin: 0 0 8px;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.empty-state p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.actions:not(:empty) {
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .empty-state {
+    padding: 24px 16px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

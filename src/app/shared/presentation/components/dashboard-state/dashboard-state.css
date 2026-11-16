@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 140px;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.state.error {
+  color: var(--qt-error-text);
+}
+
+.state mat-icon,
+.state mat-spinner {
+  flex-shrink: 0;
+}
+
+.state button {
+  color: var(--qt-text-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.state button:hover {
+  background: var(--qt-background);
+  color: var(--qt-primary-strong);
+}
+
+.state button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

@@ -1,4 +1,3 @@
-/* ==================== TOOLBAR ==================== */
 .toolbar {
   position: fixed;
   top: 0;
@@ -7,41 +6,43 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  padding: 0 24px;
   height: 64px;
-  background: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  color: #1a3a5c;
+  padding: 0 24px;
+  background: var(--qt-surface);
+  border-bottom: 1px solid var(--qt-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  color: var(--qt-text);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
+  border-radius: 8px;
   color: inherit;
   text-decoration: none;
-  border-radius: 8px;
 }
 
 .brand:focus-visible {
-  outline: 2px solid #148f77;
-  outline-offset: 4px;
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
 }
 
 .brand:hover .toolbar-title {
-  color: #148f77;
+  color: var(--qt-primary-strong);
 }
 
 .toolbar img {
-  height: 40px;
   width: auto;
+  height: 40px;
   margin-right: 12px;
 }
 
 .toolbar-title {
-  font-weight: 700;
+  color: var(--qt-text);
   font-size: 22px;
-  color: #1a3a5c;
+  font-weight: 700;
   letter-spacing: 0;
+  transition: color 0.2s ease;
 }
 
 .spacer {
@@ -55,7 +56,17 @@
   min-width: 0;
 }
 
-/* ==================== LAYOUT BODY ==================== */
+.user-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 4px 3px 3px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 999px;
+}
+
 .layout-body {
   position: fixed;
   top: 64px;
@@ -65,84 +76,109 @@
   display: flex;
   height: calc(100vh - 64px);
   overflow: hidden;
-  background: #f4f6f9;
+  background: var(--qt-background);
 }
 
 .sidenav-container {
   flex: 1;
   min-width: 0;
   height: 100%;
+  background: var(--qt-background);
 }
 
-/* ==================== SIDENAV ==================== */
 mat-sidenav {
-  width: 280px;
-  background: #ffffff;
-  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
-  border-right: 1px solid #e8eaed;
   display: flex;
   flex-direction: column;
+  width: 280px;
+  background: var(--qt-surface);
+  border-right: 1px solid var(--qt-border);
+  box-shadow: none;
 }
 
 .nav-menu {
-  padding: 12px 10px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.nav-section {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+}
+
+.nav-section + .nav-section {
+  margin-top: 16px;
+}
+
+.nav-section-title {
+  padding: 4px 12px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .nav-item {
-  border: 0;
-  text-align: left;
-  background: transparent;
-  width: 100%;
-  font: inherit;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 0;
   border-radius: 8px;
+  color: var(--qt-text-muted);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-  color: #5f6368;
-  position: relative;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .nav-item:hover,
 .nav-item-header:hover {
-  background: #eaf0fb !important;
-  color: #1a3a5c;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.nav-item:focus-visible,
+.sub-nav-item:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: -3px;
 }
 
 .nav-item.active {
-  background: #ddeaf8;
-  color: #1a3a5c;
+  background: var(--qt-primary-surface);
+  color: var(--qt-primary-strong);
   font-weight: 600;
 }
 
 .nav-icon-wrapper {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }
 
 .nav-item.active .nav-icon-wrapper {
-  background: rgba(26, 58, 92, 0.1);
+  background: var(--qt-surface);
+  color: var(--qt-primary);
 }
 
 .nav-icon-wrapper mat-icon {
-  font-size: 20px;
   width: 20px;
   height: 20px;
+  font-size: 20px;
 }
 
 .nav-label {
@@ -151,96 +187,100 @@ mat-sidenav {
   overflow-wrap: anywhere;
 }
 
-.active-indicator {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 60%;
-  background: #1a3a5c;
-  border-radius: 2px 0 0 2px;
+.nav-item.active .nav-label {
+  font-weight: 600;
 }
 
-/* ==================== SUB-MENU ==================== */
+.active-indicator {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 4px;
+  height: 60%;
+  background: var(--qt-primary);
+  border-radius: 2px 0 0 2px;
+  transform: translateY(-50%);
+}
+
 .sub-menu-container {
-  margin-left: 28px;
-  padding-left: 12px;
-  border-left: 2px solid #e8eaed;
-  margin-top: 4px;
-  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin: 4px 0 12px 28px;
+  padding-left: 12px;
+  border-left: 2px solid var(--qt-border);
 }
 
 .sub-nav-item {
-  border: 0;
-  text-align: left;
-  background: transparent;
   width: 100%;
-  font: inherit;
-  padding: 10px 16px;
+  min-height: 40px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 0;
   border-radius: 8px;
+  color: var(--qt-text-muted);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-  color: #5f6368;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .sub-nav-item:hover {
-  background: #f1f3f4;
-  color: #1a3a5c;
+  background: var(--qt-background);
+  color: var(--qt-text);
 }
 
 .sub-nav-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
 
 .sub-nav-item.sub-active {
-  background: rgba(20, 143, 119, 0.08);
-  color: #148f77;
+  background: var(--qt-primary-surface);
+  color: var(--qt-primary-strong);
 }
 
 .sub-nav-item.sub-active .sub-nav-label {
-  font-weight: 700;
+  font-weight: 600;
 }
 
-/* ==================== EXPANSION PANEL RESET ==================== */
 .nav-expansion-panel {
-  background: transparent !important;
-  box-shadow: none !important;
+  background: transparent;
+  box-shadow: none;
+  --mat-expansion-container-background-color: transparent;
+  --mat-expansion-container-text-color: var(--qt-text);
+  --mat-expansion-header-text-color: var(--qt-text-muted);
+  --mat-expansion-header-hover-state-layer-color: var(--qt-background);
+  --mat-expansion-header-focus-state-layer-color: var(--qt-background);
+  --mat-expansion-header-collapsed-state-height: 48px;
+  --mat-expansion-header-expanded-state-height: 48px;
 }
 
 .nav-item-header {
-  height: 48px !important;
-  padding: 0 10px !important;
-  border-radius: 8px !important;
+  padding: 0 12px;
+  border-radius: 8px;
 }
 
 .nav-item-title {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 ::ng-deep .nav-expansion-panel .mat-expansion-panel-body {
-  padding: 0 !important;
+  padding: 0;
 }
 
-/* ==================== CONTENT ==================== */
 mat-sidenav-content {
-  background: #f4f6f9;
+  background: var(--qt-background);
 }
 
 .content-wrapper {
-  min-width: 0;
-  padding: 24px;
-  min-height: 100%;
   box-sizing: border-box;
+  min-width: 0;
+  min-height: 100%;
+  padding: 0;
 }
 
 @media (max-width: 768px) {
@@ -252,17 +292,13 @@ mat-sidenav-content {
     font-size: 18px;
   }
 
+  /* The logo keeps the 12px of the desktop before the name, so they do not look stuck together */
   .toolbar img {
     height: 34px;
-    margin-right: 8px;
   }
 
   mat-sidenav {
     width: 260px;
-  }
-
-  .content-wrapper {
-    padding: 16px;
   }
 
   .toolbar-actions {
@@ -270,14 +306,43 @@ mat-sidenav-content {
   }
 }
 
-/* On narrow screens the brand gives its room to the photo and name of the user. */
 @media (max-width: 720px) {
-  .brand { display: none; }
+  /* With a session the toolbar keeps only the logo; without one there is room for the name too. */
+  .toolbar:has(.user-session) .toolbar-title {
+    display: none;
+  }
+
+  .toolbar:has(.user-session) img {
+    margin-right: 0;
+  }
+
+  .user-session {
+    gap: 8px;
+    padding: 3px 2px 3px 3px;
+  }
 }
 
 @media (max-width: 480px) {
-  .toolbar { padding: 0 4px; }
-  .toolbar-actions { gap: 4px; }
-  .content-wrapper { padding: 12px; }
-  mat-sidenav { width: min(280px, 85vw); }
+  .toolbar {
+    padding: 0 4px;
+  }
+
+  .toolbar-actions {
+    gap: 4px;
+  }
+
+  /* A phone has no room for the logo beside the menu, the session, the bell and the language. */
+  .toolbar:has(> button):has(.user-session) .brand {
+    display: none;
+  }
+
+  mat-sidenav {
+    width: min(280px, 85vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

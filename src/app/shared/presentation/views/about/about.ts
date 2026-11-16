@@ -1,8 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-
-import { Toolbar } from '../../components/toolbar/toolbar';
 
 /**
  * Public About view for QualiTrack.
@@ -14,8 +12,9 @@ import { Toolbar } from '../../components/toolbar/toolbar';
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [RouterLink, TranslatePipe, Toolbar],
+  imports: [RouterLink, TranslatePipe],
   templateUrl: './about.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './about.css',
 })
 export class About {
@@ -26,7 +25,7 @@ export class About {
       description: 'about.value.traceability.description',
     },
     {
-      icon: 'monitoring',
+      icon: 'insights',
       title: 'about.value.monitoring.title',
       description: 'about.value.monitoring.description',
     },
