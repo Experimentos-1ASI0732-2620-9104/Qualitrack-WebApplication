@@ -6,6 +6,8 @@ import { UpdateProfileCommand } from '../domain/model/update-profile.command';
 import { ProfileApi } from '../infrastructure/profile-api';
 import { IamStore } from '../../iam/application/iam.store';
 
+export { errorStatus } from '../../shared/infrastructure/api-error';
+
 /** Largest photo the platform accepts. */
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 
