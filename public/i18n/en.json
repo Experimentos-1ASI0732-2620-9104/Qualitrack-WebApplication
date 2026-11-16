@@ -12,6 +12,9 @@
     "minimum": "Minimum stock",
     "required": "Complete this field.",
     "invalidQuantity": "Enter a valid quantity: up to 3 decimals; whole values for units.",
+    "quantityTooLarge": "The quantity cannot exceed 999,999,999.",
+    "expiryBeforeReceipt": "The expiration must be after the reception date.",
+    "expiryTooFar": "The expiration cannot be more than 10 years from today.",
     "save": "Save",
     "cancel": "Cancel",
     "materials": "Cataloged materials",
@@ -34,7 +37,7 @@
     "receiptNumber": "Supplier lot",
     "amount": "Received quantity",
     "receivedOn": "Received on",
-    "expiresOn": "Expires on", 
+    "expiresOn": "Expires on",
     "quarantineNotice": "This receipt will remain in quarantine until quality review.",
     "review": "Review",
     "decision": "Decision",
@@ -91,12 +94,6 @@
     "containerUsageNotice": "Only raw material storage environments keep lots in monitored containers. Classify the environment as raw material storage to use containers."
   },
   "onboarding.no-plans": "No subscription plans are available yet. Please contact the service administrator.",
-  "operational-metrics": {
-    "equipment-count": "Registered equipment",
-    "batch-count": "Recorded batches",
-    "released-batch-count": "Released batches",
-    "unresolved-alert-count": "Open alerts"
-  },
   "onboarding": {
     "loading": "Checking your account…",
     "unavailable-title": "Account status unavailable",
@@ -125,7 +122,7 @@
     "heroImageAlt": "Two female pharmacy professionals reviewing inventory"
   },
   "language-switcher": {
-  "aria-label": "Preferred language"
+    "aria-label": "Preferred language"
   },
   "auth": {
     "already-have-account": "Already have an account?",
@@ -179,6 +176,7 @@
       "errors": {
         "username-required": "Username is required",
         "username-minlength": "Username must be at least 3 characters",
+        "username-maxlength": "Username can have up to 80 characters",
         "password-required": "Password is required",
         "password-minlength": "Use between 8 and 72 characters",
         "password-strength": "Password must contain letters and numbers",
@@ -267,9 +265,9 @@
       "save": "Save data",
       "saved": "Personal data saved.",
       "errors": {
-        "full-name": "Enter your full name (2 to 120 characters).",
-        "dni": "The DNI has 8 digits.",
-        "phone": "Use 6 to 15 digits; it may start with +.",
+        "full-name": "Enter your full name (2 to 120 characters, only letters, spaces, apostrophes, hyphens and dots).",
+        "dni": "The DNI must have 8 digits and cannot repeat the same number.",
+        "phone": "Enter a 9-digit mobile number starting with 9, or an 8-digit landline with its area code. It may start with +51.",
         "location": "Use 2 to 120 characters.",
         "invalid": "Some value is not valid. Check the data."
       }
@@ -306,6 +304,18 @@
     }
   },
   "common": {
+    "filters": "Filters",
+    "clear-search": "Clear the search",
+    "updated": "Updated {{time}}",
+    "paginator": {
+      "per-page": "Rows per page",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "range": "{{start}} – {{end}} of {{length}}",
+      "empty": "0 of 0"
+    },
     "save": "Save Changes",
     "cancel": "Cancel",
     "back": "Back",
@@ -316,12 +326,27 @@
     "inactive": "Inactive",
     "required": "This field is required",
     "invalidEmail": "Please enter a valid email",
+    "notBlank": "The field cannot contain only spaces",
+    "dateInvalid": "Enter a valid date",
+    "dateMin": "The date cannot be earlier than 01/01/2020",
+    "dateFuture": "The date cannot be in the future",
+    "dateTooFar": "The date cannot be more than a year from today",
+    "dateBeforeBatchStart": "The date cannot be earlier than the start of the batch",
+    "dateRangeOrder": "The end date cannot be earlier than the start date",
+    "periodTooLong": "The range cannot be longer than 366 days",
+    "invalidId": "The identifier must be a whole number greater than 0",
+    "invalidCode": "Use only letters, numbers and the separators - _ . /",
+    "invalidPhone": "Enter a 9-digit mobile number starting with 9, or an 8-digit landline with its area code",
+    "phoneChars": "The phone can only have digits, spaces, hyphens, parentheses and a leading +",
+    "phoneFake": "Enter a real phone number",
+    "invalidPersonName": "Use only letters, spaces, apostrophes, hyphens and dots",
     "minZero": "Value must be at least 0",
     "status-loading": "Loading data...",
     "all": "All",
     "clear": "Clear Filters",
     "refresh": "Refresh",
     "download": "Download",
+    "close": "Close",
     "export": "Export",
     "format": "Format",
     "date-range": "Date Range",
@@ -340,7 +365,8 @@
       "register": "Register",
       "search": "Search",
       "refresh": "Refresh"
-    }
+    },
+    "undo": "Undo"
   },
   "status": {
     "ON_TRACK": "On Track",
@@ -366,9 +392,11 @@
     "equipment-list": "Equipment Catalog",
     "register-equipment": "Register Equipment",
     "register-device": "Register IoT Device",
+    "register-edge-gateway": "Register Edge Gateway",
     "alerts": "Compliance Alerts",
     "alert-dashboard": "Active Alerts",
     "alert-history": "Alert History",
+    "alert-preferences": "Notification Preferences",
     "reports": "Reports & KPIs",
     "kpi-dashboard": "Environmental Summary",
     "deviation-trends": "Deviation Indicators",
@@ -387,7 +415,12 @@
     "tracking-profiles": "Environmental Profiles",
     "subscription": "Subscription & Billing",
     "billing-summary": "Billing Summary",
-    "subscription-plans": "Subscription Plans"
+    "subscription-plans": "Subscription Plans",
+    "section": {
+      "operation": "Operation",
+      "quality": "Quality",
+      "administration": "Administration"
+    }
   },
   "dashboard": {
     "overview": {
@@ -513,6 +546,13 @@
     }
   },
   "subscription": {
+    "plan-switch": {
+      "title": "Switch your plan?",
+      "summary": "You chose {{chosen}} on the website, and your account has {{current}}.",
+      "until": "Your current plan runs until {{date}}.",
+      "later": "Not now",
+      "billing": "Go to billing"
+    },
     "plans": {
       "title": "Subscription Plans",
       "subtitle": "Choose the plan that fits your laboratory operations.",
@@ -527,7 +567,17 @@
       "select": "Select Plan",
       "selected": "Selected",
       "continue": "Continue to Checkout",
-      "empty": "No subscription plans are currently available."
+      "empty": "No subscription plans are currently available.",
+      "toggle-monthly": "Monthly",
+      "toggle-yearly": "Annually",
+      "period-label": "Billing period",
+      "get": "Get {{name}}",
+      "already-active": "You already have an active subscription. To switch plans, cancel the renewal in Billing and choose another plan when the current period ends.",
+      "open-billing": "Go to Billing",
+      "current-renews": "Your current plan · renews on {{date}}",
+      "current-until": "Your current plan · active until {{date}}",
+      "manage-in-billing": "Manage in Billing",
+      "unavailable": "Not available while your subscription is active."
     },
     "billing-period": {
       "monthly": "Monthly",
@@ -573,12 +623,12 @@
       "no-active-subscription": "No active subscription",
       "no-active-subscription-desc": "Choose a plan to activate billing for your laboratory.",
       "choose-plan": "Choose Plan",
-      "change-plan": "Change Plan",
+      "change-plan": "View Plans",
       "plan": "Plan",
       "plan-id": "Plan ID",
       "status": "Status",
       "start-date": "Start Date",
-      "started-at": "Started At",
+      "period-start": "Current Period From",
       "end-date": "End Date",
       "payments-title": "Payment History",
       "payment-history": "Payment History",
@@ -655,11 +705,6 @@
   "ca-alerts": {
     "empty": "No compliance alerts found. Everything is within BPM parameters.",
     "not-found": "Alert not found.",
-    "kpi": {
-      "critical": "Critical",
-      "open": "Open alerts",
-      "attending": "Being attended"
-    },
     "fields": {
       "parameter": "Variable",
       "severity": "Severity",
@@ -686,7 +731,7 @@
     },
     "status": {
       "unresolved": "Open",
-      "acknowledged": "Being attended",
+      "acknowledged": "In progress",
       "resolved": "Resolved",
       "ignored": "Ignored"
     },
@@ -698,19 +743,87 @@
       "email": "E-mail the alert"
     },
     "history": {
+      "not-resolved": "Not resolved yet",
       "title": "Alert History",
-      "subtitle": "Every alert of the environment, including resolved ones.",
-      "empty": "There are no alerts with these filters."
+      "empty": "There are no alerts with these filters.",
+      "none-all": "No environment recorded alerts in the last 90 days.",
+      "none-one": "This environment recorded no alerts in the last 90 days.",
+      "unavailable": "The alerts of {{environments}} could not be read. The history does not include them.",
+      "filters": {
+        "label": "Filters of the history",
+        "period": "Period",
+        "search": "Search device, variable or note",
+        "from": "From",
+        "to": "To",
+        "clear": "Clear filters"
+      },
+      "periods": {
+        "days-7": "7 days",
+        "days-30": "30 days",
+        "days-90": "90 days",
+        "custom": "Custom"
+      },
+      "columns": {
+        "alert": "Alert",
+        "resolution": "Resolution"
+      },
+      "metrics": {
+        "alerts": "Alerts",
+        "resolved": "Resolved",
+        "percent": "{{value}}%",
+        "resolved-of": "{{resolved}} of {{total}}",
+        "attention": "Average attention time",
+        "attention-hint": "From detection to attention",
+        "resolution": "Average resolution time",
+        "resolution-hint": "From detection to resolution",
+        "no-time": "—"
+      },
+      "chart": {
+        "title": "Alerts per week",
+        "week": "Week of"
+      },
+      "open-for": "Open for {{time}}",
+      "attention-after": "attended after {{time}}",
+      "export": "Export report",
+      "export-note": "\"Export report\" covers the whole period and environment: severity, status, origin and search only narrow this table.",
+      "view": "View the detail of the {{variable}} alert"
     },
     "detail": {
+      "next": {
+        "label": "Next step",
+        "attend-title": "Register attention",
+        "attend-text": "Nobody is attending it yet. Registering attention makes you responsible for it, and then you record the corrective action."
+      },
       "alert": "Alert",
       "no-environment": "No environment",
       "normalized": "The condition returned to normal on {{date}}; the alert stays open until someone resolves it.",
       "timeline": "Follow-up",
-      "detected": "Detected on {{date}}.",
-      "last-deviation": "Last deviation on {{date}} ({{count}} deviations in the incident).",
-      "acknowledged": "Attended by user #{{user}} on {{date}}.",
-      "resolved": "Resolved by user #{{user}} on {{date}}:",
+      "step": {
+        "detected": "Detected · {{value}} {{unit}} (limit {{limit}})",
+        "last-deviation": "Last deviation",
+        "attending": "In progress by {{name}}",
+        "resolved": "Resolved by {{name}}",
+        "later": "{{time}} later",
+        "waiting-attention": "Pending: nobody has registered attention",
+        "waiting-resolution": "Pending: the corrective action is missing"
+      },
+      "user": "user #{{id}}",
+      "corrective-action": "Corrective action",
+      "templates": {
+        "label": "Corrective action templates",
+        "ventilation": {
+          "label": "Ventilation adjusted",
+          "text": "The ventilation of the area was adjusted and the reading was verified back in range."
+        },
+        "filter": {
+          "label": "Filter replaced",
+          "text": "The filter was replaced and the reading was verified back in range."
+        },
+        "sensor": {
+          "label": "Sensor recalibrated",
+          "text": "The sensor was recalibrated and the reading was verified as correct."
+        }
+      },
       "actions-title": "Related actions",
       "no-actions": "The container monitor registered no actions for this variable during the incident.",
       "no-actions-environment": "Actions are reported by container monitors; the environmental device does not execute any.",
@@ -730,8 +843,7 @@
       "saved": "Notification preferences saved."
     },
     "no-environments": "Alerts are listed per environment. Register an environment and its IoT devices first.",
-    "normalized": "Condition back to normal",
-    "acknowledged": "The attention of the alert was registered.",
+    "normalized": "Condition normalized",
     "resolved": "The alert was resolved.",
     "errors": {
       "connection": "The alerts could not be loaded. Check your connection and try again.",
@@ -740,8 +852,49 @@
     },
     "active": {
       "title": "Active Alerts",
-      "subtitle": "Open alerts of the environment and its monitored containers, with their origin and severity.",
-      "empty": "There are no active alerts in this environment."
+      "unavailable": "The alerts of {{environments}} could not be read. What you see of those environments may be out of date.",
+      "retry": "Try again",
+      "new-alerts": "New alerts: {{count}}.",
+      "attention-registered": "{{alert}} in progress",
+      "attended-by-another": "Another person already attended this alert.",
+      "search": "Device or variable",
+      "results": "Showing {{shown}} of {{total}} alerts.",
+      "no-results": "There are no alerts with these filters.",
+      "filters": {
+        "label": "Filter the alerts",
+        "all": "All",
+        "critical-unattended": "Critical not attended",
+        "unattended": "Not attended",
+        "attending": "In progress"
+      },
+      "groups": {
+        "CRITICAL": "Critical",
+        "WARNING": "Warnings",
+        "LOW": "Low"
+      },
+      "sort": {
+        "label": "Sort by",
+        "priority": "Priority",
+        "newest": "Newest",
+        "environment": "Environment"
+      },
+      "card": {
+        "limit": "limit {{value}} {{unit}}",
+        "opened": "Opened {{time}}",
+        "no-owner": "No one assigned",
+        "attending": "In progress {{time}}",
+        "attending-by": "In progress by {{name}} · {{time}}",
+        "more": "More actions",
+        "notify": "Notify",
+        "resolve": "Resolve"
+      },
+      "empty": {
+        "title": "Everything within GMP parameters",
+        "message-one": "There are no open alerts in this environment.",
+        "message-many": "There are no open alerts in the {{count}} environments.",
+        "history": "View history",
+        "monitoring": "Go to monitoring"
+      }
     },
     "origin": {
       "ENVIRONMENT": "Environment",
@@ -752,6 +905,14 @@
       "sent": "The alert was e-mailed to {{count}} person(s).",
       "no-recipients": "Nobody else in the laboratory has e-mail notices enabled.",
       "failed": "The e-mail could not be sent. Check that e-mail is configured on the platform."
+    },
+    "page": {
+      "title": "Compliance alerts"
+    },
+    "tabs": {
+      "active": "Active",
+      "history": "History",
+      "preferences": "Preferences"
     }
   },
   "notifications": {
@@ -812,13 +973,64 @@
       "view": "View Traceability",
       "view-detail": "View Batch Detail"
     },
-    "all-statuses": "All statuses",
     "no-environment": "Registered before environments; assign it an environment to open it.",
     "errors": {
       "connection": "The server could not be reached. Check your connection and try again.",
       "forbidden": "Your account cannot perform this action.",
       "not-found": "The batch or product was not found in this laboratory.",
       "failed": "The operation could not be completed."
+    },
+    "kpi": {
+      "label": "Batch indicators",
+      "total": "Total batches",
+      "products-one": "{{count}} product",
+      "products-many": "{{count}} products",
+      "pending-hint": "No raw material consumed yet",
+      "in-progress-hint": "Being manufactured",
+      "release-rate": "{{rate}} % of closed batches",
+      "rejection-rate": "{{rate}} % of closed batches",
+      "status": {
+        "PENDING": "Pending",
+        "IN_PROGRESS": "In progress",
+        "RELEASED": "Released",
+        "REJECTED": "Rejected"
+      }
+    },
+    "filters": {
+      "label": "Batch filters",
+      "search": "Batch number or product",
+      "period": "Start date range",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear filters"
+    },
+    "table": {
+      "paginator": {
+        "per-page": "Batches per page",
+        "first": "First page",
+        "previous": "Previous page",
+        "next": "Next page",
+        "last": "Last page",
+        "range": "{{start}} – {{end}} of {{length}}",
+        "empty": "0 of 0"
+      }
+    },
+    "sort": {
+      "label": "Sort by",
+      "newest": "Newest first",
+      "direction": "Order",
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "empty-state": {
+      "none-title": "No batches yet",
+      "none-message": "Batches are registered from their product. Open the pharmaceutical products to start one.",
+      "no-match-title": "No batch matches the filters",
+      "no-match-message": "Change or clear the filters to see more batches."
+    },
+    "people": {
+      "you": "{{name}} (you)",
+      "user": "User #{{id}}"
     }
   },
   "batch-form": {
@@ -840,7 +1052,10 @@
       "batch-number": "Unique in the laboratory, for example PB-2026-001."
     },
     "errors": {
-      "quantity-min": "The quantity must be greater than 0."
+      "quantity-min": "The quantity must be greater than 0.",
+      "quantity-max": "The quantity cannot exceed 999,999,999.",
+      "whole-units": "Enter a whole quantity when the unit is units.",
+      "precision": "Use no more than three decimal places."
     },
     "saved": "Batch registered."
   },
@@ -856,7 +1071,9 @@
     "notes": "BPM Notes",
     "no-notes": "No notes recorded for this batch.",
     "closed-on": "Closed on",
-    "closed-notice": "This batch is closed: no more raw materials, equipment or staff can be added."
+    "closed-notice": "This batch is closed: no more raw materials, equipment or staff can be added.",
+    "back-to": "Back to {{product}}",
+    "summary": "Batch summary"
   },
   "batch-release": {
     "title": "Release Batch",
@@ -930,6 +1147,8 @@
     "title": "Equipment",
     "add-button": "Register Equipment",
     "empty": "No equipment found in this laboratory",
+    "empty-filtered": "No equipment matches these filters.",
+    "clear-filters": "Clear filters",
     "fields": {
       "name": "Name",
       "type": "Type",
@@ -946,12 +1165,16 @@
       "label": "Show",
       "all": "All",
       "equipment": "Equipment",
-      "devices": "IoT devices"
+      "devices": "IoT devices",
+      "gateways": "Edge Gateways",
+      "environment": "Environment",
+      "all-environments": "All environments"
     },
-    "search": "Search by name, model, serial or identifier",
+    "search": "Search name, model, serial or ID",
     "summary": {
       "equipment": "Process equipment",
       "devices": "IoT devices",
+      "gateways": "Edge Gateways",
       "attention": "In maintenance or out of service"
     }
   },
@@ -1007,7 +1230,11 @@
       "parameter": "E.g. Internal Temperature",
       "unit": "E.g. °C, %, bar, RPM"
     },
-    "saved": "BPM parameter saved."
+    "saved": "BPM parameter saved.",
+    "errors": {
+      "limit": "The value must be between -1,000,000 and 1,000,000",
+      "range": "The maximum must be greater than the minimum"
+    }
   },
   "maintenance-history": {
     "title": "Maintenance History",
@@ -1051,6 +1278,7 @@
   },
   "lab-profile": {
     "title": "Laboratory Profile",
+    "tab": "Profile",
     "name": "Laboratory Name",
     "address": "Physical Address",
     "phone": "Contact Phone",
@@ -1062,7 +1290,7 @@
     "subtitle": "Register a new laboratory profile in QualiTrack.",
     "name": "Laboratory Name",
     "ruc": "RUC",
-    "rucLength": "RUC must contain 11 digits",
+    "rucLength": "RUC must have 11 digits and start with 20",
     "address": "Physical Address",
     "phone": "Contact Phone",
     "regulations": "Applicable Regulations",
@@ -1071,6 +1299,8 @@
   "staff-list": {
     "title": "Personnel Management",
     "register": "Add Staff",
+    "search": "Search name, job title or email",
+    "empty-filtered": "No staff members match these filters.",
     "name": "Full Name",
     "role": "Job title",
     "email": "Corporate Email",
@@ -1112,6 +1342,7 @@
   "product-catalog": {
     "title": "Pharmaceutical products",
     "add": "New Product",
+    "search": "Search by code or name",
     "code": "SKU / Code",
     "name": "Product Name",
     "specifications": "BPM Specifications",
@@ -1172,7 +1403,12 @@
     }
   },
   "reporting": {
-    "all-environments": "All environments",
+    "tabs": {
+      "summary": "Summary",
+      "deviations": "Deviations",
+      "generator": "New report",
+      "audit-log": "Audit log"
+    },
     "no-environments": "Register an environment of the laboratory to calculate its indicators.",
     "errors": {
       "load": "The indicators could not be loaded. Please try again."
@@ -1199,17 +1435,68 @@
       "trend": "Trend"
     },
     "summary": {
+      "state-normal":       "Normal",
+      "state-warning":      "Warning",
+      "state-critical":     "Critical",
+      "state-unconfigured": "No threshold",
+      "min": "min",
+      "max": "max",
+      "filter-hint": "Changes with filter",
+      "view-cards": "Cards",
+      "view-table": "Table",
+      "no-readings-hint": "Devices in this environment sent no data. Extend the period to search further back.",
+      "view-31-days": "View last 31 days",
+      "recent": "Recent",
+      "readings": "readings",
+      "average": "average",
       "title": "Environmental summary",
       "subtitle": "Average, minimum and maximum of the readings of each device in the period, calculated from the recorded readings.",
       "readings-title": "Readings of the period",
       "no-readings": "There are no readings in the period, so no values are calculated.",
-      "formula": "Only numeric readings are summarized; the average is rounded to two decimals.",
-      "records-title": "Laboratory records",
-      "records-note": "Current counts of the records of the laboratory; they do not depend on the period or the environment.",
-      "no-records": "The laboratory has no equipment or batches recorded yet."
+      "formula": "Only numeric readings are summarized; the average is rounded to two decimals. The state of each card is the worst one the readings reached in the period."
     },
     "deviations": {
+      "detail-title": "Deviation Detail",
+      "back-to-chart": "Back to chart",
+      "all-events": "All events",
+      "readings": "readings",
+      "view-detail": "View detail",
+      "alert-type": "Alert type",
+      "all-alerts": "All alerts",
+      "clear-filters": "Clear filters",
+      "legend-reading": "Reading",
+      "legend-normal": "Normal range ({{min}} - {{max}} {{unit}})",
+      "legend-normal-up-to": "Normal range (up to {{max}} {{unit}})",
+      "legend-normal-from": "Normal range (from {{min}} {{unit}})",
+      "legend-warning": "Warning ({{min}} - {{max}} {{unit}})",
+      "legend-critical": "Critical > {{limit}} {{unit}}",
+      "legend-critical-below": "Critical < {{limit}} {{unit}}",
+      "no-thresholds": "This variable has no configured limits, so no ranges are shown.",
+      "tooltip-critical": "Critical · Limit {{limit}} {{unit}}",
+      "tooltip-warning": "Warning · Limit {{limit}} {{unit}}",
+      "date-range-label": "Date Range",
+      "date-start-placeholder": "Start",
+      "date-end-placeholder": "End",
+
+      "empty-title": "No indicators calculated",
+      "empty-desc": "There are no numeric readings for this environment in the selected period. Try changing the period or selecting another environment.",
       "title": "Deviation indicators",
+      "kpi": {
+        "variables": "Evaluated variables",
+        "time-in-range": "Time in range (avg.)",
+        "time-in-range-hint": "Time in normal condition",
+        "deviations": "Deviations",
+        "worse-readings": "Readings worse than the previous one",
+        "critical": "Critical",
+        "critical-events": "Critical events"
+      },
+      "view-chart": "Chart",
+      "view-table": "Table",
+      "events-title": "Period events",
+      "view-alert": "View alert",
+      "critical-label": "critical",
+      "limit": "limit",
+      "no-events": "No critical or warning events recorded in this period.",
       "subtitle": "Time in range and deviations of each variable of the environment in the period, calculated from the condition of the readings.",
       "not-enough": "Not enough readings",
       "formula": "Each evaluated reading keeps its condition until the next one; the time in range is the time in normal condition over the time between the first and the last evaluated reading. A deviation is a reading whose condition is worse than the previous one; it is critical when it enters the critical condition. Readings of variables without thresholds are not evaluated.",
@@ -1220,9 +1507,56 @@
   },
   "report-generator": {
     "title": "Report & Document Generator",
-    "generating": "Generating document",
+    "subtitle": "Traceability and compliance documents ready for DIGEMID audit.",
+    "generating": "Generating report...",
     "loading-options": "Loading records...",
     "retry": "Try again",
+    "format": "Format",
+    "step-1": "Report type",
+    "step-2": "Parameters",
+    "select-environment": "Environment",
+    "all-environments": "All environments",
+    "select-batch": "Select Batch",
+    "select-equipment": "Select Equipment",
+    "generate-excel": "Generate Excel",
+    "period": "Period",
+    "last-7-days": "Last 7 days",
+    "last-30-days": "Last 30 days",
+    "max-days-hint": "Maximum 366 days per report.",
+    "format-hint": "PDF for audit · CSV for Excel analysis",
+    "report-content": "Report content",
+    "preview": "Preview",
+    "generate-pdf": "Generate PDF",
+    "contents": {
+      "batch": {
+        "general": "General batch and product data",
+        "traceability": "Traceability of materials and batches used",
+        "equipment": "Equipment and personnel involved",
+        "storage": "Storage and quality decision",
+        "deviations": "Deviation review and SHA-256 signature"
+      },
+      "compliance": {
+        "summary": "Period summary and method",
+        "readings": "Readings by variable and environment (averages, min, max)",
+        "time-in-range": "Time in range and deviations",
+        "alerts": "Detected alerts and their resolution",
+        "actions": "Executed automatic actions (e.g., ventilation)"
+      },
+      "inventory": {
+        "date": "Business date and scope",
+        "environment": "Breakdown by environment",
+        "stock": "Physical stock vs. usable stock",
+        "expiration": "Batches with stock and expiration evaluation",
+        "author": "Authorship note and export date"
+      },
+      "equipment": {
+        "general": "Equipment data and activity period",
+        "limits": "Current configured limits",
+        "maintenance": "Maintenance record",
+        "audit": "Audit entries (actors and actions)",
+        "scope": "Scope note (without telemetry or certifications)"
+      }
+    },
     "errors": {
       "resource-unavailable": "The selected record is not available to your account. Reload this page and select an available record.",
       "session-expired": "Your session has expired. Sign in again.",
@@ -1344,13 +1678,18 @@
     }
   },
   "tracking": {
+    "tabs": {
+      "monitoring": "Monitoring",
+      "history": "History",
+      "profiles": "Profiles"
+    },
     "refresh": "Refresh",
     "no-environments": "Register an environment of the laboratory to monitor it.",
     "no-devices": "This environment has no IoT devices. Associate an environmental device or a container monitor with it to see its readings.",
     "errors": {
       "load": "The monitoring data could not be loaded. Please try again.",
       "device": "The readings of this device could not be loaded.",
-      "period": "Choose a valid period of up to 31 days.",
+      "period": "Choose a valid period of up to 31 days, from 01/01/2020.",
       "save": "The configuration could not be saved. Review the values and try again."
     },
     "metrics": {
@@ -1462,6 +1801,7 @@
       "errors": {
         "incomplete": "Each limit needs both its normal and its critical value.",
         "no-limits": "Enter at least the maximums or the minimums of the metric.",
+        "out-of-range": "{{metric}}: values must be between {{min}} and {{max}} {{unit}}.",
         "critical-min": "The critical minimum must be lower than the normal minimum.",
         "critical-max": "The critical maximum must be higher than the normal maximum.",
         "normal-range": "The normal minimum must be lower than the normal maximum.",
@@ -1498,6 +1838,7 @@
     "title": "Environments",
     "subtitle": "Physical areas of the laboratory or warehouse where materials, products and devices are located.",
     "register": "Register environment",
+    "search": "Search code or name",
     "code": "Code",
     "name": "Name",
     "description": "Description",
@@ -1514,7 +1855,8 @@
       "usage-edit-hint": "Change the usage from the environment list.",
       "max-length": "Use at most {{max}} characters."
     },
-    "selector": "Environment"
+    "selector": "Environment",
+    "all": "All environments ({{count}})"
   },
   "environment-usage": {
     "LABORATORY": "Laboratory",
@@ -1551,10 +1893,25 @@
     "equipment": "Equipment",
     "staff": "Staff",
     "decision": "Quality decision",
-    "released": "Released on {{date}} and signed by user #{{user}}.",
+    "released": "Released on {{date}} and signed by {{user}}.",
     "rejected": "Rejected on {{date}}:",
     "pending": "The batch has not been released or rejected yet.",
-    "container": "Container"
+    "container": "Container",
+    "signature": "SHA-256 signature",
+    "stock-change": "Lot stock (before → after)",
+    "registered-by": "Registered by"
+  },
+  "batch-timeline": {
+    "title": "Timeline",
+    "started": "Manufacturing of {{product}} started",
+    "staff": "{{name}} joined the batch",
+    "equipment": "{{equipment}} registered for the batch",
+    "consumption": "{{quantity}} {{unit}} of {{material}} consumed",
+    "consumption-lot": "{{quantity}} {{unit}} of {{material}} consumed from lot #{{lot}}",
+    "stored": "Stored in {{container}}",
+    "released": "Batch released",
+    "rejected": "Batch rejected",
+    "by": "by {{name}}"
   },
   "equipment": {
     "errors": {
@@ -1568,7 +1925,6 @@
     "add-button": "Register IoT device",
     "title": "New IoT Device",
     "subtitle": "ESP32 environmental device or container monitor and the identity Edge uses to recognise it",
-    "save": "Register device",
     "fields": {
       "device-type": "Device type",
       "identifier": "Device identifier",
@@ -1587,7 +1943,10 @@
       "environment": "Optional; it can also be associated later from the device detail."
     },
     "no-environment": "Associate later",
-    "occupied": "already has an environmental device"
+    "occupied": "already has an environmental device",
+    "errors": {
+      "firmware": "Use a format like 1.2.3, v1.2 or 2.0.1-beta.1"
+    }
   },
   "device-types": {
     "ENVIRONMENTAL_DEVICE": "Environmental device",
@@ -1606,6 +1965,9 @@
     },
     "no-account": "No account",
     "detail": {
+      "view-profile": "View profile",
+      "view-activity": "View activity",
+      "back": "Back to staff detail",
       "load-error": "The staff member could not be loaded.",
       "activities": "Registered activities",
       "last-activity": "Last activity",
@@ -1659,7 +2021,7 @@
     "container": "Container",
     "environment": "Environment",
     "assigned-at": "Stored on",
-    "assigned-by": "By user #{{user}}",
+    "assigned-by": "By {{user}}",
     "view-conditions": "View container conditions",
     "empty": "Not stored in a container yet",
     "hint": "Operational container monitors of product storage environments",
@@ -1667,5 +2029,127 @@
     "change": "Change container",
     "saved": "The batch was stored in the container.",
     "no-containers": "There are no operational container monitors in product storage environments. Classify an environment as product storage and locate a container monitor there."
+  },
+  "edge-gateway": {
+    "type": "Edge Gateway",
+    "add-button": "Register Edge Gateway",
+    "form": {
+      "title": "Register Edge Gateway",
+      "subtitle": "The Edge Gateway receives the readings of the IoT devices of its environment and sends them to QualiTrack.",
+      "placeholders": {
+        "name": "E.g. Edge Gateway - Raw materials warehouse",
+        "identifier": "E.g. EDGE-001",
+        "serial": "E.g. RPI-0001"
+      },
+      "hints": {
+        "identifier": "Unique in QualiTrack; the Edge uses it with its API key to connect.",
+        "environment": "Optional; it can also be located later from its detail. An environment can have several Edge Gateways."
+      }
+    },
+    "api-key": {
+      "title": "API key",
+      "hint": "The Edge Gateway uses it to connect to QualiTrack. It is generated only once.",
+      "issued": "API key already generated",
+      "not-issued": "No API key yet",
+      "unknown": "The API key status could not be checked.",
+      "generate": "Generate API key",
+      "requires-location": "Locate the Edge Gateway in an environment to generate its API key.",
+      "requires-operational": "The Edge Gateway must be operational to generate its API key.",
+      "dialog": {
+        "title": "Edge Gateway API key",
+        "once": "Copy the API key now. It is shown only this time and cannot be recovered later.",
+        "device-id": "Identifier",
+        "key": "API key",
+        "copy": "Copy",
+        "copied": "Copied to the clipboard.",
+        "hint": "Set both values in the .env file of the Edge Gateway.",
+        "close": "I already copied it"
+      }
+    }
+  },
+  "environment-equipment": {
+    "title": "Environment equipment",
+    "subtitle": "Edge Gateways, IoT devices and equipment located in this environment.",
+    "open": "View the equipment and devices of this environment",
+    "view-in-list": "View in the equipment list",
+    "coverage-error": "The Edge Gateway coverage of this environment could not be read. Its devices and equipment are listed below.",
+    "uncovered-warning": "{{count}} IoT device(s) have no Edge Gateway, so their readings do not reach QualiTrack. Each Edge Gateway covers up to {{max}} devices.",
+    "summary": {
+      "uncovered": "Devices without Edge Gateway"
+    },
+    "gateways": {
+      "title": "Edge Gateways",
+      "hint": "IoT devices are distributed automatically, up to {{max}} per Edge Gateway, in order of registration.",
+      "load": "Covered devices",
+      "capacity": "{{count}} of {{max}}",
+      "empty": "This environment has no Edge Gateway yet."
+    },
+    "devices": {
+      "title": "IoT devices",
+      "empty": "This environment has no IoT devices."
+    },
+    "equipment": {
+      "title": "Process equipment",
+      "empty": "This environment has no process equipment."
+    }
+  },
+  "page-titles": {
+    "home": "Home",
+    "about": "About",
+    "dashboard": "Dashboard",
+    "not-found": "Page Not Found",
+    "onboarding": "Getting Started",
+    "sign-in": "Sign In",
+    "sign-up": "Sign Up",
+    "password-recovery": "Password Recovery",
+    "change-password": "Change Password",
+    "lab-new": "Register Laboratory",
+    "lab-profile": "Laboratory Profile",
+    "environment-list": "Environments",
+    "environment-new": "Register Environment",
+    "environment-edit": "Edit Environment",
+    "staff-list": "Staff",
+    "staff-new": "Register Staff Member",
+    "staff-detail": "Staff Member",
+    "equipment-list": "Equipment",
+    "equipment-new": "Register Equipment",
+    "device-new": "Register IoT Device",
+    "edge-gateway-new": "Register Edge Gateway",
+    "environment-equipment": "Environment equipment",
+    "equipment-detail": "Equipment Detail",
+    "bpm-config": "BPM Configuration",
+    "maintenance-new": "Technical Activity Record",
+    "batch-list": "Production Batches",
+    "product-catalog": "Products",
+    "product-new": "Register Product",
+    "product-detail": "Product Detail",
+    "batch-new": "Create Production Batch",
+    "batch-detail": "Batch Detail",
+    "batch-release": "Release Batch",
+    "batch-reject": "Reject Batch",
+    "inventory": "Inventory",
+    "raw-material-new": "Register Raw Material",
+    "raw-material-detail": "Raw Material Detail",
+    "material-history": "Material History",
+    "alerts": "Active Alerts",
+    "alert-history": "Alert History",
+    "alert-detail": "Alert Detail",
+    "notification-preferences": "Notification Preferences",
+    "monitoring": "Environmental Monitoring",
+    "telemetry-history": "Telemetry History",
+    "environmental-profiles": "Environmental Profiles",
+    "kpis": "Environmental Summary",
+    "deviation-trends": "Deviation Indicators",
+    "deviation-detail": "Deviation Detail",
+    "report-generator": "Report Generator",
+    "audit-log": "Audit Log",
+    "staff-activity": "Staff Activity",
+    "plans": "Subscription Plans",
+    "checkout": "Checkout",
+    "payment-success": "Payment Confirmed",
+    "payment-cancel": "Payment Cancelled",
+    "billing": "Billing Summary",
+    "profile": "Profile",
+    "staff-profile": "Staff Profile"
   }
 }

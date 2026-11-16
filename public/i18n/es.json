@@ -12,6 +12,9 @@
     "minimum": "Stock mínimo",
     "required": "Completa este campo.",
     "invalidQuantity": "Ingresa una cantidad válida: hasta 3 decimales; valores enteros para unidades.",
+    "quantityTooLarge": "La cantidad no puede superar 999.999.999.",
+    "expiryBeforeReceipt": "El vencimiento debe ser posterior a la fecha de recepción.",
+    "expiryTooFar": "El vencimiento no puede superar 10 años desde hoy.",
     "save": "Guardar",
     "cancel": "Cancelar",
     "materials": "Materias primas del catálogo",
@@ -91,12 +94,6 @@
     "containerUsageNotice": "Solo los ambientes de almacenamiento de materia prima guardan lotes en contenedores monitoreados. Clasifica el ambiente como almacenamiento de materia prima para usar contenedores."
   },
   "onboarding.no-plans": "Todavía no hay planes de suscripción disponibles. Contacta al administrador del servicio.",
-  "operational-metrics": {
-    "equipment-count": "Equipos registrados",
-    "batch-count": "Lotes registrados",
-    "released-batch-count": "Lotes liberados",
-    "unresolved-alert-count": "Alertas abiertas"
-  },
   "onboarding": {
     "loading": "Consultando el estado de tu cuenta…",
     "unavailable-title": "Estado de cuenta no disponible",
@@ -120,9 +117,9 @@
     "subscription-paused": "Tu laboratorio no tiene una suscripción activa. Pide a tu QA Manager que la renueve e inténtalo nuevamente."
   },
   "home": {
-  "title": "Nos preocupamos por la precisión, aseguramos la calidad.",
-  "content": "Gestión avanzada de datos para entornos operativos de alto riesgo. Asegure el cumplimiento normativo total y la precisión a nivel de laboratorio.",
-  "heroImageAlt": "Dos profesionales farmacéuticas revisando el inventario"
+    "title": "Nos preocupamos por la precisión, aseguramos la calidad.",
+    "content": "Gestión avanzada de datos para entornos operativos de alto riesgo. Asegure el cumplimiento normativo total y la precisión a nivel de laboratorio.",
+    "heroImageAlt": "Dos profesionales farmacéuticas revisando el inventario"
   },
   "language-switcher": {
     "aria-label": "Idioma preferido"
@@ -179,6 +176,7 @@
       "errors": {
         "username-required": "El usuario es obligatorio",
         "username-minlength": "El usuario debe tener al menos 3 caracteres",
+        "username-maxlength": "El usuario puede tener hasta 80 caracteres",
         "password-required": "La contraseña es obligatoria",
         "password-minlength": "Usa entre 8 y 72 caracteres",
         "password-strength": "La contraseña debe contener letras y números",
@@ -267,9 +265,9 @@
       "save": "Guardar datos",
       "saved": "Datos personales guardados.",
       "errors": {
-        "full-name": "Escribe tu nombre completo (de 2 a 120 caracteres).",
-        "dni": "El DNI tiene 8 dígitos.",
-        "phone": "Usa de 6 a 15 dígitos; puede empezar con +.",
+        "full-name": "Escribe tu nombre completo (de 2 a 120 caracteres, solo letras, espacios, apóstrofes, guiones y puntos).",
+        "dni": "El DNI debe tener 8 dígitos y no puede repetir el mismo número.",
+        "phone": "Escribe un celular de 9 dígitos que empiece con 9, o un fijo de 8 dígitos con código de área. Puede empezar con +51.",
         "location": "Usa de 2 a 120 caracteres.",
         "invalid": "Algún dato no es válido. Revísalo."
       }
@@ -306,6 +304,18 @@
     }
   },
   "common": {
+    "filters": "Filtros",
+    "clear-search": "Limpiar la búsqueda",
+    "updated": "Actualizado {{time}}",
+    "paginator": {
+      "per-page": "Filas por página",
+      "first": "Primera página",
+      "previous": "Página anterior",
+      "next": "Página siguiente",
+      "last": "Última página",
+      "range": "{{start}} – {{end}} de {{length}}",
+      "empty": "0 de 0"
+    },
     "save": "Guardar Cambios",
     "cancel": "Cancelar",
     "back": "Volver",
@@ -316,12 +326,27 @@
     "inactive": "Inactivo",
     "required": "Este campo es obligatorio",
     "invalidEmail": "Ingrese un correo válido",
+    "notBlank": "El campo no puede contener solo espacios",
+    "dateInvalid": "Ingrese una fecha válida",
+    "dateMin": "La fecha no puede ser anterior al 01/01/2020",
+    "dateFuture": "La fecha no puede ser futura",
+    "dateTooFar": "La fecha no puede superar un año desde hoy",
+    "dateBeforeBatchStart": "La fecha no puede ser anterior al inicio del lote",
+    "dateRangeOrder": "La fecha final no puede ser anterior a la inicial",
+    "periodTooLong": "El rango no puede superar 366 días",
+    "invalidId": "El identificador debe ser un número entero mayor que 0",
+    "invalidCode": "Use solo letras, números y los separadores - _ . /",
+    "invalidPhone": "Ingrese un celular de 9 dígitos que empiece con 9, o un fijo de 8 dígitos con código de área",
+    "phoneChars": "El teléfono solo puede tener dígitos, espacios, guiones, paréntesis y un + al inicio",
+    "phoneFake": "Ingrese un número de teléfono real",
+    "invalidPersonName": "Use solo letras, espacios, apóstrofes, guiones y puntos",
     "minZero": "El valor debe ser al menos 0",
     "status-loading": "Cargando datos...",
     "all": "Todos",
     "clear": "Limpiar Filtros",
     "refresh": "Actualizar",
     "download": "Descargar",
+    "close": "Cerrar",
     "export": "Exportar",
     "format": "Formato",
     "date-range": "Rango de Fechas",
@@ -340,7 +365,8 @@
       "register": "Registrar",
       "search": "Buscar",
       "refresh": "Actualizar"
-    }
+    },
+    "undo": "Deshacer"
   },
   "status": {
     "ON_TRACK": "En Camino",
@@ -366,9 +392,11 @@
     "equipment-list": "Catálogo de equipos",
     "register-equipment": "Registrar equipo",
     "register-device": "Registrar dispositivo IoT",
+    "register-edge-gateway": "Registrar Edge Gateway",
     "alerts": "Alertas de cumplimiento",
     "alert-dashboard": "Alertas activas",
     "alert-history": "Historial de alertas",
+    "alert-preferences": "Preferencias de notificación",
     "reports": "Reportes y KPIs",
     "kpi-dashboard": "Resumen ambiental",
     "deviation-trends": "Indicadores de desviación",
@@ -387,7 +415,12 @@
     "tracking-profiles": "Perfiles ambientales",
     "subscription": "Suscripción y facturación",
     "billing-summary": "Resumen de facturación",
-    "subscription-plans": "Planes de suscripción"
+    "subscription-plans": "Planes de suscripción",
+    "section": {
+      "operation": "Operación",
+      "quality": "Calidad",
+      "administration": "Administración"
+    }
   },
   "dashboard": {
     "overview": {
@@ -513,6 +546,13 @@
     }
   },
   "subscription": {
+    "plan-switch": {
+      "title": "¿Cambiar de plan?",
+      "summary": "Elegiste {{chosen}} en el sitio web, y tu cuenta tiene {{current}}.",
+      "until": "Tu plan actual dura hasta el {{date}}.",
+      "later": "Ahora no",
+      "billing": "Ir a facturación"
+    },
     "plans": {
       "title": "Planes de Suscripción",
       "subtitle": "Elige el plan que mejor se adapte a las operaciones de tu laboratorio.",
@@ -527,7 +567,17 @@
       "select": "Seleccionar Plan",
       "selected": "Seleccionado",
       "continue": "Continuar al Pago",
-      "empty": "No hay planes de suscripción disponibles actualmente."
+      "empty": "No hay planes de suscripción disponibles actualmente.",
+      "toggle-monthly": "Mensual",
+      "toggle-yearly": "Anual",
+      "period-label": "Periodo de facturación",
+      "get": "Obtener {{name}}",
+      "already-active": "Ya tienes una suscripción activa. Para cambiar de plan, cancela la renovación en Facturación y elige otro plan cuando termine el periodo actual.",
+      "open-billing": "Ir a Facturación",
+      "current-renews": "Tu plan actual · se renueva el {{date}}",
+      "current-until": "Tu plan actual · activo hasta el {{date}}",
+      "manage-in-billing": "Gestionar en Facturación",
+      "unavailable": "No disponible mientras tu suscripción esté activa."
     },
     "billing-period": {
       "monthly": "Mensual",
@@ -573,12 +623,12 @@
       "no-active-subscription": "No hay una suscripción activa",
       "no-active-subscription-desc": "Elige un plan para activar la facturación de tu laboratorio.",
       "choose-plan": "Elegir Plan",
-      "change-plan": "Cambiar Plan",
+      "change-plan": "Ver Planes",
       "plan": "Plan",
       "plan-id": "ID del Plan",
       "status": "Estado",
       "start-date": "Fecha de Inicio",
-      "started-at": "Inició El",
+      "period-start": "Periodo actual desde",
       "end-date": "Fecha de Fin",
       "payments-title": "Historial de Pagos",
       "payment-history": "Historial de Pagos",
@@ -655,11 +705,6 @@
   "ca-alerts": {
     "empty": "No se encontraron alertas de cumplimiento. Todo está dentro de los parámetros BPM.",
     "not-found": "Alerta no encontrada.",
-    "kpi": {
-      "critical": "Críticas",
-      "open": "Alertas abiertas",
-      "attending": "En atención"
-    },
     "fields": {
       "parameter": "Variable",
       "severity": "Severidad",
@@ -682,7 +727,7 @@
       "low": "Baja",
       "info": "Informativo",
       "warning": "Advertencia",
-      "critical": "Crítico"
+      "critical": "Crítica"
     },
     "status": {
       "unresolved": "Abierta",
@@ -698,19 +743,87 @@
       "email": "Avisar por correo"
     },
     "history": {
+      "not-resolved": "Sin resolver todavía",
       "title": "Historial de alertas",
-      "subtitle": "Todas las alertas del ambiente, incluidas las resueltas.",
-      "empty": "No hay alertas con estos filtros."
+      "empty": "No hay alertas con estos filtros.",
+      "none-all": "Ningún ambiente registró alertas en los últimos 90 días.",
+      "none-one": "Este ambiente no registró alertas en los últimos 90 días.",
+      "unavailable": "No se pudieron leer las alertas de: {{environments}}. El historial no las incluye.",
+      "filters": {
+        "label": "Filtros del historial",
+        "period": "Periodo",
+        "search": "Buscar dispositivo, variable o nota",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Limpiar filtros"
+      },
+      "periods": {
+        "days-7": "7 días",
+        "days-30": "30 días",
+        "days-90": "90 días",
+        "custom": "Personalizado"
+      },
+      "columns": {
+        "alert": "Alerta",
+        "resolution": "Resolución"
+      },
+      "metrics": {
+        "alerts": "Alertas",
+        "resolved": "Resueltas",
+        "percent": "{{value}} %",
+        "resolved-of": "{{resolved}} de {{total}}",
+        "attention": "T. medio de atención",
+        "attention-hint": "De la detección a la atención",
+        "resolution": "T. medio de resolución",
+        "resolution-hint": "De la detección a la resolución",
+        "no-time": "—"
+      },
+      "chart": {
+        "title": "Alertas por semana",
+        "week": "Semana del"
+      },
+      "open-for": "{{time}} abierta",
+      "attention-after": "atención {{time}}",
+      "export": "Exportar reporte",
+      "export-note": "«Exportar reporte» cubre todo el periodo y el ambiente: la severidad, el estado, el origen y la búsqueda solo afectan esta tabla.",
+      "view": "Ver el detalle de la alerta de {{variable}}"
     },
     "detail": {
+      "next": {
+        "label": "Siguiente paso",
+        "attend-title": "Registrar la atención",
+        "attend-text": "Nadie la atiende todavía. Al registrar la atención quedas como responsable y luego registras la acción correctiva."
+      },
       "alert": "Alerta",
       "no-environment": "Sin ambiente",
       "normalized": "La condición volvió a la normalidad el {{date}}; la alerta sigue abierta hasta que alguien la resuelva.",
       "timeline": "Seguimiento",
-      "detected": "Detectada el {{date}}.",
-      "last-deviation": "Última desviación el {{date}} ({{count}} desviaciones en el incidente).",
-      "acknowledged": "Atendida por el usuario #{{user}} el {{date}}.",
-      "resolved": "Resuelta por el usuario #{{user}} el {{date}}:",
+      "step": {
+        "detected": "Detectada · {{value}} {{unit}} (límite {{limit}})",
+        "last-deviation": "Última desviación",
+        "attending": "En atención por {{name}}",
+        "resolved": "Resuelta por {{name}}",
+        "later": "{{time}} después",
+        "waiting-attention": "Pendiente: nadie ha registrado atención",
+        "waiting-resolution": "Pendiente: falta registrar la acción correctiva"
+      },
+      "user": "usuario #{{id}}",
+      "corrective-action": "Acción correctiva",
+      "templates": {
+        "label": "Plantillas de acción correctiva",
+        "ventilation": {
+          "label": "Ventilación ajustada",
+          "text": "Se ajustó la ventilación del área y se verificó que la lectura volvió al rango."
+        },
+        "filter": {
+          "label": "Filtro reemplazado",
+          "text": "Se reemplazó el filtro y se verificó que la lectura volvió al rango."
+        },
+        "sensor": {
+          "label": "Sensor recalibrado",
+          "text": "Se recalibró el sensor y se verificó que la lectura es correcta."
+        }
+      },
       "actions-title": "Actuaciones relacionadas",
       "no-actions": "El monitor del contenedor no registró actuaciones para esta variable durante el incidente.",
       "no-actions-environment": "Las actuaciones las informan los monitores de contenedor; el dispositivo ambiental no ejecuta acciones.",
@@ -731,7 +844,6 @@
     },
     "no-environments": "Las alertas se consultan por ambiente. Registra primero un ambiente y sus dispositivos IoT.",
     "normalized": "Condición normalizada",
-    "acknowledged": "Se registró la atención de la alerta.",
     "resolved": "La alerta quedó resuelta.",
     "errors": {
       "connection": "No se pudieron cargar las alertas. Revisa tu conexión e inténtalo de nuevo.",
@@ -740,8 +852,49 @@
     },
     "active": {
       "title": "Alertas activas",
-      "subtitle": "Alertas abiertas del ambiente y de sus contenedores monitoreados, con su origen y severidad.",
-      "empty": "No hay alertas activas en este ambiente."
+      "unavailable": "No se pudieron leer las alertas de: {{environments}}. Lo que ves de esos ambientes puede no estar al día.",
+      "retry": "Reintentar",
+      "new-alerts": "Alertas nuevas: {{count}}.",
+      "attention-registered": "{{alert}} en atención",
+      "attended-by-another": "Otra persona ya atendió esta alerta.",
+      "search": "Dispositivo o variable",
+      "results": "Se muestran {{shown}} de {{total}} alertas.",
+      "no-results": "No hay alertas con estos filtros.",
+      "filters": {
+        "label": "Filtrar las alertas",
+        "all": "Todas",
+        "critical-unattended": "Críticas sin atender",
+        "unattended": "Sin atender",
+        "attending": "En atención"
+      },
+      "groups": {
+        "CRITICAL": "Críticas",
+        "WARNING": "Advertencias",
+        "LOW": "Bajas"
+      },
+      "sort": {
+        "label": "Ordenar por",
+        "priority": "Prioridad",
+        "newest": "Más recientes",
+        "environment": "Ambiente"
+      },
+      "card": {
+        "limit": "límite {{value}} {{unit}}",
+        "opened": "Abierta {{time}}",
+        "no-owner": "Sin responsable",
+        "attending": "En atención {{time}}",
+        "attending-by": "En atención por {{name}} · {{time}}",
+        "more": "Más acciones",
+        "notify": "Avisar",
+        "resolve": "Resolver"
+      },
+      "empty": {
+        "title": "Todo dentro de los parámetros BPM",
+        "message-one": "No hay alertas abiertas en este ambiente.",
+        "message-many": "No hay alertas abiertas en los {{count}} ambientes.",
+        "history": "Ver historial",
+        "monitoring": "Ir a monitoreo"
+      }
     },
     "origin": {
       "ENVIRONMENT": "Ambiente",
@@ -752,6 +905,14 @@
       "sent": "Se avisó por correo a {{count}} persona(s).",
       "no-recipients": "Nadie más del laboratorio tiene activados los avisos por correo.",
       "failed": "No se pudo enviar el correo. Revisa que el envío de correos esté configurado en la plataforma."
+    },
+    "page": {
+      "title": "Alertas de cumplimiento"
+    },
+    "tabs": {
+      "active": "Activas",
+      "history": "Historial",
+      "preferences": "Preferencias"
     }
   },
   "notifications": {
@@ -812,13 +973,64 @@
       "view": "Ver Trazabilidad",
       "view-detail": "Ver Detalle del Lote"
     },
-    "all-statuses": "Todos los estados",
     "no-environment": "Registrado antes de los ambientes; asígnale un ambiente para abrirlo.",
     "errors": {
       "connection": "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
       "forbidden": "Tu cuenta no puede realizar esta acción.",
       "not-found": "No se encontró el lote o el producto en este laboratorio.",
       "failed": "No se pudo completar la operación."
+    },
+    "kpi": {
+      "label": "Indicadores de lotes",
+      "total": "Total de lotes",
+      "products-one": "{{count}} producto",
+      "products-many": "{{count}} productos",
+      "pending-hint": "Aún sin consumo de materias primas",
+      "in-progress-hint": "En fabricación",
+      "release-rate": "{{rate}} % de los lotes cerrados",
+      "rejection-rate": "{{rate}} % de los lotes cerrados",
+      "status": {
+        "PENDING": "Pendientes",
+        "IN_PROGRESS": "En progreso",
+        "RELEASED": "Liberados",
+        "REJECTED": "Rechazados"
+      }
+    },
+    "filters": {
+      "label": "Filtros de lotes",
+      "search": "Número de lote o producto",
+      "period": "Rango de fecha de inicio",
+      "from": "Desde",
+      "to": "Hasta",
+      "clear": "Limpiar filtros"
+    },
+    "table": {
+      "paginator": {
+        "per-page": "Lotes por página",
+        "first": "Primera página",
+        "previous": "Página anterior",
+        "next": "Página siguiente",
+        "last": "Última página",
+        "range": "{{start}} – {{end}} de {{length}}",
+        "empty": "0 de 0"
+      }
+    },
+    "sort": {
+      "label": "Ordenar por",
+      "newest": "Más recientes",
+      "direction": "Orden",
+      "ascending": "Ascendente",
+      "descending": "Descendente"
+    },
+    "empty-state": {
+      "none-title": "Aún no hay lotes",
+      "none-message": "Los lotes se registran desde su producto. Abre los productos farmacéuticos para iniciar uno.",
+      "no-match-title": "Ningún lote coincide con los filtros",
+      "no-match-message": "Cambia o limpia los filtros para ver más lotes."
+    },
+    "people": {
+      "you": "{{name}} (tú)",
+      "user": "Usuario #{{id}}"
     }
   },
   "batch-form": {
@@ -840,7 +1052,10 @@
       "batch-number": "Único en el laboratorio, por ejemplo PB-2026-001."
     },
     "errors": {
-      "quantity-min": "La cantidad debe ser mayor que 0."
+      "quantity-min": "La cantidad debe ser mayor que 0.",
+      "quantity-max": "La cantidad no puede superar 999.999.999.",
+      "whole-units": "La cantidad debe ser entera cuando la unidad es unidades.",
+      "precision": "Usa como máximo tres decimales."
     },
     "saved": "Lote registrado."
   },
@@ -856,7 +1071,9 @@
     "notes": "Notas BPM",
     "no-notes": "No hay notas registradas para este lote.",
     "closed-on": "Cerrado el",
-    "closed-notice": "Este lote está cerrado: ya no se pueden agregar materias primas, equipos ni personal."
+    "closed-notice": "Este lote está cerrado: ya no se pueden agregar materias primas, equipos ni personal.",
+    "back-to": "Volver a {{product}}",
+    "summary": "Resumen del lote"
   },
   "batch-release": {
     "title": "Liberar Lote",
@@ -930,6 +1147,8 @@
     "title": "Equipos",
     "add-button": "Registrar Equipo",
     "empty": "No se encontraron equipos en este laboratorio",
+    "empty-filtered": "Ningún equipo coincide con estos filtros.",
+    "clear-filters": "Limpiar filtros",
     "fields": {
       "name": "Nombre",
       "type": "Tipo",
@@ -946,12 +1165,16 @@
       "label": "Mostrar",
       "all": "Todos",
       "equipment": "Equipos",
-      "devices": "Dispositivos IoT"
+      "devices": "Dispositivos IoT",
+      "gateways": "Edge Gateways",
+      "environment": "Ambiente",
+      "all-environments": "Todos los ambientes"
     },
-    "search": "Buscar por nombre, modelo, serie o identificador",
+    "search": "Buscar nombre, modelo, serie o ID",
     "summary": {
       "equipment": "Equipos de proceso",
       "devices": "Dispositivos IoT",
+      "gateways": "Edge Gateways",
       "attention": "En mantenimiento o fuera de servicio"
     }
   },
@@ -1007,7 +1230,11 @@
       "parameter": "Ej. Temperatura Interna",
       "unit": "Ej. °C, %, bar, RPM"
     },
-    "saved": "Parámetro BPM guardado."
+    "saved": "Parámetro BPM guardado.",
+    "errors": {
+      "limit": "El valor debe estar entre -1.000.000 y 1.000.000",
+      "range": "El máximo debe ser mayor que el mínimo"
+    }
   },
   "maintenance-history": {
     "title": "Historial de Mantenimiento",
@@ -1051,6 +1278,7 @@
   },
   "lab-profile": {
     "title": "Perfil del Laboratorio",
+    "tab": "Perfil",
     "name": "Nombre del Laboratorio",
     "address": "Dirección Física",
     "phone": "Teléfono de Contacto",
@@ -1062,7 +1290,7 @@
     "subtitle": "Registra un nuevo perfil de laboratorio en QualiTrack.",
     "name": "Nombre del Laboratorio",
     "ruc": "RUC",
-    "rucLength": "El RUC debe contener 11 dígitos",
+    "rucLength": "El RUC debe tener 11 dígitos y empezar con 20",
     "address": "Dirección Física",
     "phone": "Teléfono de Contacto",
     "regulations": "Regulaciones Aplicables",
@@ -1071,6 +1299,8 @@
   "staff-list": {
     "title": "Gestión de Personal",
     "register": "Añadir Personal",
+    "search": "Buscar nombre, cargo o correo",
+    "empty-filtered": "Ningún miembro del personal coincide con estos filtros.",
     "name": "Nombre Completo",
     "role": "Cargo",
     "email": "Correo Corporativo",
@@ -1112,6 +1342,7 @@
   "product-catalog": {
     "title": "Productos farmacéuticos",
     "add": "Nuevo Producto",
+    "search": "Buscar por código o nombre",
     "code": "SKU / Código",
     "name": "Nombre del Producto",
     "specifications": "Especificaciones BPM",
@@ -1172,7 +1403,12 @@
     }
   },
   "reporting": {
-    "all-environments": "Todos los ambientes",
+    "tabs": {
+      "summary": "Resumen",
+      "deviations": "Desviaciones",
+      "generator": "Nuevo reporte",
+      "audit-log": "Auditoría"
+    },
     "no-environments": "Registra un ambiente del laboratorio para calcular sus indicadores.",
     "errors": {
       "load": "No se pudieron cargar los indicadores. Vuelve a intentarlo."
@@ -1199,18 +1435,68 @@
       "trend": "Tendencia"
     },
     "summary": {
+      "state-normal":       "Normal",
+      "state-warning":      "Advertencia",
+      "state-critical":     "Crítico",
+      "state-unconfigured": "Sin umbral",
+      "min": "mín",
+      "max": "máx",
+      "filter-hint": "Cambia con el filtro",
+      "view-cards": "Tarjetas",
+      "view-table": "Tabla",
+      "no-readings-hint": "Los dispositivos de este ambiente no enviaron datos. Amplía el periodo para buscar más atrás.",
+      "view-31-days": "Ver últimos 31 días",
+      "recent": "Reciente",
+      "readings": "lecturas",
+      "average": "promedio",
       "title": "Resumen ambiental",
       "subtitle": "Promedio, mínimo y máximo de las lecturas de cada dispositivo en el periodo, calculados a partir de las lecturas registradas.",
       "readings-title": "Lecturas del periodo",
       "no-readings": "No hay lecturas en el periodo, por lo que no se calcula ningún valor.",
-      "formula": "Solo se resumen las lecturas numéricas; el promedio se redondea a dos decimales.",
-      "records-title": "Registros del laboratorio",
-      "records-note": "Conteos actuales de los registros del laboratorio; no dependen del periodo ni del ambiente.",
-      "no-records": "El laboratorio aún no tiene equipos ni lotes registrados."
+      "formula": "Solo se resumen las lecturas numéricas; el promedio se redondea a dos decimales. El estado de cada tarjeta es el peor que alcanzaron las lecturas en el periodo."
     },
     "deviations": {
+      "detail-title": "Detalle de Desviación",
+      "back-to-chart": "Volver al gráfico",
+      "all-events": "Todos los eventos",
+      "readings": "lecturas",
+      "view-detail": "Ver detalle",
+      "alert-type": "Tipo de alerta",
+      "all-alerts": "Todas las alertas",
+      "clear-filters": "Limpiar filtros",
+      "legend-reading": "Lectura",
+      "legend-normal": "Rango normal ({{min}} - {{max}} {{unit}})",
+      "legend-normal-up-to": "Rango normal (hasta {{max}} {{unit}})",
+      "legend-normal-from": "Rango normal (desde {{min}} {{unit}})",
+      "legend-warning": "Advertencia ({{min}} - {{max}} {{unit}})",
+      "legend-critical": "Crítica > {{limit}} {{unit}}",
+      "legend-critical-below": "Crítica < {{limit}} {{unit}}",
+      "no-thresholds": "Esta variable no tiene límites configurados, por eso no se muestran rangos.",
+      "tooltip-critical": "Crítica · Límite {{limit}} {{unit}}",
+      "tooltip-warning": "Advertencia · Límite {{limit}} {{unit}}",
+      "date-range-label": "Rango de fechas",
+      "date-start-placeholder": "Inicio",
+      "date-end-placeholder": "Fin",
       "title": "Indicadores de desviación",
+      "empty-title": "Sin indicadores calculados",
+      "empty-desc": "No hay lecturas numéricas de este ambiente en el periodo seleccionado. Intenta cambiar el periodo o seleccionar otro ambiente.",
       "subtitle": "Tiempo en rango y desviaciones de cada variable del ambiente en el periodo, calculados a partir de la condición de las lecturas.",
+      "kpi": {
+        "variables": "Variables evaluadas",
+        "time-in-range": "Tiempo en rango (prom.)",
+        "time-in-range-hint": "Tiempo en condición normal",
+        "deviations": "Desviaciones",
+        "worse-readings": "Lecturas peores que la anterior",
+        "critical": "Críticas",
+        "critical-events": "Eventos críticos"
+      },
+      "view-chart": "Gráfico",
+      "view-table": "Tabla",
+      "events-title": "Eventos del periodo",
+      "view-alert": "Ver alerta",
+      "critical-label": "crítica",
+      "limit": "límite",
+      "no-events": "No se registraron eventos críticos o de advertencia en este periodo.",
       "not-enough": "Lecturas insuficientes",
       "formula": "Cada lectura evaluada mantiene su condición hasta la siguiente; el tiempo en rango es el tiempo en condición normal sobre el tiempo entre la primera y la última lectura evaluada. Una desviación es una lectura cuya condición es peor que la anterior; es crítica cuando entra en condición crítica. Las lecturas de variables sin umbrales no se evalúan.",
       "chart": "Lecturas del periodo",
@@ -1220,9 +1506,56 @@
   },
   "report-generator": {
     "title": "Generador de Reportes y Documentos",
-    "generating": "Generando documento",
+    "subtitle": "Documentos de trazabilidad y cumplimiento listos para auditoría DIGEMID.",
+    "generating": "Generando reporte...",
     "loading-options": "Cargando registros...",
     "retry": "Reintentar",
+    "format": "Formato",
+    "step-1": "Tipo de reporte",
+    "step-2": "Parámetros",
+    "select-environment": "Ambiente",
+    "all-environments": "Todos los ambientes",
+    "select-batch": "Seleccionar Lote",
+    "select-equipment": "Seleccionar Equipo",
+    "generate-excel": "Generar Excel",
+    "period": "Periodo",
+    "last-7-days": "Últimos 7 días",
+    "last-30-days": "Últimos 30 días",
+    "max-days-hint": "Máximo 366 días por reporte.",
+    "format-hint": "PDF para auditoría · CSV para análisis en Excel",
+    "report-content": "Contenido del reporte",
+    "preview": "Vista previa",
+    "generate-pdf": "Generar PDF",
+    "contents": {
+      "batch": {
+        "general": "Datos generales del lote y producto",
+        "traceability": "Trazabilidad de materiales y lotes usados",
+        "equipment": "Equipos y personal involucrado",
+        "storage": "Almacenamiento y decisión de calidad",
+        "deviations": "Revisión de desviaciones y firma SHA-256"
+      },
+      "compliance": {
+        "summary": "Resumen del periodo y método",
+        "readings": "Lecturas por variable y ambiente (promedios, mínimos, máximos)",
+        "time-in-range": "Tiempo en rango y desviaciones",
+        "alerts": "Alertas detectadas y su resolución",
+        "actions": "Acciones automáticas ejecutadas (ej. ventilación)"
+      },
+      "inventory": {
+        "date": "Fecha de negocio y alcance",
+        "environment": "Desglose por ambiente",
+        "stock": "Stock físico vs. stock usable",
+        "expiration": "Lotes con stock y evaluación de vencimiento",
+        "author": "Nota de autoría y fecha de exportación"
+      },
+      "equipment": {
+        "general": "Datos del equipo y periodo de actividad",
+        "limits": "Límites configurados actuales",
+        "maintenance": "Registro de mantenimiento",
+        "audit": "Entradas de auditoría (actores y acciones)",
+        "scope": "Nota de alcance (sin telemetría ni certificaciones)"
+      }
+    },
     "errors": {
       "resource-unavailable": "El registro seleccionado no está disponible para tu cuenta. Recarga esta página y selecciona un registro disponible.",
       "session-expired": "Tu sesión ha vencido. Inicia sesión nuevamente.",
@@ -1344,13 +1677,18 @@
     }
   },
   "tracking": {
+    "tabs": {
+      "monitoring": "Monitoreo",
+      "history": "Historial",
+      "profiles": "Perfiles"
+    },
     "refresh": "Actualizar",
     "no-environments": "Registra un ambiente del laboratorio para monitorearlo.",
     "no-devices": "Este ambiente no tiene dispositivos IoT. Asóciale un dispositivo ambiental o un monitor de contenedor para ver sus lecturas.",
     "errors": {
       "load": "No se pudieron cargar los datos de monitoreo. Inténtalo nuevamente.",
       "device": "No se pudieron cargar las lecturas de este dispositivo.",
-      "period": "Elige un periodo válido de hasta 31 días.",
+      "period": "Elige un periodo válido de hasta 31 días, desde el 01/01/2020.",
       "save": "No se pudo guardar la configuración. Revisa los valores e inténtalo nuevamente."
     },
     "metrics": {
@@ -1462,6 +1800,7 @@
       "errors": {
         "incomplete": "Cada límite necesita su valor normal y su valor crítico.",
         "no-limits": "Ingresa al menos los máximos o los mínimos de la métrica.",
+        "out-of-range": "{{metric}}: los valores deben estar entre {{min}} y {{max}} {{unit}}.",
         "critical-min": "El mínimo crítico debe ser menor que el mínimo normal.",
         "critical-max": "El máximo crítico debe ser mayor que el máximo normal.",
         "normal-range": "El mínimo normal debe ser menor que el máximo normal.",
@@ -1498,6 +1837,7 @@
     "title": "Ambientes",
     "subtitle": "Áreas físicas del laboratorio o almacén donde se ubican materiales, productos y dispositivos.",
     "register": "Registrar ambiente",
+    "search": "Buscar código o nombre",
     "code": "Código",
     "name": "Nombre",
     "description": "Descripción",
@@ -1514,7 +1854,8 @@
       "usage-edit-hint": "Cambia el uso desde la lista de ambientes.",
       "max-length": "Usa como máximo {{max}} caracteres."
     },
-    "selector": "Ambiente"
+    "selector": "Ambiente",
+    "all": "Todos los ambientes ({{count}})"
   },
   "environment-usage": {
     "LABORATORY": "Laboratorio",
@@ -1551,10 +1892,25 @@
     "equipment": "Equipos",
     "staff": "Personal",
     "decision": "Decisión de calidad",
-    "released": "Liberado el {{date}} y firmado por el usuario #{{user}}.",
+    "released": "Liberado el {{date}} y firmado por {{user}}.",
     "rejected": "Rechazado el {{date}}:",
     "pending": "El lote aún no ha sido liberado ni rechazado.",
-    "container": "Contenedor"
+    "container": "Contenedor",
+    "signature": "Firma SHA-256",
+    "stock-change": "Stock del lote (antes → después)",
+    "registered-by": "Registrado por"
+  },
+  "batch-timeline": {
+    "title": "Línea de tiempo",
+    "started": "Inicio de la fabricación de {{product}}",
+    "staff": "{{name}} se unió al lote",
+    "equipment": "Se registró el equipo {{equipment}}",
+    "consumption": "Consumo de {{quantity}} {{unit}} de {{material}}",
+    "consumption-lot": "Consumo de {{quantity}} {{unit}} de {{material}} del lote #{{lot}}",
+    "stored": "Guardado en {{container}}",
+    "released": "Lote liberado",
+    "rejected": "Lote rechazado",
+    "by": "por {{name}}"
   },
   "equipment": {
     "errors": {
@@ -1568,7 +1924,6 @@
     "add-button": "Registrar dispositivo IoT",
     "title": "Nuevo Dispositivo IoT",
     "subtitle": "Dispositivo ambiental o monitor de contenedor ESP32 y la identidad con la que Edge lo reconoce",
-    "save": "Registrar dispositivo",
     "fields": {
       "device-type": "Tipo de dispositivo",
       "identifier": "Identificador del dispositivo",
@@ -1587,7 +1942,10 @@
       "environment": "Opcional; también se puede asociar después desde el detalle del dispositivo."
     },
     "no-environment": "Asociar después",
-    "occupied": "ya tiene un dispositivo ambiental"
+    "occupied": "ya tiene un dispositivo ambiental",
+    "errors": {
+      "firmware": "Use un formato como 1.2.3, v1.2 o 2.0.1-beta.1"
+    }
   },
   "device-types": {
     "ENVIRONMENTAL_DEVICE": "Dispositivo ambiental",
@@ -1606,6 +1964,9 @@
     },
     "no-account": "Sin cuenta",
     "detail": {
+      "view-profile": "Ver perfil",
+      "view-activity": "Ver actividad",
+      "back": "Volver al detalle del trabajador",
       "load-error": "No se pudo cargar al miembro del personal.",
       "activities": "Actividades registradas",
       "last-activity": "Última actividad",
@@ -1659,7 +2020,7 @@
     "container": "Contenedor",
     "environment": "Ambiente",
     "assigned-at": "Guardado el",
-    "assigned-by": "Por el usuario #{{user}}",
+    "assigned-by": "Por {{user}}",
     "view-conditions": "Ver condiciones del contenedor",
     "empty": "Aún no se guarda en un contenedor",
     "hint": "Monitores de contenedor operativos de ambientes de almacenamiento de productos",
@@ -1667,5 +2028,127 @@
     "change": "Cambiar contenedor",
     "saved": "El lote se guardó en el contenedor.",
     "no-containers": "No hay monitores de contenedor operativos en ambientes de almacenamiento de productos. Clasifica un ambiente como almacenamiento de productos y ubica allí un monitor de contenedor."
+  },
+  "edge-gateway": {
+    "type": "Edge Gateway",
+    "add-button": "Registrar Edge Gateway",
+    "form": {
+      "title": "Registrar Edge Gateway",
+      "subtitle": "El Edge Gateway recibe las lecturas de los dispositivos IoT de su ambiente y las envía a QualiTrack.",
+      "placeholders": {
+        "name": "Ej. Edge Gateway - Almacén de materias primas",
+        "identifier": "Ej. EDGE-001",
+        "serial": "Ej. RPI-0001"
+      },
+      "hints": {
+        "identifier": "Único en QualiTrack; el Edge lo usa junto con su API key para conectarse.",
+        "environment": "Opcional; también se puede ubicar después desde su detalle. Un ambiente puede tener varios Edge Gateways."
+      }
+    },
+    "api-key": {
+      "title": "API key",
+      "hint": "El Edge Gateway la usa para conectarse a QualiTrack. Se genera una sola vez.",
+      "issued": "API key ya generada",
+      "not-issued": "Aún sin API key",
+      "unknown": "No se pudo consultar el estado de la API key.",
+      "generate": "Generar API key",
+      "requires-location": "Ubica el Edge Gateway en un ambiente para generar su API key.",
+      "requires-operational": "El Edge Gateway debe estar operativo para generar su API key.",
+      "dialog": {
+        "title": "API key del Edge Gateway",
+        "once": "Copia la API key ahora. Solo se muestra esta vez y no se puede recuperar después.",
+        "device-id": "Identificador",
+        "key": "API key",
+        "copy": "Copiar",
+        "copied": "Copiado al portapapeles.",
+        "hint": "Coloca ambos valores en el archivo .env del Edge Gateway.",
+        "close": "Ya la copié"
+      }
+    }
+  },
+  "environment-equipment": {
+    "title": "Equipos del ambiente",
+    "subtitle": "Edge Gateways, dispositivos IoT y equipos ubicados en este ambiente.",
+    "open": "Ver los equipos y dispositivos de este ambiente",
+    "view-in-list": "Ver en la lista de equipos",
+    "coverage-error": "No se pudo leer la cobertura de Edge Gateways de este ambiente. Sus dispositivos y equipos se listan abajo.",
+    "uncovered-warning": "{{count}} dispositivo(s) IoT no tienen Edge Gateway, así que sus lecturas no llegan a QualiTrack. Cada Edge Gateway cubre hasta {{max}} dispositivos.",
+    "summary": {
+      "uncovered": "Dispositivos sin Edge Gateway"
+    },
+    "gateways": {
+      "title": "Edge Gateways",
+      "hint": "Los dispositivos IoT se reparten automáticamente, hasta {{max}} por Edge Gateway, en orden de registro.",
+      "load": "Dispositivos cubiertos",
+      "capacity": "{{count}} de {{max}}",
+      "empty": "Este ambiente aún no tiene un Edge Gateway."
+    },
+    "devices": {
+      "title": "Dispositivos IoT",
+      "empty": "Este ambiente no tiene dispositivos IoT."
+    },
+    "equipment": {
+      "title": "Equipos de proceso",
+      "empty": "Este ambiente no tiene equipos de proceso."
+    }
+  },
+  "page-titles": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "dashboard": "Panel de control",
+    "not-found": "Página no encontrada",
+    "onboarding": "Primeros pasos",
+    "sign-in": "Iniciar sesión",
+    "sign-up": "Crear cuenta",
+    "password-recovery": "Recuperar contraseña",
+    "change-password": "Cambiar contraseña",
+    "lab-new": "Registrar laboratorio",
+    "lab-profile": "Perfil del laboratorio",
+    "environment-list": "Ambientes",
+    "environment-new": "Registrar ambiente",
+    "environment-edit": "Editar ambiente",
+    "staff-list": "Personal",
+    "staff-new": "Registrar personal",
+    "staff-detail": "Miembro del personal",
+    "equipment-list": "Equipos",
+    "equipment-new": "Registrar equipo",
+    "device-new": "Registrar dispositivo IoT",
+    "edge-gateway-new": "Registrar Edge Gateway",
+    "environment-equipment": "Equipos del ambiente",
+    "equipment-detail": "Detalle del equipo",
+    "bpm-config": "Configuración BPM",
+    "maintenance-new": "Registro de actividad técnica",
+    "batch-list": "Lotes de producción",
+    "product-catalog": "Productos",
+    "product-new": "Registrar producto",
+    "product-detail": "Detalle del producto",
+    "batch-new": "Crear lote de producción",
+    "batch-detail": "Detalle del lote",
+    "batch-release": "Liberar lote",
+    "batch-reject": "Rechazar lote",
+    "inventory": "Inventario",
+    "raw-material-new": "Registrar materia prima",
+    "raw-material-detail": "Detalle de la materia prima",
+    "material-history": "Historial del material",
+    "alerts": "Alertas activas",
+    "alert-history": "Historial de alertas",
+    "alert-detail": "Detalle de la alerta",
+    "notification-preferences": "Preferencias de notificación",
+    "monitoring": "Monitoreo ambiental",
+    "telemetry-history": "Historial de telemetría",
+    "environmental-profiles": "Perfiles ambientales",
+    "kpis": "Resumen ambiental",
+    "deviation-trends": "Indicadores de desviación",
+    "deviation-detail": "Detalle de la desviación",
+    "report-generator": "Generador de reportes",
+    "audit-log": "Registro de auditoría",
+    "staff-activity": "Actividad del personal",
+    "plans": "Planes de suscripción",
+    "checkout": "Pago",
+    "payment-success": "Pago confirmado",
+    "payment-cancel": "Pago cancelado",
+    "billing": "Resumen de facturación",
+    "profile": "Perfil",
+    "staff-profile": "Perfil del personal"
   }
 }
