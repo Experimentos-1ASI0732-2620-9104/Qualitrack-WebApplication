@@ -1,0 +1,79 @@
+.once {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--qt-warning);
+  border-radius: 12px;
+  background: var(--qt-warning-surface);
+  color: var(--qt-warning-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.once mat-icon {
+  flex-shrink: 0;
+}
+
+dl {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 16px;
+}
+
+dt {
+  margin-bottom: 6px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+dt code {
+  text-transform: none;
+}
+
+dd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--qt-border);
+  border-radius: 8px;
+  background: var(--qt-background);
+}
+
+dd code {
+  flex: 1;
+  min-width: 0;
+  color: var(--qt-text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+dd button {
+  flex-shrink: 0;
+  color: var(--qt-text-muted);
+}
+
+dd button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.hint,
+.copied {
+  margin: 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.copied {
+  min-height: 22px;
+  margin-top: 8px;
+  color: var(--qt-success-text);
+}

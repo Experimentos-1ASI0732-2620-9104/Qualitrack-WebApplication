@@ -1,0 +1,197 @@
+<main class="operations-page">
+  <a class="back-link" routerLink="/equipments">{{ 'equipment-list.title' | translate }}</a>
+
+  <header class="page-heading">
+    <h1>
+      <mat-icon aria-hidden="true">meeting_room</mat-icon>
+      @if (environment(); as current) {
+        {{ current.code }} · {{ current.name }}
+      } @else {
+        {{ 'environment-equipment.title' | translate }}
+      }
+    </h1>
+
+    <div class="actions">
+      <a mat-stroked-button routerLink="/equipments" [queryParams]="{ environmentId: environmentId() }">
+        <mat-icon>filter_list</mat-icon>
+        {{ 'environment-equipment.view-in-list' | translate }}
+      </a>
+
+      <button
+        mat-icon-button
+        type="button"
+        (click)="load()"
+        [disabled]="loading()"
+        [matTooltip]="'common.refresh' | translate"
+        [attr.aria-label]="'common.refresh' | translate"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+  <p class="muted lead">{{ 'environment-equipment.subtitle' | translate }}</p>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error()! | translate }}</p>
+  }
+
+  @if (loading() && !loaded()) {
+    <p role="status">{{ 'common.status-loading' | translate }}</p>
+  } @else if (loaded()) {
+    <!-- The coverage comes from its own request: without it the devices and the equipment are still shown -->
+    @if (coverage(); as current) {
+      @if (current.hasUncoveredDevices) {
+        <p class="notice" role="alert">
+          <mat-icon aria-hidden="true">warning</mat-icon>
+          <span>
+            {{ 'environment-equipment.uncovered-warning' | translate: { count: current.uncoveredDeviceCount, max: current.maxDevicesPerGateway } }}
+          </span>
+          @if (store.canManage()) {
+            <a
+              mat-stroked-button
+              routerLink="/equipments/edge-gateways/new"
+              [queryParams]="{ environmentId: environmentId() }">
+              <mat-icon>router</mat-icon>
+              {{ 'edge-gateway.add-button' | translate }}
+            </a>
+          }
+        </p>
+      }
+
+      <section class="summary-strip">
+        <div>
+          <span>{{ 'equipment-list.summary.gateways' | translate }}</span><strong>{{ current.gateways.length }}</strong>
+        </div>
+        <div>
+          <span>{{ 'equipment-list.summary.devices' | translate }}</span><strong>{{ current.deviceCount }}</strong>
+        </div>
+        <div>
+          <span>{{ 'equipment-list.summary.equipment' | translate }}</span><strong>{{ processEquipment().length }}</strong>
+        </div>
+        <div>
+          <span>{{ 'environment-equipment.summary.uncovered' | translate }}</span>
+          <strong [class.warning]="current.hasUncoveredDevices">{{ current.uncoveredDeviceCount }}</strong>
+        </div>
+      </section>
+
+      <section>
+        <h2><mat-icon aria-hidden="true">router</mat-icon>{{ 'environment-equipment.gateways.title' | translate }}</h2>
+        <p class="muted">{{ 'environment-equipment.gateways.hint' | translate: { max: current.maxDevicesPerGateway } }}</p>
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ 'equipment-list.fields.name' | translate }}</th>
+                <th>{{ 'environment-equipment.gateways.load' | translate }}</th>
+                <th>{{ 'equipment-list.fields.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (gateway of gatewayPage.rows(); track gateway.equipmentId) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/equipments', gateway.equipmentId]">{{ gateway.name }}</a>
+                    <small>{{ gateway.sensorExternalId }}</small>
+                  </td>
+                  <td [attr.data-label]="'environment-equipment.gateways.load' | translate">
+                    <span class="load" [class.full]="gateway.deviceCount >= current.maxDevicesPerGateway">
+                      {{ 'environment-equipment.gateways.capacity' | translate: { count: gateway.deviceCount, max: current.maxDevicesPerGateway } }}
+                    </span>
+                  </td>
+                  <td [attr.data-label]="'equipment-list.fields.status' | translate">
+                    @if (gatewayStatus(gateway.equipmentId); as status) {
+                      <span class="status" [ngClass]="status.toLowerCase()">
+                        {{ 'equipment-status.' + status.toLowerCase() | translate }}
+                      </span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">{{ 'environment-equipment.gateways.empty' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="gatewayPage" />
+        </div>
+      </section>
+    } @else if (coverageError(); as message) {
+      <p class="error" role="alert">{{ message | translate }}</p>
+    }
+
+    <section>
+      <h2><mat-icon aria-hidden="true">sensors</mat-icon>{{ 'environment-equipment.devices.title' | translate }}</h2>
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ 'equipment-list.fields.name' | translate }}</th>
+              <th>{{ 'equipment-list.fields.type' | translate }}</th>
+              <th>{{ 'equipment-list.fields.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (device of devicePage.rows(); track device.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/equipments', device.id]">{{ device.name }}</a>
+                  <small>{{ device.sensorExternalId }}</small>
+                </td>
+                <td [attr.data-label]="'equipment-list.fields.type' | translate">
+                  {{ 'device-types.' + device.deviceType | translate }}
+                </td>
+                <td [attr.data-label]="'equipment-list.fields.status' | translate">
+                  <span class="status" [ngClass]="device.status.toLowerCase()">
+                    {{ 'equipment-status.' + device.status.toLowerCase() | translate }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3">{{ 'environment-equipment.devices.empty' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <app-table-paginator [page]="devicePage" />
+      </div>
+    </section>
+
+    <section>
+      <h2><mat-icon aria-hidden="true">precision_manufacturing</mat-icon>{{ 'environment-equipment.equipment.title' | translate }}</h2>
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ 'equipment-list.fields.name' | translate }}</th>
+              <th>{{ 'equipment-list.fields.type' | translate }}</th>
+              <th>{{ 'equipment-list.fields.status' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (equipment of equipmentPage.rows(); track equipment.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/equipments', equipment.id]">{{ equipment.name }}</a>
+                  <small>{{ equipment.model }} · {{ equipment.serialNumber }}</small>
+                </td>
+                <td [attr.data-label]="'equipment-list.fields.type' | translate">{{ equipment.type }}</td>
+                <td [attr.data-label]="'equipment-list.fields.status' | translate">
+                  <span class="status" [ngClass]="equipment.status.toLowerCase()">
+                    {{ 'equipment-status.' + equipment.status.toLowerCase() | translate }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3">{{ 'environment-equipment.equipment.empty' | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <app-table-paginator [page]="equipmentPage" />
+      </div>
+    </section>
+  }
+</main>

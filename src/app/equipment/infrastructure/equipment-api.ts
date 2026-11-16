@@ -7,12 +7,24 @@ import { Equipment } from '../domain/model/equipment.entity';
 import { BpmParameterConfig } from '../domain/model/bpm-parameter-config.entity';
 import { MaintenanceRecord } from '../domain/model/maintenance-record.entity';
 import { IotDeviceType } from '../domain/model/iot-device-type';
+import { InstallationEnvironment } from '../domain/model/installation-environment.entity';
+import { MaintenanceTechnician } from '../domain/model/maintenance-technician.entity';
+import { EdgeGatewayApiKey } from '../domain/model/edge-gateway-api-key';
+import { EdgeGatewayCoverage } from '../domain/model/edge-gateway-coverage.entity';
 
 import { EquipmentApiEndpoint } from './equipment-api-endpoint';
 import { BpmConfigApiEndpoint } from './bpm-config-api-endpoint';
 import { MaintenanceApiEndpoint } from './maintenance-api-endpoint';
+import { InstallationEnvironmentApiEndpoint } from './installation-environment-api-endpoint';
+import { MaintenanceTechnicianApiEndpoint } from './maintenance-technician-api-endpoint';
+import { EdgeGatewayApiEndpoint } from './edge-gateway-api-endpoint';
 
-import { ChangeEquipmentStatusRequest, RegisterEquipmentRequest, RegisterIotDeviceRequest } from './equipment.request';
+import {
+  ChangeEquipmentStatusRequest,
+  RegisterEdgeGatewayRequest,
+  RegisterEquipmentRequest,
+  RegisterIotDeviceRequest,
+} from './equipment.request';
 import { ConfigureBpmRequest } from './bpm-config.request';
 import { RegisterMaintenanceRequest } from './maintenance.request';
 
@@ -20,10 +32,10 @@ import { RegisterMaintenanceRequest } from './maintenance.request';
  * Infrastructure facade of the Equipment bounded context.
  *
  * @remarks
- * Equipment and IoT devices belong to a laboratory; their location, status changes and maintenance are
- * registered under the environment where they are located.
+ * Equipment, IoT devices and Edge Gateways belong to a laboratory; their location, status changes and
+ * maintenance are registered under the environment where they are located.
  *
- * This service groups the equipment, BPM configuration and maintenance endpoints
+ * This service groups the equipment, Edge Gateway, BPM configuration and maintenance endpoints
  * behind a single entry point for the rest of the application.
  *
  * @example
@@ -46,6 +58,15 @@ export class EquipmentApi extends BaseApi {
   /** Endpoint for the maintenance records. */
   private readonly _maintenanceEndpoint: MaintenanceApiEndpoint;
 
+  /** Endpoint for the environments of Laboratory Management where equipment is installed. */
+  private readonly _environmentEndpoint: InstallationEnvironmentApiEndpoint;
+
+  /** Endpoint for the staff of Laboratory Management who perform maintenance. */
+  private readonly _technicianEndpoint: MaintenanceTechnicianApiEndpoint;
+
+  /** Endpoint for the Edge Gateways, their API key and their coverage of an environment. */
+  private readonly _edgeGatewayEndpoint: EdgeGatewayApiEndpoint;
+
   /**
    * Creates the facade and its endpoints.
    *
@@ -56,6 +77,29 @@ export class EquipmentApi extends BaseApi {
     this._equipmentEndpoint = new EquipmentApiEndpoint(http);
     this._bpmEndpoint = new BpmConfigApiEndpoint(http);
     this._maintenanceEndpoint = new MaintenanceApiEndpoint(http);
+    this._environmentEndpoint = new InstallationEnvironmentApiEndpoint(http);
+    this._technicianEndpoint = new MaintenanceTechnicianApiEndpoint(http);
+    this._edgeGatewayEndpoint = new EdgeGatewayApiEndpoint(http);
+  }
+
+  /**
+   * Retrieves the environments of a laboratory where equipment can be installed.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @returns An observable that emits the environments of the laboratory.
+   */
+  getEnvironments(laboratoryId: number): Observable<InstallationEnvironment[]> {
+    return this._environmentEndpoint.getEnvironments(laboratoryId);
+  }
+
+  /**
+   * Retrieves the staff of a laboratory, to choose who performed a maintenance.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @returns An observable that emits the staff members of the laboratory.
+   */
+  getTechnicians(laboratoryId: number): Observable<MaintenanceTechnician[]> {
+    return this._technicianEndpoint.getStaff(laboratoryId);
   }
 
   /**
@@ -66,6 +110,18 @@ export class EquipmentApi extends BaseApi {
    */
   getEquipment(laboratoryId: number): Observable<Equipment[]> {
     return this._equipmentEndpoint.getEquipmentByLab(laboratoryId);
+  }
+
+  /**
+   * Retrieves the equipment, IoT devices and Edge Gateways located in an environment.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param environmentId - The identifier of the environment.
+   * @param iotOnly - Whether only the IoT devices are requested.
+   * @returns An observable that emits the equipment located in the environment.
+   */
+  getEquipmentByEnvironment(laboratoryId: number, environmentId: number, iotOnly = false): Observable<Equipment[]> {
+    return this._equipmentEndpoint.getEquipmentByEnvironment(laboratoryId, environmentId, iotOnly);
   }
 
   /**
@@ -103,11 +159,55 @@ export class EquipmentApi extends BaseApi {
   }
 
   /**
+   * Registers an Edge Gateway of the laboratory.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param request - The data of the Edge Gateway to register.
+   * @returns An observable that emits the registered Edge Gateway as an equipment.
+   */
+  registerEdgeGateway(laboratoryId: number, request: RegisterEdgeGatewayRequest): Observable<Equipment> {
+    return this._edgeGatewayEndpoint.registerEdgeGateway(laboratoryId, request);
+  }
+
+  /**
+   * Reads whether an Edge Gateway already has an API key.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param equipmentId - The equipment identifier of the Edge Gateway.
+   * @returns An observable that emits `true` when a key was issued; otherwise `false`.
+   */
+  getEdgeGatewayApiKeyStatus(laboratoryId: number, equipmentId: number): Observable<boolean> {
+    return this._edgeGatewayEndpoint.getApiKeyStatus(laboratoryId, equipmentId);
+  }
+
+  /**
+   * Issues the API key of an Edge Gateway, which the cloud answers only once.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param equipmentId - The equipment identifier of the Edge Gateway.
+   * @returns An observable that emits the identifier of the Edge Gateway and its API key.
+   */
+  issueEdgeGatewayApiKey(laboratoryId: number, equipmentId: number): Observable<EdgeGatewayApiKey> {
+    return this._edgeGatewayEndpoint.issueApiKey(laboratoryId, equipmentId);
+  }
+
+  /**
+   * Reads how the Edge Gateways of an environment cover its IoT devices.
+   *
+   * @param laboratoryId - The identifier of the laboratory.
+   * @param environmentId - The identifier of the environment.
+   * @returns An observable that emits the coverage of the environment.
+   */
+  getEdgeGatewayCoverage(laboratoryId: number, environmentId: number): Observable<EdgeGatewayCoverage> {
+    return this._edgeGatewayEndpoint.getCoverage(laboratoryId, environmentId);
+  }
+
+  /**
    * Locates an equipment in an environment (TS33); IoT devices use their own resource (TS38, TS40).
    *
    * @remarks
    * When the equipment has a device type it is located through the resource of that device type;
-   * otherwise it is located as a regular equipment.
+   * otherwise it is located as a regular equipment, which is also how an Edge Gateway is located.
    *
    * @param laboratoryId - The identifier of the laboratory.
    * @param environmentId - The identifier of the environment where the equipment will be located.

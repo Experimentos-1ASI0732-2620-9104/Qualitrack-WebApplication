@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -15,9 +22,21 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { EquipmentStore } from '../../../application/equipment.store';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { LaboratoryApi } from '../../../../laboratory/infrastructure/laboratory-api';
-import { StaffMember } from '../../../../laboratory/domain/model/staff-member.entity';
-import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
+import { MaintenanceTechnician } from '../../../domain/model/maintenance-technician.entity';
+import { localIsoDate, todayInLima } from '../../../../shared/presentation/utils/local-date';
+import { MIN_DATE } from '../../../../shared/presentation/validators/date.validators';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
+
+/**
+ * Builds the Date of a yyyy-MM-dd calendar day at local midnight, the way the date picker holds its dates.
+ *
+ * @param isoDate - The calendar day
+ * @returns The Date of that day
+ */
+function dateOf(isoDate: string): Date {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
 
 /**
  * Registers a maintenance performed on an equipment located in an environment (US49).
@@ -41,6 +60,7 @@ import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
     TranslatePipe,
   ],
   templateUrl: './maintenance-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './maintenance-form.css',
 })
 export class MaintenanceForm implements OnInit {
@@ -50,10 +70,9 @@ export class MaintenanceForm implements OnInit {
 
   protected readonly store = inject(EquipmentStore);
   private readonly iam = inject(IamStore);
-  private readonly laboratoryApi = inject(LaboratoryApi);
 
   /** Staff of the laboratory that can perform maintenance: active operators with an account. */
-  private readonly staff = signal<StaffMember[]>([]);
+  private readonly staff = signal<MaintenanceTechnician[]>([]);
   protected readonly staffLoaded = signal(false);
 
   /**
@@ -71,16 +90,25 @@ export class MaintenanceForm implements OnInit {
     return selected?.id === this.equipmentId() ? selected : null;
   });
 
-  /** A performed maintenance cannot be dated in the future. */
-  protected readonly today = new Date();
+  /** A performed maintenance cannot be dated in the future: today in Lima is the latest date. */
+  protected readonly today = dateOf(todayInLima());
 
-  protected readonly maintenanceTypes = ['PREVENTIVE', 'CORRECTIVE', 'CALIBRATION', 'INSPECTION', 'OTHER'];
+  /** Earliest date accepted. */
+  protected readonly minDate = dateOf(MIN_DATE);
+
+  protected readonly maintenanceTypes = [
+    'PREVENTIVE',
+    'CORRECTIVE',
+    'CALIBRATION',
+    'INSPECTION',
+    'OTHER',
+  ];
 
   protected readonly form = this.fb.nonNullable.group({
-    maintenanceDate: [new Date(), Validators.required],
+    maintenanceDate: [dateOf(todayInLima()), Validators.required],
     technicianStaffId: [null as number | null, Validators.required],
     type: ['', Validators.required],
-    description: ['', [Validators.required, Validators.maxLength(1000)]],
+    description: ['', [Validators.required, notBlankValidator, Validators.maxLength(1000)]],
   });
 
   constructor() {
@@ -88,12 +116,12 @@ export class MaintenanceForm implements OnInit {
   }
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const id = Number(this.route.snapshot.paramMap.get('equipmentId'));
     if (!Number.isSafeInteger(id) || id <= 0) return;
     this.equipmentId.set(id);
     if (!this.equipment()) void this.store.loadEquipmentById(id);
-    this.laboratoryApi.getStaff(this.iam.requireLaboratoryId()).subscribe({
-      next: (staff) => {
+    this.store.loadTechnicians().then(
+      (staff) => {
         this.staff.set(staff);
         this.staffLoaded.set(true);
         const technicians = this.technicians();
@@ -101,8 +129,8 @@ export class MaintenanceForm implements OnInit {
           this.form.controls.technicianStaffId.setValue(technicians[0].id);
         }
       },
-      error: () => this.staffLoaded.set(true),
-    });
+      () => this.staffLoaded.set(true),
+    );
   }
 
   protected async onSave(): Promise<void> {
@@ -115,6 +143,6 @@ export class MaintenanceForm implements OnInit {
       technicianStaffId,
       maintenanceDate: localIsoDate(new Date(maintenanceDate)),
     });
-    if (saved) await this.router.navigate(['/equipments/equipment-detail', equipment.id]);
+    if (saved) await this.router.navigate(['/equipments', equipment.id]);
   }
 }
