@@ -93,7 +93,7 @@ export class LegacyInventoryApiEndpoint extends ErrorHandlingEnabledBaseType {
       )
       .pipe(
         map((resources) =>
-          resources.map((resource): LegacyMaterial => ({
+          resources.map((resource): LegacyMaterial => new LegacyMaterial({
             id: resource.id,
             code: resource.code,
             name: resource.name,
