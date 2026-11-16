@@ -1,0 +1,38 @@
+<main class="operations-page" [attr.aria-busy]="loading()">
+  <a class="back-link" [routerLink]="staffId() ? ['/laboratories/staff', staffId()] : ['/laboratories/staff']">{{ 'staff.detail.back' | translate }}</a>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">person</mat-icon>{{ 'staff.profile.title' | translate }}</h1>
+  </header>
+  @if (loading()) {
+    <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
+  } @else {
+    @if (profile(); as staffProfile) {
+      <section class="staff-profile" [attr.aria-label]="'staff.profile.title' | translate">
+        <div class="staff-photo">
+          @if (staffProfile.photoUrl; as photo) {
+            <img [src]="photo" [alt]="'profile.photo.alt' | translate: { name: staffProfile.profile.displayName }">
+          } @else {
+            <span aria-hidden="true">{{ staffProfile.profile.initials }}</span>
+          }
+        </div>
+        <div class="staff-profile-data">
+          @if (staffProfile.profile.updatedAt) {
+            <p class="muted">{{ 'profile.updated-at' | translate: { date: (staffProfile.profile.updatedAt | dateTime) } }}</p>
+          } @else {
+            <p class="muted">{{ 'staff.profile.not-completed' | translate }}</p>
+          }
+          <dl>
+            <div><dt>{{ 'profile.personal.full-name' | translate }}</dt><dd>{{ staffProfile.profile.fullName ?? '—' }}</dd></div>
+            <div><dt>{{ 'profile.personal.dni' | translate }}</dt><dd>{{ staffProfile.profile.dni ?? '—' }}</dd></div>
+            <div><dt>{{ 'profile.personal.phone' | translate }}</dt><dd>{{ staffProfile.profile.phoneNumber ?? '—' }}</dd></div>
+            <div><dt>{{ 'profile.personal.location' | translate }}</dt><dd>{{ staffProfile.profile.location ?? '—' }}</dd></div>
+            <div><dt>{{ 'profile.account.username' | translate }}</dt><dd>{{ staffProfile.profile.username }}</dd></div>
+            <div><dt>{{ 'profile.account.email' | translate }}</dt><dd>{{ staffProfile.profile.email ?? '—' }}</dd></div>
+          </dl>
+        </div>
+      </section>
+    } @else {
+      <p class="notice" role="status">{{ 'staff.profile.unavailable' | translate }}</p>
+    }
+  }
+</main>

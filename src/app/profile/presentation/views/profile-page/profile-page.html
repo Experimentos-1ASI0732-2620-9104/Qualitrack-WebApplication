@@ -1,10 +1,8 @@
-<section class="operations-page profile-page" [attr.aria-busy]="store.loading()">
-  <div class="page-heading">
-    <div>
-      <h1><mat-icon aria-hidden="true">account_circle</mat-icon>{{ 'profile.title' | translate }}</h1>
-      <p class="muted">{{ 'profile.subtitle' | translate }}</p>
-    </div>
-  </div>
+<main class="operations-page profile-page" [attr.aria-busy]="store.loading()">
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">account_circle</mat-icon>{{ 'profile.title' | translate }}</h1>
+    <p class="muted">{{ 'profile.subtitle' | translate }}</p>
+  </header>
 
   @if (store.failed() && !store.profile()) {
     <p class="error" role="alert">{{ 'profile.errors.load' | translate }}</p>
@@ -29,13 +27,13 @@
         </div>
 
         <input #photoInput type="file" class="visually-hidden" [accept]="photoTypes" (change)="photoChosen($event)"
-          [attr.aria-label]="'profile.photo.change' | translate">
+               [attr.aria-label]="'profile.photo.change' | translate">
         <div class="photo-actions">
-          <button mat-stroked-button type="button" [disabled]="photoBusy()" (click)="choosePhoto()">
+          <button mat-stroked-button class="secondary-btn" type="button" [disabled]="photoBusy()" (click)="choosePhoto()">
             <mat-icon>photo_camera</mat-icon>{{ (profile.hasPhoto ? 'profile.photo.change' : 'profile.photo.add') | translate }}
           </button>
           @if (profile.hasPhoto) {
-            <button mat-button type="button" class="danger" [disabled]="photoBusy()" (click)="removePhoto()">
+            <button mat-stroked-button class="danger-btn" type="button" [disabled]="photoBusy()" (click)="removePhoto()">
               <mat-icon>delete</mat-icon>{{ 'profile.photo.remove' | translate }}
             </button>
           }
@@ -61,7 +59,7 @@
           }
           @if (profile.updatedAt) {
             <li class="muted"><mat-icon aria-hidden="true">history</mat-icon>
-              {{ 'profile.updated-at' | translate: { date: (profile.updatedAt | date: 'medium') } }}</li>
+              {{ 'profile.updated-at' | translate: { date: (profile.updatedAt | dateTime) } }}</li>
           }
         </ul>
       </aside>
@@ -80,7 +78,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>{{ 'profile.personal.dni' | translate }}</mat-label>
-                <input matInput formControlName="dni" inputmode="numeric" maxlength="8">
+                <input matInput digitsOnly formControlName="dni" inputmode="numeric" maxlength="8" autocomplete="off">
                 <mat-hint>{{ 'profile.personal.dni-hint' | translate }}</mat-hint>
                 @if (personalForm.controls.dni.invalid) {
                   <mat-error>{{ 'profile.personal.errors.dni' | translate }}</mat-error>
@@ -88,7 +86,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>{{ 'profile.personal.phone' | translate }}</mat-label>
-                <input matInput formControlName="phoneNumber" type="tel" autocomplete="tel" maxlength="30">
+                <input matInput phoneInput formControlName="phoneNumber" type="tel" inputmode="tel" autocomplete="tel" maxlength="20">
                 @if (personalForm.controls.phoneNumber.invalid) {
                   <mat-error>{{ 'profile.personal.errors.phone' | translate }}</mat-error>
                 }
@@ -106,7 +104,7 @@
               <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
             }
             <div class="form-actions">
-              <button mat-flat-button color="primary" type="submit" [disabled]="personalSaving() || personalForm.pristine">
+              <button mat-flat-button class="primary-btn" type="submit" [disabled]="personalSaving() || personalForm.pristine">
                 <mat-icon>save</mat-icon>{{ 'profile.personal.save' | translate }}
               </button>
             </div>
@@ -145,7 +143,7 @@
               <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
             }
             <div class="form-actions">
-              <button mat-flat-button color="primary" type="submit" [disabled]="accountSaving() || accountForm.pristine">
+              <button mat-flat-button class="primary-btn" type="submit" [disabled]="accountSaving() || accountForm.pristine">
                 <mat-icon>save</mat-icon>{{ 'profile.account.save' | translate }}
               </button>
             </div>
@@ -185,7 +183,7 @@
               <p [class]="message.ok ? 'success' : 'error'" [attr.role]="message.ok ? 'status' : 'alert'">{{ message.key | translate }}</p>
             }
             <div class="form-actions">
-              <button mat-flat-button color="primary" type="submit" [disabled]="passwordSaving()">
+              <button mat-flat-button class="primary-btn" type="submit" [disabled]="passwordSaving()">
                 <mat-icon>lock_reset</mat-icon>{{ 'iam.change-password.button' | translate }}
               </button>
             </div>
@@ -195,7 +193,9 @@
         <section class="card" id="notifications" aria-labelledby="notifications-title">
           <h2 id="notifications-title">{{ 'profile.notifications.title' | translate }}</h2>
           <p class="muted">{{ 'profile.notifications.subtitle' | translate }}</p>
-          <app-notification-preferences-form />
+          <a mat-stroked-button class="secondary-btn" routerLink="/alerts/notification-settings">
+            <mat-icon>tune</mat-icon>{{ 'notifications.preferences' | translate }}
+          </a>
         </section>
       </div>
     </div>
@@ -204,4 +204,4 @@
       <mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate"></mat-spinner>
     </div>
   }
-</section>
+</main>
