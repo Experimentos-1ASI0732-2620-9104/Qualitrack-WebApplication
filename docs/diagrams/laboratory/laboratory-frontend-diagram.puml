@@ -7,9 +7,14 @@ skinparam classAttributeIconSize 0
 hide empty members
 
 package "shared" {
+  class PageHeader <<component>>
+  interface PageTab
+  class ListToolbar <<component>>
+  class TablePaginator <<component>>
   interface BaseEntity
   class BaseApi
   class BaseApiEndpoint
+  class errorStatus <<function>>
   interface BaseAssembler
 }
 
@@ -17,19 +22,6 @@ package "iam.application" {
   class IamStore {
     +requireLaboratoryId(): number
     +canManageQuality: Signal<boolean>
-  }
-}
-
-package "profile.application" {
-  class ProfileStore {
-    +staffProfile(laboratoryId, staffId): Observable<StaffProfile>
-  }
-}
-
-package "batch.infrastructure" {
-  class BatchApi {
-    +getBatches(lab)
-    +getMaterialHistory(laboratoryId, legacyRawMaterialId)
   }
 }
 
@@ -81,7 +73,6 @@ package "laboratory.domain.model" {
     PRODUCT_STORAGE
     OTHER
   }
-  class RawMaterial <<legacy, read-only>>
   interface CreateLaboratoryCommand
   interface UpdateLaboratoryCommand
   interface RegisterStaffCommand
@@ -106,7 +97,6 @@ package "laboratory.infrastructure" {
     +getStaffMember(laboratoryId, staffId)
     +registerStaff(laboratoryId, request): Observable<RegisteredStaff>
     +deactivateStaff(laboratoryId, staffId): Observable<StaffMember>
-    +getRawMaterials(laboratoryId)
     +getEnvironments(laboratoryId)
     +getEnvironment(laboratoryId, environmentId)
     +createEnvironment(laboratoryId, request)
@@ -116,26 +106,21 @@ package "laboratory.infrastructure" {
   class LaboratoryApiEndpoint
   class StaffApiEndpoint
   class EnvironmentApiEndpoint
-  class RawMaterialApiEndpoint
   class LaboratoryAssembler
   class StaffAssembler
   class EnvironmentAssembler
-  class RawMaterialAssembler
 }
 
 LaboratoryApi --|> BaseApi
 LaboratoryApi --> LaboratoryApiEndpoint
 LaboratoryApi --> StaffApiEndpoint
 LaboratoryApi --> EnvironmentApiEndpoint
-LaboratoryApi --> RawMaterialApiEndpoint
 LaboratoryApiEndpoint --|> BaseApiEndpoint
 StaffApiEndpoint --|> BaseApiEndpoint
 EnvironmentApiEndpoint --|> BaseApiEndpoint
-RawMaterialApiEndpoint --|> BaseApiEndpoint
 LaboratoryApiEndpoint --> LaboratoryAssembler
 StaffApiEndpoint --> StaffAssembler
 EnvironmentApiEndpoint --> EnvironmentAssembler
-RawMaterialApiEndpoint --> RawMaterialAssembler
 note bottom of StaffApiEndpoint
   GET/POST /laboratories/{laboratoryId}/staff, GET .../staff/{staffId},
   POST .../staff/{staffId}/deactivations
@@ -150,80 +135,89 @@ package "laboratory.application" {
     +createLaboratory(command)
     +updateLaboratory(laboratoryId, command)
     +loadStaff(laboratoryId)
+    +staffMember(laboratoryId, staffId): Observable<StaffMember>
     +registerStaff(laboratoryId, command): Observable<RegisteredStaff>
     +deactivateStaff(laboratoryId, staffId): Observable<StaffMember>
-  }
-  class EnvironmentStore <<root>> {
     +environments: Signal<Environment[]>
-    +canManage: Signal<boolean>
+    +environmentsLoading / environmentError / environmentsEmpty
+    +canManageEnvironments: Signal<boolean>
     +loadEnvironments()
-    +register(command)
-    +update(environmentId, command)
-    +assignUsage(environmentId, usage)
-    +preferredEnvironment(usage?, scope?)
-    +rememberEnvironment(environmentId, scope?)
-  }
-  class RawMaterialHistoryStore <<component scoped>> {
-    +material
-    +usages
-    +load(laboratoryId, materialId)
+    +loadEnvironment(environmentId)
+    +registerEnvironment(command)
+    +updateEnvironment(environmentId, command)
+    +assignEnvironmentUsage(environmentId, usage)
   }
 }
 
 LaboratoryStore --> LaboratoryApi
-EnvironmentStore --> LaboratoryApi
-EnvironmentStore --> IamStore
-RawMaterialHistoryStore --> LaboratoryApi
-RawMaterialHistoryStore --> BatchApi
-note right of EnvironmentStore
-  Remembers the environment per feature
-  (inventory, production) in this browser only.
+LaboratoryStore --> IamStore
+note right of LaboratoryStore
+  Single store of the context (application/laboratory.store.ts).
+  The other contexts read environments and staff through their
+  own models; each one remembers its environment in this browser.
 end note
 
 package "laboratory.presentation" {
+  class "LABORATORY_TABS" as LaboratoryTabs <<const>>
   class LabForm
   class LabProfile
   class EnvironmentList
   class EnvironmentForm
-  class EnvironmentSelector <<component>>
   class StaffList
   class StaffForm
   class StaffDetail
-  class RawMaterialDetail
   class LaboratoryRoutes
 }
 
 LabForm --> LaboratoryStore
 LabProfile --> LaboratoryStore
-EnvironmentList --> EnvironmentStore
-EnvironmentForm --> EnvironmentStore
-EnvironmentSelector --> EnvironmentStore
+EnvironmentList --> LaboratoryStore
+EnvironmentForm --> LaboratoryStore
 StaffList --> LaboratoryStore
 StaffForm --> LaboratoryStore
+StaffForm ..> errorStatus
 StaffForm ..> RegisteredStaff
 StaffList --> IamStore
-StaffDetail --> LaboratoryApi
 StaffDetail --> LaboratoryStore
-StaffDetail --> RaApi
-StaffDetail --> ProfileStore : photo and personal data (quality managers)
-StaffDetail ..> OperationsPage
 note right of StaffForm
   Quality managers register operators and auditors; the credentials are e-mailed
   or shown once (username and temporary password) when the e-mail cannot be sent.
 end note
 note right of StaffDetail
-  Profile and activity history of a staff member (audit log entries they performed),
-  for quality managers and auditors. Only the quality manager sees the photo, DNI,
-  phone and location the staff member keeps in the profile.
+  Laboratory data and deactivation only. Navigation links open
+  /profile/staff/:staffId (quality managers with a staff account) and
+  /reports/staff/:staffId/activity (quality managers and auditors).
+  No Profile or Reporting & Audit code is imported.
 end note
-RawMaterialDetail --> RawMaterialHistoryStore
 
 note bottom of LaboratoryRoutes
-  /laboratories/lab-profile, environments[/new|/:environmentId/edit],
-  staff-list, staff-form (quality managers), staff/:staffId (quality managers and auditors),
-  raw-materials/:id (legacy history).
-  product-catalog and product-form redirect to /batches;
+  /laboratories/profile, environments[/new|/:environmentId/edit],
+  staff, staff/new (quality managers), staff/:staffId (quality managers and auditors),
+  raw-materials/:id redirects to /inventory/legacy-materials/:id.
+  product-catalog and product-form redirect to /batches/environments;
   raw-material-list and raw-material-form redirect to /inventory.
+end note
+
+note left of LaboratoryRoutes
+  Source: laboratory/presentation/laboratory.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+LaboratoryTabs ..> PageTab
+LabProfile ..> PageHeader
+LabProfile ..> LaboratoryTabs
+EnvironmentList ..> PageHeader
+EnvironmentList ..> ListToolbar
+EnvironmentList ..> TablePaginator
+EnvironmentList ..> LaboratoryTabs
+StaffList ..> PageHeader
+StaffList ..> ListToolbar
+StaffList ..> TablePaginator
+StaffList ..> LaboratoryTabs
+note bottom of LaboratoryTabs
+  Profile, Environments and Staff are the tabs of the page header of the
+  laboratory. The code of an environment opens its equipment
+  (/equipments/environments/:environmentId).
 end note
 
 @enduml
