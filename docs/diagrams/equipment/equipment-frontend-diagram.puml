@@ -7,6 +7,9 @@ skinparam classAttributeIconSize 0
 hide empty members
 
 package "shared" {
+  class PageHeader <<component>>
+  class ListToolbar <<component>>
+  class TablePaginator <<component>>
   interface BaseEntity
   class BaseApi
   class BaseApiEndpoint
@@ -18,13 +21,6 @@ package "iam.application" {
   class IamStore {
     +requireLaboratoryId(): number
     +canManageQuality: Signal<boolean>
-  }
-}
-
-package "laboratory" {
-  class EnvironmentStore {
-    +environments: Signal<Environment[]>
-    +loadEnvironments()
   }
 }
 
@@ -42,8 +38,24 @@ package "equipment.domain.model" {
     +sensorExternalId: string | null
     +firmwareVersion: string | null
     +isIotDevice: boolean
+    +isEdgeGateway: boolean
     +isLocated: boolean
   }
+  class EdgeGatewayCoverage {
+    +maxDevicesPerGateway: number
+    +deviceCount: number
+    +uncoveredDeviceCount: number
+    +gateways: EdgeGatewayLoad[]
+  }
+  interface EdgeGatewayLoad {
+    +equipmentId / name / sensorExternalId
+    +deviceCount: number
+  }
+  interface EdgeGatewayApiKey {
+    +sensorExternalId: string
+    +apiKey: string
+  }
+  interface RegisterEdgeGatewayCommand
   enum IotDeviceType {
     ENVIRONMENTAL_DEVICE
     CONTAINER_MONITOR
@@ -69,6 +81,17 @@ package "equipment.domain.model" {
   interface ChangeEquipmentStatusCommand
   interface RegisterMaintenanceCommand
   interface ConfigureBpmCommand
+  class InstallationEnvironment {
+    +id / code / name
+    +usage: string | null
+  }
+  class MaintenanceTechnician {
+    +id / fullName / role
+    +active: boolean
+    +accessRole: string | null
+    +userId: number | null
+    +assignable: boolean
+  }
 }
 
 Equipment ..|> BaseEntity
@@ -76,9 +99,15 @@ MaintenanceRecord ..|> BaseEntity
 BpmParameterConfig ..|> BaseEntity
 Equipment --> IotDeviceType
 Equipment --> EquipmentStatus
+EdgeGatewayCoverage --> EdgeGatewayLoad
 note right of Equipment
   An IoT device is an equipment with a device type and the identity
   Edge uses to recognise it. Only IoT devices send telemetry.
+  An Edge Gateway is an equipment of type EDGE_GATEWAY with no device type.
+end note
+note bottom of EdgeGatewayCoverage
+  Computed by the platform: up to 15 IoT devices per Edge Gateway,
+  in order of registration; the rest stay uncovered (warning).
 end note
 
 package "equipment.infrastructure" {
@@ -93,19 +122,40 @@ package "equipment.infrastructure" {
     +registerMaintenance(lab, environmentId, equipmentId, request)
     +getBpmConfig(lab, equipmentId)
     +configureBpm(lab, request)
+    +getEnvironments(lab)
+    +getTechnicians(lab)
+    +getEquipmentByEnvironment(lab, environmentId, iotOnly)
+    +registerEdgeGateway(lab, request)
+    +getEdgeGatewayApiKeyStatus(lab, equipmentId)
+    +issueEdgeGatewayApiKey(lab, equipmentId)
+    +getEdgeGatewayCoverage(lab, environmentId)
   }
+  class EdgeGatewayApiEndpoint
+  class EdgeGatewayAssembler
   class EquipmentApiEndpoint
   class MaintenanceApiEndpoint
   class BpmConfigApiEndpoint
   class EquipmentAssembler
   class MaintenanceAssembler
   class BpmConfigAssembler
+  class InstallationEnvironmentApiEndpoint
+  class InstallationEnvironmentAssembler
+  class MaintenanceTechnicianApiEndpoint
+  class MaintenanceTechnicianAssembler
 }
 
 EquipmentApi --|> BaseApi
 EquipmentApi --> EquipmentApiEndpoint
 EquipmentApi --> MaintenanceApiEndpoint
 EquipmentApi --> BpmConfigApiEndpoint
+EquipmentApi --> EdgeGatewayApiEndpoint
+EdgeGatewayApiEndpoint --> EdgeGatewayAssembler
+EdgeGatewayAssembler ..> EdgeGatewayCoverage
+note bottom of EdgeGatewayApiEndpoint
+  POST /laboratories/{laboratoryId}/edge-gateways
+  GET | POST .../edge-gateways/{equipmentId}/api-key (status | issue once)
+  GET .../environments/{environmentId}/edge-gateway-coverage
+end note
 EquipmentApiEndpoint --|> BaseApiEndpoint
 MaintenanceApiEndpoint --|> BaseApiEndpoint
 BpmConfigApiEndpoint --|> BaseApiEndpoint
@@ -113,12 +163,22 @@ EquipmentApiEndpoint --> EquipmentAssembler
 MaintenanceApiEndpoint --> MaintenanceAssembler
 BpmConfigApiEndpoint --> BpmConfigAssembler
 EquipmentAssembler ..|> BaseAssembler
+EquipmentApi --> InstallationEnvironmentApiEndpoint
+EquipmentApi --> MaintenanceTechnicianApiEndpoint
+InstallationEnvironmentApiEndpoint --> InstallationEnvironmentAssembler
+InstallationEnvironmentAssembler ..> InstallationEnvironment
+MaintenanceTechnicianApiEndpoint --> MaintenanceTechnicianAssembler
+MaintenanceTechnicianAssembler ..> MaintenanceTechnician
+note bottom of InstallationEnvironmentApiEndpoint
+  Laboratory -> Equipment (Customer/Supplier):
+  GET /laboratories/{id}/environments and /staff in Equipment's own models.
+end note
 MaintenanceAssembler ..|> BaseAssembler
 BpmConfigAssembler ..|> BaseAssembler
 note right of EquipmentApiEndpoint
   /laboratories/{laboratoryId}/equipments[/{equipmentId}]
   /laboratories/{laboratoryId}/devices/{environmental-devices|container-monitors}
-  .../environments/{environmentId}/equipments
+  .../environments/{environmentId}/equipments[?iot=true|false]
   .../environments/{environmentId}/{environmental-devices|container-monitors}
   .../environments/{environmentId}/equipments/{equipmentId}/status-changes
 end note
@@ -137,6 +197,7 @@ package "equipment.application" {
     +selectedEquipment: Signal<Equipment>
     +iotDevices: Signal<Equipment[]>
     +processEquipment: Signal<Equipment[]>
+    +edgeGateways: Signal<Equipment[]>
     +needsMaintenance: Signal<Equipment[]>
     +maintenanceHistory: Signal<MaintenanceRecord[]>
     +canManage: Signal<boolean>
@@ -148,6 +209,14 @@ package "equipment.application" {
     +changeStatus(equipment, command)
     +loadMaintenanceHistory(equipment)
     +registerMaintenance(equipment, command)
+    +environments: Signal<InstallationEnvironment[]>
+    +loadEnvironments(): Promise<void>
+    +loadTechnicians(): Promise<MaintenanceTechnician[]>
+    +registerEdgeGateway(command, environmentId)
+    +loadEdgeGatewayApiKeyStatus(equipmentId): Promise<boolean | null>
+    +issueEdgeGatewayApiKey(equipmentId): Promise<EdgeGatewayApiKey | null>
+    +loadEnvironmentEquipment(environmentId): Promise<Equipment[]>
+    +loadEdgeGatewayCoverage(environmentId): Promise<EdgeGatewayCoverage>
   }
   class equipmentError <<function>>
 }
@@ -164,18 +233,26 @@ package "equipment.presentation" {
   class EquipmentDetail
   class MaintenanceForm
   class BpmConfigForm
+  class EdgeGatewayForm
+  class EnvironmentEquipment
+  class EdgeGatewayApiKeyDialog
   class EquipmentRoutes
 }
 
+EdgeGatewayForm --> EquipmentStore
+EnvironmentEquipment --> EquipmentStore
+EquipmentDetail ..> EdgeGatewayApiKeyDialog : opens
+EdgeGatewayApiKeyDialog ..> EdgeGatewayApiKey
+note right of EdgeGatewayApiKeyDialog
+  The API key is shown once and lives only in the dialog:
+  it is never kept in the store or in the browser storage.
+end note
+
 EquipmentList --> EquipmentStore
-EquipmentList --> EnvironmentStore
 EquipmentForm --> EquipmentStore
 DeviceForm --> EquipmentStore
-DeviceForm --> EnvironmentStore
 EquipmentDetail --> EquipmentStore
-EquipmentDetail --> EnvironmentStore
 MaintenanceForm --> EquipmentStore
-MaintenanceForm --> LaboratoryApi
 MaintenanceForm --> IamStore
 note right of MaintenanceForm
   The technician is chosen from the active operators of the laboratory;
@@ -185,12 +262,33 @@ end note
 BpmConfigForm --> EquipmentStore
 
 note bottom of EquipmentRoutes
-  /equipments/equipment-list: summary (process equipment, IoT devices, in maintenance
+  /equipments: summary (process equipment, IoT devices, in maintenance
   or out of service), search and filters by kind and attention, like the inventory
-  /equipments/register-equipment, /equipments/register-device
-  /equipments/equipment-detail/:id (location, status change, BPM, maintenance)
-  /equipments/maintenance-form/:id, /equipments/bpm-config-form/:id
-  /equipments/maintenance-history/:id redirects to the detail
+  ?environmentId= opens the list filtered by environment
+  /equipments/new, /equipments/devices/new, /equipments/edge-gateways/new
+  /equipments/environments/:environmentId (gateways, coverage warning, devices, equipment)
+  /equipments/:equipmentId (location, status change, BPM, maintenance)
+  /equipments/:equipmentId/maintenances/new, /equipments/:equipmentId/bpm-configuration
+  view-named paths (equipment-detail/:id, maintenance-history/:id...) redirect
+end note
+
+note left of EquipmentRoutes
+  Source: equipment/presentation/equipment.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+EquipmentList ..> PageHeader
+EquipmentList ..> ListToolbar
+EquipmentList ..> TablePaginator
+EnvironmentEquipment ..> TablePaginator
+note bottom of EnvironmentEquipment
+  Reads what is located in the environment and the Edge Gateway coverage
+  apart: when only the coverage fails, the devices and the equipment are
+  still listed under a notice.
+end note
+note bottom of EquipmentDetail
+  The API key of an Edge Gateway is read and generated only by a quality
+  manager; the platform refuses its status to anyone else.
 end note
 
 @enduml
