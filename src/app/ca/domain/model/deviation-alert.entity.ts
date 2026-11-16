@@ -38,6 +38,19 @@ export interface RelatedActuation {
   occurredAt: string;
 }
 
+/** How far the recorded value of an alert went past its limit. */
+export interface ThresholdExcess {
+  /** Whether the value is over or under the limit. */
+  direction: 'above' | 'below';
+  /** Distance to the limit, always positive. */
+  amount: number;
+  /** Whether {@link ThresholdExcess.amount} is a percentage of the limit or is in the unit of the alert. */
+  measure: 'percent' | 'unit';
+}
+
+/** Units whose zero is arbitrary or that already are percentages, so a percentage of the limit would mislead. */
+const UNITS_WITHOUT_RELATIVE_EXCESS: ReadonlySet<string> = new Set(['°C', 'ºC', 'C', '%']);
+
 /**
  * Deviation alert of an environment or of one of its monitored containers (US85-US88).
  *
@@ -179,6 +192,22 @@ export class DeviationAlert implements BaseEntity {
   /** `true` while the alert is unresolved or being attended, `false` once it is resolved. */
   get isOpen(): boolean {
     return this.status !== 'RESOLVED';
+  }
+
+  /**
+   * How far the recorded value went past the limit, or `null` when it is exactly on it.
+   *
+   * @remarks
+   * It is a percentage of the limit, except for units where that would mislead and for a limit of zero, which have no
+   * meaningful percentage.
+   */
+  get thresholdExcess(): ThresholdExcess | null {
+    const distance = this.recordedValue - this.thresholdValue;
+    if (distance === 0) return null;
+    const direction = distance > 0 ? 'above' : 'below';
+    return this.thresholdValue === 0 || UNITS_WITHOUT_RELATIVE_EXCESS.has(this.unit)
+      ? { direction, amount: Math.abs(distance), measure: 'unit' }
+      : { direction, amount: Math.abs(distance / this.thresholdValue) * 100, measure: 'percent' };
   }
 
   /** `true` when the condition returned to normal after the latest deviation but the alert is still open. */
