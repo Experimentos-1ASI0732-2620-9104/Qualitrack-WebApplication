@@ -1,0 +1,38 @@
+<main class="operations-page">
+  <header class="page-heading">
+    <h1>
+      <mat-icon aria-hidden="true">inventory_2</mat-icon>
+      {{ 'inventory.title' | translate }}
+    </h1>
+  </header>
+
+  @if (store.environmentsLoading()) {
+    <p role="status">
+      {{ 'inventory.loading' | translate }}
+    </p>
+  } @else if (store.environmentsError()) {
+    <p class="error" role="alert">
+      {{ store.environmentsError() | translate }}
+    </p>
+  } @else if (store.environmentsEmpty()) {
+    <section class="editor" role="status">
+      <h2>
+        {{ 'inventory.noEnvironments' | translate }}
+      </h2>
+
+      <p class="notice">
+        {{ 'inventory.noEnvironmentsNotice' | translate }}
+      </p>
+
+      @if (iam.canManageQuality()) {
+        <a
+          mat-flat-button
+          routerLink="/laboratories/environments/new"
+        >
+          <mat-icon>add_location_alt</mat-icon>
+          {{ 'environments.register' | translate }}
+        </a>
+      }
+    </section>
+  }
+</main>

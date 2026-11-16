@@ -1,0 +1,35 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.data-table td strong {
+  font-weight: 600;
+}
+
+td a {
+  color: var(--qt-primary-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+td a:hover {
+  text-decoration: underline;
+}
+
+td a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

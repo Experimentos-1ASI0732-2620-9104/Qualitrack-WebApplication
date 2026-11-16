@@ -1,141 +1,103 @@
 <main class="operations-page">
-  <header class="page-heading">
-    <h1><mat-icon aria-hidden="true">inventory_2</mat-icon>{{ 'inventory.title' | translate }}</h1>
-    <div class="actions">
-      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
-      <button mat-stroked-button (click)="reload()" [disabled]="store.loading() || store.saving()">
-        <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
-      </button>
-      <button mat-stroked-button (click)="toggleNearExpiry()" [attr.aria-pressed]="showNearExpiry()">
-        <mat-icon>event_busy</mat-icon>{{ 'inventory.nearExpiry' | translate }}
-      </button>
-      @if (store.canReview()) {
-        <button mat-stroked-button (click)="showImports()" [disabled]="store.saving()" [attr.aria-pressed]="importing()">
-          <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.legacy' | translate }}
-        </button>
-        <a mat-flat-button [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', 'new']">
-          <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
-        </a>
-      }
-    </div>
-  </header>
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error() | translate }}</p>
-  }
-  @if (store.notice()) {
-    <p class="success" role="status">{{ store.notice() | translate }}</p>
-  }
-  @if (importing()) {
-    <section class="editor">
-      <h2>{{ 'inventory.legacy' | translate }}</h2>
-      <p class="notice">{{ 'inventory.importNotice' | translate }}</p>
-      @for (item of store.legacy(); track item.id) {
-        <div class="legacy-row">
-          <div>
-            <strong>{{ item.name }}</strong>
-            <p>
-              {{ item.code }} · {{ item.batchNumber }} · {{ item.balance | number: '1.0-3' }}
-              {{ item.unit }}
-            </p>
-          </div>
-          <button mat-stroked-button (click)="import(item.id)" [disabled]="store.saving()">
-            <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.import' | translate }}
+  <app-page-header
+    icon="inventory_2"
+    titleKey="inventory.title"
+    [tabs]="tabs"
+    [activeTab]="selectedTabIndex() === 0 ? 'catalogue' : 'near-expiry'"
+    [loading]="store.loading() || store.saving()"
+    (refresh)="reload()"
+    (tabChosen)="selectTab($event === 'catalogue' ? 0 : 1)"
+  >
+    <div class="inventory">
+      <!-- The environment and what can be added to it; in the catalogue, its materials with their counts and the search -->
+      <app-list-toolbar
+        searchKey="inventory.search"
+        [filterable]="selectedTabIndex() === 0"
+        [search]="search()"
+        [activeFilters]="(lowOnly() ? 1 : 0) + (search().trim() ? 1 : 0)"
+        (searchChange)="search.set($event)"
+      >
+        <app-environment-selector
+          toolbarContext
+          appearance="inline"
+          [environments]="store.environments()"
+          [selectedId]="store.environmentId()"
+          (selectedChange)="changeEnvironment($event)"
+        />
+        @if (store.canReview()) {
+          <button
+            toolbarActions
+            mat-stroked-button
+            type="button"
+            (click)="showImports()"
+            [disabled]="store.saving()"
+            [attr.aria-pressed]="importing()"
+          >
+            <mat-icon>move_to_inbox</mat-icon>{{ 'inventory.legacy' | translate }}
           </button>
-        </div>
-      } @empty {
-        <p>{{ 'inventory.noLegacy' | translate }}</p>
-      }
-    </section>
-  }
-  @if (showNearExpiry()) {
-    <section class="editor" aria-labelledby="near-expiry-title">
-      <h2 id="near-expiry-title">{{ 'inventory.nearExpiry' | translate }}</h2>
-      <p class="notice">{{ 'inventory.nearExpiryNotice' | translate }}</p>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ 'inventory.name' | translate }}</th>
-            <th>{{ 'inventory.receiptNumber' | translate }}</th>
-            <th>{{ 'inventory.expiresOn' | translate }}</th>
-            <th>{{ 'inventory.available' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (lot of store.nearExpiry(); track lot.id) {
-            <tr>
-              <td>
-                <a [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', lot.rawMaterialId]">
-                  {{ materialNames().get(lot.rawMaterialId) ?? ('#' + lot.rawMaterialId) }}
-                </a>
-              </td>
-              <td [attr.data-label]="'inventory.receiptNumber' | translate">{{ lot.batchNumber }}</td>
-              <td [attr.data-label]="'inventory.expiresOn' | translate" class="warning">{{ lot.expiresOn }}</td>
-              <td [attr.data-label]="'inventory.available' | translate">
-                {{ lot.availableAmount | number: '1.0-3' }} {{ lot.unit }}
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="4">{{ 'inventory.nearExpiryEmpty' | translate }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </section>
-  }
-  <section class="summary-strip">
-    <div>
-      <span>{{ 'inventory.materials' | translate }}</span><strong>{{ store.materials().length }}</strong>
-    </div>
-    <div>
-      <span>{{ 'inventory.lowStock' | translate }}</span><strong>{{ store.lowCount() }}</strong>
-    </div>
-  </section>
-  <div class="filters">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic"
-      ><mat-label>{{ 'inventory.search' | translate }}</mat-label
-      ><mat-icon matPrefix>search</mat-icon
-      ><input matInput [ngModel]="search()" (ngModelChange)="search.set($event)"
-    /></mat-form-field>
-    <mat-checkbox [checked]="lowOnly()" (change)="toggleLowOnly($event.checked)">{{
-      'inventory.lowStock' | translate
-    }}</mat-checkbox>
-  </div>
-  @if (store.loading()) {
-    <p role="status">{{ 'inventory.loading' | translate }}</p>
-  } @else {
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>{{ 'inventory.name' | translate }}</th>
-          <th>{{ 'inventory.usableStock' | translate }}</th>
-          <th>{{ 'inventory.physicalStock' | translate }}</th>
-          <th>{{ 'inventory.minimum' | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (material of filtered(); track material.id) {
-          <tr>
-            <td>
-              <a [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', material.id]">{{ material.name }}</a
-              ><small>{{ material.code }}</small>
-            </td>
-            <td [attr.data-label]="'inventory.usableStock' | translate" [class.warning]="material.isLowStock">
-              {{ material.usableStock | number: '1.0-3' }} {{ material.unit }}
-            </td>
-            <td [attr.data-label]="'inventory.physicalStock' | translate">
-              {{ material.physicalStock | number: '1.0-3' }} {{ material.unit }}
-            </td>
-            <td [attr.data-label]="'inventory.minimum' | translate">
-              {{ material.minimumStock | number: '1.0-3' }} {{ material.unit }}
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="4">{{ 'inventory.empty' | translate }}</td>
-          </tr>
         }
-      </tbody>
-    </table>
-  }
+        @if (store.canReview()) {
+          <a
+            toolbarActions
+            mat-flat-button
+            [routerLink]="['/inventory/environments', store.environmentId(), 'raw-materials', 'new']"
+          >
+            <mat-icon>add</mat-icon>{{ 'inventory.newMaterial' | translate }}
+          </a>
+        }
+        <div toolbarFilters class="stock-chips" role="group" [attr.aria-label]="'inventory.catalogue' | translate">
+          <app-filter-chip
+            labelKey="common.all"
+            [count]="store.materials().length"
+            [pressed]="!lowOnly()"
+            (toggled)="toggleLowOnly(false)"
+          />
+          <app-filter-chip
+            icon="trending_down"
+            labelKey="inventory.lowStock"
+            [tone]="store.lowCount() ? 'danger' : 'neutral'"
+            [count]="store.lowCount()"
+            [pressed]="lowOnly()"
+            (toggled)="toggleLowOnly(!lowOnly())"
+          />
+        </div>
+      </app-list-toolbar>
+
+      @if (store.error()) {
+        <p class="error" role="alert">{{ store.error() | translate }}</p>
+      }
+      @if (store.notice()) {
+        <p class="success" role="status">{{ store.notice() | translate }}</p>
+      }
+      @if (importing()) {
+        <app-legacy-import-panel
+          [materials]="store.legacy()"
+          [saving]="store.saving()"
+          (importRequested)="import($event)"
+        />
+      }
+
+      @if (selectedTabIndex() === 0) {
+        @if (waiting()) {
+          <p role="status">{{ 'inventory.loading' | translate }}</p>
+        } @else {
+          <app-inventory-material-table
+            [materials]="filtered()"
+            [environmentId]="store.environmentId()"
+          />
+        }
+      } @else {
+        <p class="notice">{{ 'inventory.nearExpiryNotice' | translate }}</p>
+        @if (store.loading() || store.nearExpiryLoading()) {
+          <p role="status">{{ 'inventory.loading' | translate }}</p>
+        } @else {
+          <app-near-expiry-table
+            [batches]="store.nearExpiry()"
+            [materialNames]="materialNames()"
+            [environmentId]="store.environmentId()"
+          />
+        }
+      }
+    </div>
+  </app-page-header>
 </main>

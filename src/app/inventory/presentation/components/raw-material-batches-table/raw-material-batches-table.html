@@ -1,0 +1,96 @@
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>{{ 'inventory.receiptNumber' | translate }}</th>
+      <th>{{ 'inventory.amount' | translate }}</th>
+      <th>{{ 'inventory.available' | translate }}</th>
+      <th>{{ 'inventory.expiresOn' | translate }}</th>
+      <th>{{ 'inventory.container' | translate }}</th>
+      <th>{{ 'inventory.state' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      @for (receipt of receiptPage.rows(); track receipt.id) {
+        <tr>
+          <td>
+            <strong>{{ receipt.batchNumber }}</strong>
+            <small>{{ receipt.supplier }}</small>
+            <small>#{{ receipt.id }} · {{ receipt.receivedOn }}</small>
+          </td>
+          <td [attr.data-label]="'inventory.amount' | translate">
+            {{ receipt.initialAmount | number: '1.0-3' }} {{ receipt.unit }}
+          </td>
+          <td [attr.data-label]="'inventory.available' | translate">
+            {{ receipt.availableAmount | number: '1.0-3' }} {{ receipt.unit }}
+          </td>
+          <td [attr.data-label]="'inventory.expiresOn' | translate">
+            {{ receipt.expiresOn }}
+          </td>
+          <td [attr.data-label]="'inventory.container' | translate">
+            @if (receipt.containerMonitorId !== null) {
+              <strong>{{
+                  containerName(receipt.containerMonitorId) ?? '#' + receipt.containerMonitorId
+                }}</strong>
+              <a
+                [routerLink]="['/tracking/history']"
+                [queryParams]="{
+                  environmentId: environmentId(),
+                  deviceId: receipt.containerMonitorId,
+                }"
+              ><small>{{ 'inventory.viewConditions' | translate }}</small></a
+              >
+            } @else {
+              <small>{{ 'inventory.noContainer' | translate }}</small>
+            }
+            @if (canOperate() && storesInContainers()) {
+              <div>
+                <button
+                  mat-button
+                  type="button"
+                  (click)="storageRequested.emit(receipt)"
+                  [disabled]="saving()"
+                >
+                  <mat-icon>inventory</mat-icon>{{
+                    (receipt.containerMonitorId === null
+                        ? 'inventory.storeInContainer'
+                        : 'inventory.changeContainer'
+                    ) | translate
+                  }}
+                </button>
+              </div>
+            }
+          </td>
+          <td [attr.data-label]="'inventory.state' | translate">
+            <span
+              class="status"
+              [class.released]="receipt.status === 'RELEASED'"
+              [class.rejected]="receipt.status === 'REJECTED'"
+            >{{ 'inventory.status.' + receipt.status | translate }}</span
+            >
+            @if (receipt.availability && receipt.availability !== receipt.status) {
+              <small>{{ 'inventory.status.' + receipt.availability | translate }}</small>
+            }
+            @if (canReview() && receipt.status !== 'REJECTED') {
+              <div>
+                <button
+                  mat-button
+                  type="button"
+                  (click)="reviewRequested.emit(receipt)"
+                  [disabled]="saving()"
+                >
+                  <mat-icon>fact_check</mat-icon>{{ 'inventory.review' | translate }}
+                </button>
+              </div>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6">{{ 'inventory.noReceipts' | translate }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <app-table-paginator [page]="receiptPage" />
+</div>

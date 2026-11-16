@@ -1,0 +1,14 @@
+<section class="summary-strip">
+  <div>
+    <span>{{ 'inventory.usableStock' | translate }}</span>
+    <strong>{{ material().usableStock | number: '1.0-3' }} {{ material().unit }}</strong>
+  </div>
+  <div>
+    <span>{{ 'inventory.physicalStock' | translate }}</span>
+    <strong>{{ material().physicalStock | number: '1.0-3' }} {{ material().unit }}</strong>
+  </div>
+  <div>
+    <span>{{ 'inventory.minimum' | translate }}</span>
+    <strong>{{ material().minimumStock | number: '1.0-3' }} {{ material().unit }}</strong>
+  </div>
+</section>

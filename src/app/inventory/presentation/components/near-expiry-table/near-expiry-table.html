@@ -1,0 +1,33 @@
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>{{ 'inventory.name' | translate }}</th>
+        <th>{{ 'inventory.receiptNumber' | translate }}</th>
+        <th>{{ 'inventory.expiresOn' | translate }}</th>
+        <th>{{ 'inventory.available' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (lot of lotPage.rows(); track lot.id) {
+        <tr>
+          <td>
+            <a [routerLink]="['/inventory/environments', environmentId(), 'raw-materials', lot.rawMaterialId]">
+              {{ materialNames().get(lot.rawMaterialId) ?? ('#' + lot.rawMaterialId) }}
+            </a>
+          </td>
+          <td [attr.data-label]="'inventory.receiptNumber' | translate">{{ lot.batchNumber }}</td>
+          <td [attr.data-label]="'inventory.expiresOn' | translate" class="warning">{{ lot.expiresOn }}</td>
+          <td [attr.data-label]="'inventory.available' | translate">
+            {{ lot.availableAmount | number: '1.0-3' }} {{ lot.unit }}
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4">{{ 'inventory.nearExpiryEmpty' | translate }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <app-table-paginator [page]="lotPage" />
+</div>

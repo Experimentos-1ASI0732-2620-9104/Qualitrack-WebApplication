@@ -1,0 +1,93 @@
+<section class="editor">
+  <h2>{{ 'inventory.newReceipt' | translate }}</h2>
+  <form [formGroup]="form()" (ngSubmit)="saveRequested.emit()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.supplier' | translate }}</mat-label>
+        <input matInput formControlName="supplier" maxlength="150" />
+        @if (form().controls.supplier.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.supplier.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.receiptNumber' | translate }}</mat-label>
+        <input matInput formControlName="batchNumber" maxlength="50" autocomplete="off" />
+        @if (form().controls.batchNumber.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.batchNumber.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        } @else if (form().controls.batchNumber.hasError('code')) {
+          <mat-error>{{ 'common.invalidCode' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.amount' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="amount"
+          min="0.001"
+          [max]="maxStock"
+          step="0.001"
+        />
+        <span matTextSuffix>{{ unit() }}</span>
+        @if (form().controls.amount.hasError('max')) {
+          <mat-error>{{ 'inventory.quantityTooLarge' | translate }}</mat-error>
+        } @else {
+          <mat-error>{{ 'inventory.invalidQuantity' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.receivedOn' | translate }}</mat-label>
+        <input
+          matInput
+          type="date"
+          formControlName="receivedOn"
+          [attr.min]="minDate()"
+          [attr.max]="maxReceiptDate()"
+        />
+        @if (form().controls.receivedOn.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.receivedOn.hasError('invalidDate')) {
+          <mat-error>{{ 'common.dateInvalid' | translate }}</mat-error>
+        } @else if (form().controls.receivedOn.hasError('minDate')) {
+          <mat-error>{{ 'common.dateMin' | translate }}</mat-error>
+        } @else if (form().controls.receivedOn.hasError('futureDate')) {
+          <mat-error>{{ 'common.dateFuture' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'inventory.expiresOn' | translate }}</mat-label>
+        <input
+          matInput
+          type="date"
+          formControlName="expiresOn"
+          [attr.min]="form().controls.receivedOn.value || minDate()"
+          [attr.max]="maxExpiryDate()"
+        />
+        @if (form().controls.expiresOn.hasError('required')) {
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        } @else if (form().controls.expiresOn.hasError('invalidDate')) {
+          <mat-error>{{ 'common.dateInvalid' | translate }}</mat-error>
+        } @else if (form().controls.expiresOn.hasError('minDate')) {
+          <mat-error>{{ 'common.dateMin' | translate }}</mat-error>
+        } @else if (form().controls.expiresOn.hasError('maxDate')) {
+          <mat-error>{{ 'inventory.expiryTooFar' | translate }}</mat-error>
+        } @else if (form().controls.expiresOn.hasError('dateOrder')) {
+          <mat-error>{{ 'inventory.expiryBeforeReceipt' | translate }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <p class="notice">{{ 'inventory.quarantineNotice' | translate }}</p>
+    <div class="actions">
+      <button mat-button type="button" (click)="cancelRequested.emit()" [disabled]="saving()">
+        {{ 'inventory.cancel' | translate }}
+      </button>
+      <button mat-flat-button class="primary-btn" type="submit" [disabled]="saving()">
+        <mat-icon>save</mat-icon>{{ 'inventory.save' | translate }}
+      </button>
+    </div>
+  </form>
+</section>
