@@ -1,5 +1,4 @@
 <div class="not-found-page">
-  <app-toolbar />
 
   <main class="not-found-content">
     <section class="not-found-card">
@@ -22,7 +21,7 @@
         </div>
 
         <div class="actions">
-          @if (iamStore.isSignedIn()) {
+          @if (isSignedIn()) {
             <a mat-flat-button class="primary-action" routerLink="/dashboard">
               <mat-icon>dashboard</mat-icon>
               {{ 'page-not-found.go-dashboard' | translate }}

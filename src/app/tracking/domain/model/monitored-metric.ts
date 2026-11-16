@@ -1,4 +1,4 @@
-import { IotDeviceType } from '../../../equipment/domain/model/iot-device-type';
+import { MonitoredDeviceType } from './monitored-device.entity';
 
 /**
  * Represents a measurement type reported by an IoT device.
@@ -46,7 +46,7 @@ export interface MetricDefinition {
   /**
    * Type of IoT device responsible for generating this metric.
    */
-  deviceType: IotDeviceType;
+  deviceType: MonitoredDeviceType;
 
   /**
    * Indicates whether quality managers can configure
@@ -62,6 +62,13 @@ export interface MetricDefinition {
    * increasing risk conditions.
    */
   upperOnly: boolean;
+
+  /**
+   * Physically plausible values of the metric, in its unit.
+   *
+   * Thresholds outside this range are almost surely typing mistakes. Only metrics with thresholds have one.
+   */
+  range?: { min: number; max: number };
 }
 
 /**
@@ -71,11 +78,11 @@ export interface MetricDefinition {
  * defining their units, supported devices and configuration rules.
  */
 export const METRICS: readonly MetricDefinition[] = [
-  { metric: 'AIR_QUALITY', unit: 'ppm', deviceType: 'ENVIRONMENTAL_DEVICE', configurable: true, upperOnly: true },
+  { metric: 'AIR_QUALITY', unit: 'ppm', deviceType: 'ENVIRONMENTAL_DEVICE', configurable: true, upperOnly: true, range: { min: 0, max: 10000 } },
   { metric: 'MOTION', unit: 'event', deviceType: 'ENVIRONMENTAL_DEVICE', configurable: false, upperOnly: false },
-  { metric: 'TEMPERATURE', unit: '°C', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false },
-  { metric: 'HUMIDITY', unit: '%RH', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false },
-  { metric: 'LUMINOSITY', unit: 'lux', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false },
+  { metric: 'TEMPERATURE', unit: '°C', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false, range: { min: -100, max: 150 } },
+  { metric: 'HUMIDITY', unit: '%RH', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false, range: { min: 0, max: 100 } },
+  { metric: 'LUMINOSITY', unit: 'lux', deviceType: 'CONTAINER_MONITOR', configurable: true, upperOnly: false, range: { min: 0, max: 100000 } },
   { metric: 'RFID_TAG', unit: 'tag', deviceType: 'CONTAINER_MONITOR', configurable: false, upperOnly: false },
 ];
 
@@ -88,7 +95,7 @@ export const METRICS: readonly MetricDefinition[] = [
  * @param deviceType IoT device type used to filter supported metrics.
  * @returns List of metrics reported by the specified device type.
  */
-export function metricsOf(deviceType: IotDeviceType): MetricDefinition[] {
+export function metricsOf(deviceType: MonitoredDeviceType): MetricDefinition[] {
   return METRICS.filter((definition) => definition.deviceType === deviceType);
 }
 
@@ -102,7 +109,7 @@ export function metricsOf(deviceType: IotDeviceType): MetricDefinition[] {
  * @param deviceType IoT device type used to filter configurable metrics.
  * @returns Metrics where quality managers can configure thresholds.
  */
-export function configurableMetricsOf(deviceType: IotDeviceType): MetricDefinition[] {
+export function configurableMetricsOf(deviceType: MonitoredDeviceType): MetricDefinition[] {
   return metricsOf(deviceType).filter((definition) => definition.configurable);
 }
 

@@ -1,50 +1,181 @@
 <main class="operations-page">
-  <a routerLink="/alerts/alert-dashboard">{{ 'ca-alerts.active.title' | translate }}</a>
-  <header class="page-heading">
-    <div>
-      <h1>{{ 'ca-alerts.history.title' | translate }}</h1>
-      <p class="muted">{{ 'ca-alerts.history.subtitle' | translate }}</p>
-    </div>
-    <div class="actions">
-      <app-environment-selector [selectedId]="environmentId()" (selectedChange)="changeEnvironment($event)" />
-    </div>
-  </header>
+  <app-page-header
+    icon="notifications_active"
+    titleKey="ca-alerts.page.title"
+    [tabs]="tabs()"
+    activeTab="/alerts/history"
+    [loading]="store.loading()"
+    (refresh)="load()"
+  >
+    <div class="history">
+      @if (!detailOpen() && store.error(); as error) {
+        <app-error-banner
+          [messageKey]="error"
+          [dismissible]="true"
+          (dismiss)="store.clearError()"
+        />
+      }
 
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error()! | translate }}</p>
-  }
+      @if (store.environmentsEmpty()) {
+        <app-setup-notice messageKey="ca-alerts.no-environments" [actionLink]="iam.canManageQuality() ? '/laboratories/environments/new' : null" />
+      } @else if (store.environmentsLoaded()) {
+        <!-- The environment and the report; then the period, the chips with their counts and the search -->
+        <app-list-toolbar
+          searchKey="ca-alerts.history.filters.search"
+          [search]="filter().search"
+          [activeFilters]="activeFilterCount()"
+          (searchChange)="search($event)"
+        >
+          <app-environment-selector
+            toolbarContext
+            appearance="inline"
+            allOptionKey="environments.all"
+            [environments]="store.environments()"
+            [selectedId]="environmentId()"
+            (selectedChange)="chooseEnvironment($event)"
+            (allSelected)="chooseAllEnvironments()"
+          />
+          <a toolbarActions mat-stroked-button routerLink="/reports/new" [queryParams]="reportQuery()">
+            <mat-icon aria-hidden="true">description</mat-icon>
+            {{ 'ca-alerts.history.export' | translate }}
+          </a>
+          <div toolbarFilters class="chip-groups" [attr.aria-label]="'ca-alerts.history.filters.label' | translate" role="group">
+            <div class="chip-group" role="group" aria-labelledby="history-period">
+              <span id="history-period" class="group-label">{{
+                  'ca-alerts.history.filters.period' | translate
+                }}</span>
+              @for (period of periods; track period) {
+                <app-filter-chip
+                  [labelKey]="
+                    period === null
+                      ? 'ca-alerts.history.periods.custom'
+                      : 'ca-alerts.history.periods.days-' + period
+                  "
+                  [icon]="period === null ? 'date_range' : null"
+                  [pressed]="filter().period === period"
+                  (toggled)="choosePeriod(period)"
+                />
+              }
+            </div>
+            <div class="chip-group" role="group" aria-labelledby="history-severity">
+              <span id="history-severity" class="group-label">{{
+                  'ca-alerts.fields.severity' | translate
+                }}</span>
+              @for (severity of severities; track severity) {
+                <app-filter-chip
+                  [labelKey]="severityChips[severity].labelKey"
+                  [icon]="severityChips[severity].icon"
+                  [count]="countWith({ severities: [severity] })"
+                  [pressed]="filter().severities.includes(severity)"
+                  (toggled)="toggleSeverity(severity)"
+                />
+              }
+            </div>
+            <div class="chip-group" role="group" aria-labelledby="history-status">
+              <span id="history-status" class="group-label">{{ 'common.status' | translate }}</span>
+              @for (status of statuses; track status) {
+                <app-filter-chip
+                  [labelKey]="statusChips[status].labelKey"
+                  [icon]="statusChips[status].icon"
+                  [count]="countWith({ statuses: [status] })"
+                  [pressed]="filter().statuses.includes(status)"
+                  (toggled)="toggleStatus(status)"
+                />
+              }
+            </div>
+            <div class="chip-group" role="group" aria-labelledby="history-origin">
+              <span id="history-origin" class="group-label">{{
+                  'ca-alerts.fields.origin' | translate
+                }}</span>
+              @for (origin of origins; track origin) {
+                <app-filter-chip
+                  [labelKey]="'ca-alerts.origin.' + origin"
+                  [icon]="originIcons[origin]"
+                  [count]="countWith({ origins: [origin] })"
+                  [pressed]="filter().origins.includes(origin)"
+                  (toggled)="toggleOrigin(origin)"
+                />
+              }
+            </div>
+          </div>
+          <div toolbarMore class="more">
+            @if (filter().period === null) {
+              <div class="custom-period">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ca-alerts.history.filters.from' | translate }}</mat-label>
+                  <input
+                    matInput
+                    type="date"
+                    [value]="filter().from ?? ''"
+                    [max]="filter().to ?? ''"
+                    (change)="chooseDay('from', $any($event.target).value)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ca-alerts.history.filters.to' | translate }}</mat-label>
+                  <input
+                    matInput
+                    type="date"
+                    [value]="filter().to ?? ''"
+                    [min]="filter().from ?? ''"
+                    (change)="chooseDay('to', $any($event.target).value)"
+                  />
+                </mat-form-field>
+              </div>
+            }
+            @if (isFiltered()) {
+              <button mat-button type="button" class="clear-filters" (click)="clearFilters()">
+                {{ 'ca-alerts.history.filters.clear' | translate }}
+              </button>
+            }
+            @if (narrowsTable()) {
+              <p class="export-note">{{ 'ca-alerts.history.export-note' | translate }}</p>
+            }
+          </div>
+        </app-list-toolbar>
 
-  @if (environments.isEmpty()) {
-    <p class="notice">{{ 'ca-alerts.no-environments' | translate }}</p>
-  } @else if (environmentId() !== null) {
-    <div class="filters">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'common.status' | translate }}</mat-label>
-        <mat-select [(ngModel)]="status" (selectionChange)="search()">
-          <mat-option value="">{{ 'common.all' | translate }}</mat-option>
-          @for (item of statuses; track item) {
-            <mat-option [value]="item">{{ 'ca-alerts.status.' + item.toLowerCase() | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'ca-alerts.fields.severity' | translate }}</mat-label>
-        <mat-select [(ngModel)]="severity" (selectionChange)="search()">
-          <mat-option value="">{{ 'common.all' | translate }}</mat-option>
-          @for (item of severities; track item) {
-            <mat-option [value]="item">{{ 'ca-alerts.severity.' + item.toLowerCase() | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button mat-button type="button" (click)="clearFilters()" [disabled]="store.loading()">
-        {{ 'common.clear' | translate }}
-      </button>
+        @if (unavailableEnvironments(); as environments) {
+          <app-action-banner
+            icon="cloud_off"
+            tone="warning"
+            actionKey="ca-alerts.active.retry"
+            (action)="load()"
+          >
+            {{ 'ca-alerts.history.unavailable' | translate: { environments } }}
+          </app-action-banner>
+        }
+
+
+        @if (store.loading()) {
+          <p role="status">{{ 'common.status-loading' | translate }}</p>
+        } @else if (shownAlerts().length) {
+          <div class="insights">
+            <app-alert-history-cards [alerts]="shownAlerts()" />
+            <app-alert-week-chart [weeks]="weeks()" />
+          </div>
+
+          <app-alert-table [alerts]="shownAlerts()" [now]="now()" />
+
+        } @else if (isFiltered()) {
+          <app-empty-state messageKey="ca-alerts.history.empty">
+            <button mat-stroked-button type="button" (click)="clearFilters()">
+              {{ 'ca-alerts.history.filters.clear' | translate }}
+            </button>
+          </app-empty-state>
+        } @else if (!store.error() && !unavailableEnvironments()) {
+          <app-empty-state
+            icon="verified"
+            [positive]="true"
+            [messageKey]="
+              environmentId() === null ? 'ca-alerts.history.none-all' : 'ca-alerts.history.none-one'
+            "
+          />
+        }
+      } @else if (!store.error()) {
+        <p role="status">{{ 'common.status-loading' | translate }}</p>
+      }
     </div>
+  </app-page-header>
 
-    @if (store.loading()) {
-      <p role="status">{{ 'common.status-loading' | translate }}</p>
-    } @else if (!store.error()) {
-      <app-alert-table [alerts]="store.alerts()" emptyKey="ca-alerts.history.empty" />
-    }
-  }
+  <router-outlet (activate)="detailOpen.set(true)" (deactivate)="detailOpen.set(false)" />
 </main>

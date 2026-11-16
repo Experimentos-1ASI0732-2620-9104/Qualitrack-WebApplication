@@ -8,12 +8,14 @@ const browser = await chromium.launch();
 const results = [];
 await mkdir('test-results/onboarding', { recursive: true });
 try {
-  // Real HTTP to the explicitly isolated local backend, not the mocked payment scenario below.
+  // Real HTTP to an isolated local backend, only when asked for; the mocked payment scenario below always runs.
+  if (process.env.LOCAL_API === '1') {
   const live = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await live.newPage();
   const username = 'local-browser-test-' + randomUUID();
   await page.goto(origin + '/iam/sign-up?role=qa-manager');
   await page.locator('#username').fill(username);
+  await page.locator('#email').fill(username + '@example.com');
   await page.locator('#password').fill('TestPassword123!');
   await page.locator('#confirmPassword').fill('TestPassword123!');
   await page.locator('button[type=submit]').click();
@@ -23,12 +25,13 @@ try {
   await page.locator('#password').fill('TestPassword123!');
   await page.locator('button[type=submit]').click();
   await page.waitForURL('**/subscriptions/plans');
-  await page.getByText('No subscription plans are available yet.').waitFor();
+  await page.locator('.plan-card').first().waitFor();
   await page.goto(origin + '/dashboard');
   await page.waitForURL('**/subscriptions/plans');
   await page.screenshot({ path: 'test-results/onboarding/real-account-without-subscription.png' });
   results.push('Real local HTTP: registration -> sign in -> plans; manual dashboard access denied');
   await live.close();
+  }
 
   // The provider boundary is mocked only in this test. It never activates a runtime subscription.
   let state = { userId: 27, laboratoryId: null, subscriptionId: null, subscriptionStatus: null, nextStep: 'SUBSCRIPTION' };
@@ -44,6 +47,7 @@ try {
     const path = new URL(route.request().url()).pathname;
     let body = [], status = 200;
     if (path.endsWith('/users/me/onboarding')) body = state;
+    else if (path.endsWith('/users/me/profile')) body = { userId: 27, staffId: null, username: 'fixture', email: null, roles: [], fullName: 'Browser Fixture', dni: null, phoneNumber: null, location: null, position: null, hasPhoto: false };
     else if (path.endsWith('/laboratories') && route.request().method() === 'POST') {
       state = { ...state, laboratoryId: 42, nextStep: 'READY' }; body = laboratory; status = 201;
     } else if (path === '/api/v1/laboratories/42') body = laboratory;
@@ -56,7 +60,7 @@ try {
   await app.waitForTimeout(2300);
   assert.equal(new URL(app.url()).pathname, '/subscriptions/success');
   state = { ...state, subscriptionId: 73, subscriptionStatus: 'ACTIVE', nextStep: 'LABORATORY' };
-  await app.waitForURL('**/laboratories/create', { timeout: 10000 });
+  await app.waitForURL('**/laboratories/new', { timeout: 10000 });
   await app.locator('[formcontrolname=name]').fill('Browser fixture laboratory');
   await app.locator('[formcontrolname=ruc]').fill('20123456789');
   await app.locator('[formcontrolname=address]').fill('Test address');
@@ -69,7 +73,7 @@ try {
   await app.getByRole('heading', { name: laboratory.name }).waitFor();
   assert.equal(await app.evaluate(() => localStorage.getItem('laboratoryId')), '42');
   assert.equal(await app.locator('mat-sidenav-content').evaluate(element => getComputedStyle(element).marginLeft), '0px');
-  const menu = app.locator('button[aria-expanded]');
+  const menu = app.getByRole('button', { name: 'Main navigation', exact: true });
   await menu.click();
   await app.locator('mat-sidenav.mat-drawer-opened').waitFor();
   await app.waitForFunction(() => document.querySelector('mat-sidenav')?.contains(document.activeElement));
@@ -77,7 +81,7 @@ try {
   await app.waitForFunction(() => document.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded') === 'false');
   assert.equal(await menu.getAttribute('aria-expanded'), 'false');
   await app.getByRole('radio', { name: 'Español', exact: true }).click();
-  await app.waitForFunction(() => document.documentElement.lang === 'es-419');
+  await app.waitForFunction(() => document.documentElement.lang === 'es');
   await app.getByRole('button', { name: 'Actualizar', exact: true }).waitFor();
   await app.getByRole('radio', { name: 'Español', exact: true, checked: true }).waitFor();
   await app.getByRole('radio', { name: 'English', exact: true, checked: false }).waitFor();

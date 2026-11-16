@@ -3,29 +3,39 @@ import {
   OnInit,
   computed,
   inject,
-  signal
+  signal,
+  ChangeDetectionStrategy,
 } from '@angular/core';
-import {
-  DatePipe,
-  DecimalPipe
-} from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslatePipe } from '@ngx-translate/core';
 import { BatchStore } from '../../../application/batch.store';
 import { BatchStatus } from '../../../domain/model/batch.entity';
 import { IamStore } from '../../../../iam/application/iam.store';
+import { EmptyState } from '../../../../shared/presentation/components/empty-state/empty-state';
+import {
+  BatchFilter,
+  EMPTY_BATCH_FILTER,
+  filterBatches,
+  isBatchFilterApplied,
+} from '../../batch-filter';
+import { BatchFilters } from '../../components/batch-filters/batch-filters';
+import { BatchKpiCards } from '../../components/batch-kpi-cards/batch-kpi-cards';
+import { BatchTable } from '../../components/batch-table/batch-table';
+import { BATCH_TABS } from '../../batch-tabs';
+import { PageHeader } from '../../../../shared/presentation/components/page-header/page-header';
+import { ListToolbar } from '../../../../shared/presentation/components/list-toolbar/list-toolbar';
+import { EnvironmentSelector } from '../../../../shared/presentation/components/environment-selector/environment-selector';
 
 /**
  * Batches of every product of the laboratory, newest first.
  *
  * @remarks
- * Batches are created from their product; this list only helps to find them. Batches registered before
- * environments existed are listed without a link until they are assigned to an environment.
+ * Batches are created from their product; this list only helps to find them. The indicators count the batches of
+ * each status among those that meet the other criteria, and also filter the list by status. Batches registered
+ * before environments existed are listed without a link until they are assigned to an environment.
  *
  * @author Qualitrack
  */
@@ -33,57 +43,72 @@ import { IamStore } from '../../../../iam/application/iam.store';
   selector: 'app-batch-list',
   standalone: true,
   imports: [
-    DatePipe,
-    DecimalPipe,
-    FormsModule,
+    PageHeader,
+    ListToolbar,
+    EnvironmentSelector,
+    BatchFilters,
+    BatchKpiCards,
+    BatchTable,
+    EmptyState,
     RouterLink,
     MatButtonModule,
     MatIconModule,
-    MatInputModule,
-    MatSelectModule,
-    TranslateModule,
+    MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './batch-list.html',
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './batch-list.css',
 })
 export class BatchList implements OnInit {
   protected readonly store = inject(BatchStore);
   private readonly iam = inject(IamStore);
 
   /**
-   * Statuses offered by the status filter.
+   * Criteria of the list.
    */
-  protected readonly statuses: BatchStatus[] = ['PENDING', 'IN_PROGRESS', 'RELEASED', 'REJECTED'];
+  protected readonly filter = signal<BatchFilter>({ ...EMPTY_BATCH_FILTER });
 
   /**
-   * Text typed in the search box.
+   * Batches that meet every criterion but the status; the indicators count them.
    */
-  protected readonly search = signal('');
+  protected readonly inContext = computed(() =>
+    filterBatches(this.store.batches(), { ...this.filter(), status: '' }),
+  );
 
   /**
-   * Status selected in the filter; empty means every status.
+   * Batches that meet every criterion.
    */
-  protected readonly status = signal<BatchStatus | ''>('');
+  protected readonly filtered = computed(() => filterBatches(this.store.batches(), this.filter()));
 
   /**
-   * Batches that match the selected status and contain the search text in their number or product name.
+   * Whether any criterion hides batches.
    */
-  protected readonly filtered = computed(() => {
-    const term = this.search().trim().toLowerCase();
-    return this.store
-      .batches()
-      .filter(
-        (batch) =>
-          (!this.status() || batch.status === this.status()) &&
-          `${batch.batchNumber} ${batch.productName}`.toLowerCase().includes(term),
-      );
+  protected readonly filterApplied = computed(() => isBatchFilterApplied(this.filter()));
+
+  /** Operations of the module. */
+  protected readonly tabs = BATCH_TABS;
+
+  /** How many filters of the folding row narrow the list: the status, the text and the period. */
+  protected readonly activeFilters = computed(() => {
+    const filter = this.filter();
+    return (filter.status ? 1 : 0) + (filter.search.trim() ? 1 : 0) + (filter.from || filter.to ? 1 : 0);
   });
 
   /**
-   * Lifecycle hook that loads the batches of the laboratory.
+   * Environments that have batches, offered by the environment filter.
+   */
+  protected readonly environments = computed(() => {
+    const ids = new Set(this.store.batches().map((batch) => batch.environmentId));
+    return this.store.environments().filter((environment) => ids.has(environment.id));
+  });
+
+  /**
+   * Lifecycle hook that loads the batches and the environments of the laboratory.
    */
   ngOnInit(): void {
     this.refresh();
+    void this.store.loadEnvironments();
   }
 
   /**
@@ -94,12 +119,27 @@ export class BatchList implements OnInit {
   }
 
   /**
-   * Builds the translation key suffix of a batch status (e.g., `IN_PROGRESS` becomes `in-progress`).
+   * Shows only the batches of a status, as chosen through an indicator.
    *
-   * @param status - The batch status.
-   * @returns The key suffix.
+   * @param status - The status, or empty for every status
    */
-  protected statusKey(status: string): string {
-    return status.toLowerCase().replace(/_/g, '-');
+  /**
+   * Changes part of the filter of the list.
+   *
+   * @param changes - The criteria that change
+   */
+  protected patchFilter(changes: Partial<BatchFilter>): void {
+    this.filter.update((filter) => ({ ...filter, ...changes }));
+  }
+
+  protected chooseStatus(status: BatchStatus | ''): void {
+    this.filter.update((filter) => ({ ...filter, status }));
+  }
+
+  /**
+   * Shows every batch again.
+   */
+  protected clearFilters(): void {
+    this.filter.set({ ...EMPTY_BATCH_FILTER });
   }
 }

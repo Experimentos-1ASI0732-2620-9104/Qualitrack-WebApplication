@@ -1,0 +1,54 @@
+:host {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--qt-radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.status-chip mat-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.tone-success {
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
+}
+
+.tone-warning {
+  background: var(--qt-warning-surface);
+  color: var(--qt-warning-text);
+}
+
+.tone-danger {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+.tone-neutral {
+  background: var(--qt-neutral-surface);
+  color: var(--qt-neutral-text);
+}
+
+.tone-outlined {
+  background: var(--qt-surface);
+  border-color: var(--qt-neutral-text);
+  color: var(--qt-neutral-text);
+}
+
+.tone-info {
+  background: var(--qt-primary-surface);
+  color: var(--qt-primary-strong);
+}

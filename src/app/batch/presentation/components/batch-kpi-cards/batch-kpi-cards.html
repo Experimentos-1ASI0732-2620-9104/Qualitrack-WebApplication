@@ -1,0 +1,18 @@
+<div class="kpi-chips" role="group" [attr.aria-label]="'batches.kpi.label' | translate">
+  <app-filter-chip
+    icon="inventory_2"
+    labelKey="batches.kpi.total"
+    [count]="counts().total"
+    [pressed]="selected() === ''"
+    (toggled)="choose('')"
+  />
+  @for (kpi of kpis(); track kpi.status) {
+    <app-filter-chip
+      [icon]="kpi.icon"
+      [labelKey]="kpi.labelKey"
+      [count]="kpi.value"
+      [pressed]="selected() === kpi.status"
+      (toggled)="choose(kpi.status)"
+    />
+  }
+</div>

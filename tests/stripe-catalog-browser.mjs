@@ -5,6 +5,10 @@ import { randomBytes, randomUUID } from 'node:crypto';
 
 const origin = process.env.WEB_URL ?? 'http://localhost:4200';
 assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname), 'Local test only');
+if (process.env.LOCAL_API !== '1') {
+  console.log('Skipped: this check needs an isolated local backend. Start one and set LOCAL_API=1.');
+  process.exit(0);
+}
 const output = 'test-results/catalog-tests';
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch();
@@ -16,6 +20,7 @@ try {
   const password = randomBytes(24).toString('base64url') + 'aA1!';
   await page.goto(origin + '/iam/sign-up?role=qa-manager');
   await page.locator('#username').fill(username);
+  await page.locator('#email').fill(username + '@example.com');
   await page.locator('#password').fill(password);
   await page.locator('#confirmPassword').fill(password);
   await page.locator('button[type=submit]').click();
@@ -33,8 +38,8 @@ try {
   assert.deepEqual(plans.filter(plan => plan.code === 'ENTERPRISE').map(plan => plan.amount).sort((a, b) => a - b), [599, 5990]);
   assert.ok(plans.filter(plan => plan.code === 'BASIC').every(plan => plan.maxUsers === 10 && plan.maxEquipment === 5));
   assert.ok(plans.filter(plan => plan.code === 'ENTERPRISE').every(plan => plan.maxUsers === 10 && plan.maxEquipment === null));
-  await page.locator('.plan-card').nth(3).waitFor();
-  assert.equal(await page.getByText('Unlimited', { exact: true }).count(), 2);
+  await page.locator('.plan-card').nth(1).waitFor();
+  assert.equal(await page.getByText('Unlimited', { exact: true }).count(), 1);
   results.push('Four source-backed plans served by the real local API; Enterprise equipment is unlimited');
 
   for (const language of ['English', 'Español']) {
@@ -48,7 +53,7 @@ try {
       const layout = await page.evaluate(() => ({
         width: innerWidth,
         content: document.documentElement.scrollWidth,
-        overflow: [...document.querySelectorAll('.plan-card, .limits-grid > div, .price-block')]
+        overflow: [...document.querySelectorAll('.plan-card, .features-list, .price-block')]
           .filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.className),
         unresolved: document.body.innerText.includes('{{count}}'),
       }));
@@ -61,8 +66,8 @@ try {
   }
 
   await page.getByRole('radio', { name: 'English', exact: true }).click();
-  await page.locator('.plan-card').filter({ hasText: 'Standard Lab Plan' }).first()
-    .getByRole('button', { name: 'Select Plan', exact: true }).click();
+  await page.locator('.plan-card').filter({ hasText: 'Standard Lab' }).first()
+    .getByRole('button', { name: 'Get Standard Lab', exact: true }).click();
   await page.waitForURL('**/subscriptions/checkout?**');
   await page.locator('.summary-row.total').getByText('USD 199', { exact: true }).waitFor();
   results.push('Standard monthly selection reaches checkout with USD 199');
@@ -74,14 +79,14 @@ try {
     assert.ok(session.ok(), `Checkout creation returned HTTP ${session.status()}`);
     await page.waitForURL('https://checkout.stripe.com/**', { timeout: 30000 });
     assert.ok(new URL(page.url()).pathname.includes('cs_test_'), 'Expected a TEST checkout session');
-    await page.getByText('Standard Lab Plan', { exact: false }).first().waitFor({ timeout: 45000 });
+    await page.getByText('Standard Lab', { exact: false }).first().waitFor({ timeout: 45000 });
     await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
     await page.screenshot({ path: `${output}/stripe-test-checkout.png`, fullPage: true, animations: 'disabled' });
     results.push('Actual Stripe TEST checkout session created and opened; no payment submitted');
   }
 
   await page.goto(origin + '/about');
-  assert.equal(await page.title(), 'QualiTrack | IoTech');
+  assert.equal(await page.title(), 'About - QualiTrack');
   await page.getByText('IoTech Team', { exact: true }).waitFor();
   results.push('About view identifies the team as IoTech');
 } finally {

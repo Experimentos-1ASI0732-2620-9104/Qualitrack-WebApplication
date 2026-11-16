@@ -9,58 +9,159 @@
       <span>{{ 'batch-traceability.container' | translate }}</span>
       <strong>{{ trace.container ? (trace.container.containerName ?? '#' + trace.container.containerMonitorId) : ('batch-storage.empty' | translate) }}</strong>
       @if (trace.container) {
-        <small class="muted">{{ 'batch-storage.assigned-at' | translate }}: {{ trace.container.assignedAt | date: 'short' }}</small>
+        <small class="muted">{{ 'batch-storage.assigned-at' | translate }}: {{ trace.container.assignedAt | dateTime }}</small>
       }
     </div>
   </section>
 
-  <!-- Raw material lots consumed; usages without a lot are legacy records -->
-  <h2>{{ 'batch-traceability.raw-materials' | translate }}</h2>
-  <ul>
-    @for (usage of trace.rawMaterials; track usage.id) {
-      <li>
-        {{ usage.rawMaterialName }} — {{ usage.quantityUsed | number: '1.0-3' }} {{ usage.unit }}
-        @if (usage.inventoryReceiptId !== null) {
-          ({{ 'batch-usage.fields.lot' | translate }} #{{ usage.inventoryReceiptId }})
-        }
-      </li>
-    } @empty {
-      <li class="muted">{{ 'batch-usage.empty' | translate }}</li>
-    }
-  </ul>
-
-  <!-- Equipment used -->
-  <h2>{{ 'batch-traceability.equipment' | translate }}</h2>
-  <ul>
-    @for (usage of trace.equipment; track usage.id) {
-      <li>{{ usage.equipmentName }}</li>
-    } @empty {
-      <li class="muted">{{ 'batch-participants.no-equipment' | translate }}</li>
-    }
-  </ul>
-
-  <!-- Staff that took part -->
-  <h2>{{ 'batch-traceability.staff' | translate }}</h2>
-  <ul>
-    @for (participation of trace.staff; track participation.id) {
-      <li>{{ participation.staffName }}@if (participation.staffRole) { · {{ participation.staffRole }} }</li>
-    } @empty {
-      <li class="muted">{{ 'batch-participants.no-staff' | translate }}</li>
-    }
-  </ul>
-
-  <!-- Final decision: release with its signature, rejection with its reason, or pending -->
+  <!-- Final decision: release with who signed it and the signature, rejection with its reason, or pending -->
   <h2>{{ 'batch-traceability.decision' | translate }}</h2>
   @if (trace.release; as release) {
-    <p class="success">
-      {{ 'batch-traceability.released' | translate: { date: (release.signedAt | date: 'medium'), user: release.signedByUserId } }}
-      <small class="muted">SHA-256 {{ release.signatureHash }}</small>
-    </p>
+    <div class="decision released">
+      <mat-icon aria-hidden="true">verified</mat-icon>
+      <div class="decision-text">
+        <p class="decision-title">
+          {{ 'batch-traceability.released' | translate: { date: (release.signedAt | dateTime), user: person(release.signedByUserId) } }}
+        </p>
+        <p class="signature">
+          <span>{{ 'batch-traceability.signature' | translate }}</span>
+          <code>{{ release.signatureHash }}</code>
+        </p>
+      </div>
+    </div>
   } @else if (trace.rejection; as rejection) {
-    <p class="error">
-      {{ 'batch-traceability.rejected' | translate: { date: rejection.rejectionDate } }} {{ rejection.reason }}
-    </p>
+    <div class="decision rejected">
+      <mat-icon aria-hidden="true">block</mat-icon>
+      <div class="decision-text">
+        <p class="decision-title">
+          {{ 'batch-traceability.rejected' | translate: { date: (rejection.rejectionDate | dateOnly) } }}
+        </p>
+        <p>{{ rejection.reason }}</p>
+      </div>
+    </div>
   } @else {
-    <p class="muted">{{ 'batch-traceability.pending' | translate }}</p>
+    <div class="decision pending">
+      <mat-icon aria-hidden="true">hourglass_top</mat-icon>
+      <div class="decision-text">
+        <p>{{ 'batch-traceability.pending' | translate }}</p>
+      </div>
+    </div>
   }
+
+  <!-- Timeline of the batch -->
+  <h2>{{ 'batch-timeline.title' | translate }}</h2>
+  <app-batch-timeline [trace]="trace" />
+
+  <!-- Raw material lots consumed; usages without a lot are legacy records -->
+  <h2>{{ 'batch-traceability.raw-materials' | translate }}</h2>
+  @if (trace.rawMaterials.length) {
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'batch-usage.fields.raw-material' | translate }}</th>
+            <th scope="col">{{ 'batch-usage.fields.lot' | translate }}</th>
+            <th scope="col">{{ 'batch-usage.fields.quantity-used' | translate }}</th>
+            <th scope="col">{{ 'batch-traceability.stock-change' | translate }}</th>
+            <th scope="col">{{ 'batch-usage.fields.usage-date' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usage of rawMaterialPage.rows(); track usage.id) {
+            <tr>
+              <td><strong>{{ usage.rawMaterialName }}</strong></td>
+              <td [attr.data-label]="'batch-usage.fields.lot' | translate">
+                @if (usage.inventoryReceiptId !== null) {
+                  #{{ usage.inventoryReceiptId }}
+                } @else {
+                  <span class="muted">{{ 'batch-usage.legacy' | translate }}</span>
+                }
+              </td>
+              <td [attr.data-label]="'batch-usage.fields.quantity-used' | translate">
+                {{ usage.quantityUsed | number: '1.0-3' }} {{ usage.unit }}
+              </td>
+              <td [attr.data-label]="'batch-traceability.stock-change' | translate">
+                @if (usage.stockBefore !== null && usage.stockAfter !== null) {
+                  {{ usage.stockBefore | number: '1.0-3' }} → {{ usage.stockAfter | number: '1.0-3' }} {{ usage.unit }}
+                } @else {
+                  —
+                }
+              </td>
+              <td [attr.data-label]="'batch-usage.fields.usage-date' | translate">{{ usage.usageDate | dateTime }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <app-table-paginator [page]="rawMaterialPage" />
+    </div>
+  } @else {
+    <p class="empty">{{ 'batch-usage.empty' | translate }}</p>
+  }
+
+  <div class="two-columns">
+    <!-- Equipment used -->
+    <section>
+      <h2>{{ 'batch-traceability.equipment' | translate }}</h2>
+      @if (trace.equipment.length) {
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'batch-participants.equipment' | translate }}</th>
+                <th scope="col">{{ 'batch-participants.registered-at' | translate }}</th>
+                <th scope="col">{{ 'batch-traceability.registered-by' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usage of equipmentPage.rows(); track usage.id) {
+                <tr>
+                  <td><strong>{{ usage.equipmentName }}</strong></td>
+                  <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ usage.registeredAt | dateTime }}</td>
+                  <td [attr.data-label]="'batch-traceability.registered-by' | translate">{{ person(usage.registeredByUserId) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="equipmentPage" />
+        </div>
+      } @else {
+        <p class="empty">{{ 'batch-participants.no-equipment' | translate }}</p>
+      }
+    </section>
+
+    <!-- Staff that took part -->
+    <section>
+      <h2>{{ 'batch-traceability.staff' | translate }}</h2>
+      @if (trace.staff.length) {
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'batch-participants.staff' | translate }}</th>
+                <th scope="col">{{ 'batch-participants.registered-at' | translate }}</th>
+                <th scope="col">{{ 'batch-traceability.registered-by' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (participation of staffPage.rows(); track participation.id) {
+                <tr>
+                  <td>
+                    <strong>{{ participation.staffName }}</strong>
+                    @if (participation.staffRole) {
+                      <small>{{ participation.staffRole }}</small>
+                    }
+                  </td>
+                  <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ participation.registeredAt | dateTime }}</td>
+                  <td [attr.data-label]="'batch-traceability.registered-by' | translate">{{ person(participation.registeredByUserId) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="staffPage" />
+        </div>
+      } @else {
+        <p class="empty">{{ 'batch-participants.no-staff' | translate }}</p>
+      }
+    </section>
+  </div>
 }

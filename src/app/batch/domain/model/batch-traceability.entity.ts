@@ -1,3 +1,4 @@
+import { BaseEntity } from '../../../shared/domain/model/base-entity';
 import { Batch } from './batch.entity';
 import {
   EquipmentUsage,
@@ -12,7 +13,7 @@ import {
  *
  * @author Qualitrack
  */
-export interface TracedRawMaterialUsage {
+export class TracedRawMaterialUsage implements BaseEntity {
   /**
    * The unique numeric identifier of the usage record.
    */
@@ -62,6 +63,30 @@ export interface TracedRawMaterialUsage {
    * The stock after the consumption; null when not recorded.
    */
   stockAfter: number | null;
+
+  constructor(params: {
+    id: number;
+    rawMaterialId: number;
+    rawMaterialName: string;
+    rawMaterialEnvironmentId: number | null;
+    inventoryReceiptId: number | null;
+    quantityUsed: number;
+    unit: string;
+    usageDate: string;
+    stockBefore: number | null;
+    stockAfter: number | null;
+  }) {
+    this.id = params.id;
+    this.rawMaterialId = params.rawMaterialId;
+    this.rawMaterialName = params.rawMaterialName;
+    this.rawMaterialEnvironmentId = params.rawMaterialEnvironmentId;
+    this.inventoryReceiptId = params.inventoryReceiptId;
+    this.quantityUsed = params.quantityUsed;
+    this.unit = params.unit;
+    this.usageDate = params.usageDate;
+    this.stockBefore = params.stockBefore;
+    this.stockAfter = params.stockAfter;
+  }
 }
 
 /**
@@ -72,7 +97,7 @@ export interface TracedRawMaterialUsage {
  *
  * @author Qualitrack
  */
-export interface ReleaseEvidence {
+export class ReleaseEvidence {
   /**
    * The identifier of the user who signed the release.
    */
@@ -87,6 +112,16 @@ export interface ReleaseEvidence {
    * The ISO date string of the moment the release was signed.
    */
   signedAt: string;
+
+  constructor(params: {
+    signedByUserId: number;
+    signatureHash: string;
+    signedAt: string;
+  }) {
+    this.signedByUserId = params.signedByUserId;
+    this.signatureHash = params.signatureHash;
+    this.signedAt = params.signedAt;
+  }
 }
 
 /**
@@ -94,7 +129,7 @@ export interface ReleaseEvidence {
  *
  * @author Qualitrack
  */
-export interface RejectionEvidence {
+export class RejectionEvidence {
   /**
    * The ISO date string of the moment the rejection was formalized.
    */
@@ -104,6 +139,14 @@ export interface RejectionEvidence {
    * The justification of the rejection.
    */
   reason: string;
+
+  constructor(params: {
+    rejectionDate: string;
+    reason: string;
+  }) {
+    this.rejectionDate = params.rejectionDate;
+    this.reason = params.reason;
+  }
 }
 
 /**
@@ -111,7 +154,7 @@ export interface RejectionEvidence {
  *
  * @author Qualitrack
  */
-export interface BatchContainer {
+export class BatchContainer {
   /**
    * The numeric identifier of the stored batch.
    */
@@ -141,6 +184,22 @@ export interface BatchContainer {
    * The ISO date string of the moment the batch was assigned to the container.
    */
   assignedAt: string;
+
+  constructor(params: {
+    batchId: number;
+    containerMonitorId: number;
+    containerName: string | null;
+    environmentId: number;
+    assignedBy: number;
+    assignedAt: string;
+  }) {
+    this.batchId = params.batchId;
+    this.containerMonitorId = params.containerMonitorId;
+    this.containerName = params.containerName;
+    this.environmentId = params.environmentId;
+    this.assignedBy = params.assignedBy;
+    this.assignedAt = params.assignedAt;
+  }
 }
 
 /**
@@ -161,7 +220,7 @@ export interface BatchContainer {
  *
  * @author Qualitrack
  */
-export interface BatchTraceability {
+export class BatchTraceability {
   /**
    * The batch being traced.
    */
@@ -205,4 +264,24 @@ export interface BatchTraceability {
    * The container where the batch is stored; null while it has none.
    */
   container: BatchContainer | null;
+
+  constructor(params: {
+    batch: Batch;
+    product: { id: number; code: string; name: string };
+    rawMaterials: TracedRawMaterialUsage[];
+    equipment: EquipmentUsage[];
+    staff: StaffParticipation[];
+    release: ReleaseEvidence | null;
+    rejection: RejectionEvidence | null;
+    container: BatchContainer | null;
+  }) {
+    this.batch = params.batch;
+    this.product = params.product;
+    this.rawMaterials = params.rawMaterials;
+    this.equipment = params.equipment;
+    this.staff = params.staff;
+    this.release = params.release;
+    this.rejection = params.rejection;
+    this.container = params.container;
+  }
 }

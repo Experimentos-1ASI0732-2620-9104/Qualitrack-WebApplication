@@ -1,7 +1,6 @@
 <mat-button-toggle-group
   [value]="currentLang"
-  appearance="standard"
-  [hideSingleSelectionIndicator]="compact()"
+  [hideSingleSelectionIndicator]="true"
   [attr.aria-label]="'language-switcher.aria-label' | translate"
   name="language">
   @for (language of languages; track language.code) {

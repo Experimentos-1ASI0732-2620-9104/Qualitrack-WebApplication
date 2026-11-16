@@ -1,0 +1,38 @@
+<section class="filters" [attr.aria-label]="'batches.filters.label' | translate">
+  <!-- Start period, chosen in the calendar; a click anywhere on the field opens it, also on the label of an empty field -->
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+    class="period"
+    (click)="picker.open()"
+  >
+    <mat-label>{{ 'batches.filters.period' | translate }}</mat-label>
+    <mat-date-range-input [rangePicker]="picker">
+      <input
+        matStartDate
+        readonly
+        [value]="from()"
+        [placeholder]="'batches.filters.from' | translate"
+        (keydown.alt.arrowdown)="picker.open()"
+        (dateChange)="chooseDay('from', $event.value)"
+      />
+      <input
+        matEndDate
+        readonly
+        [value]="to()"
+        [placeholder]="'batches.filters.to' | translate"
+        (keydown.alt.arrowdown)="picker.open()"
+        (dateChange)="chooseDay('to', $event.value)"
+      />
+    </mat-date-range-input>
+    <mat-datepicker-toggle matIconSuffix [for]="picker" />
+    <mat-date-range-picker #picker />
+  </mat-form-field>
+
+  @if (applied()) {
+    <button mat-stroked-button type="button" class="clear" (click)="cleared.emit()">
+      <mat-icon aria-hidden="true">filter_alt_off</mat-icon>
+      {{ 'batches.filters.clear' | translate }}
+    </button>
+  }
+</section>

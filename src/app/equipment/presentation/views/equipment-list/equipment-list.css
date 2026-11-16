@@ -1,30 +1,129 @@
-/* Equipment specifics on top of the shared operations page layout. */
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+/* The toolbar, the messages and the table, one under the other */
+.equipment {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.kind-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.error {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.data-table td.empty-cell {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.empty-cell p {
+  margin: 0 0 12px;
+  color: var(--qt-text-muted);
+}
+
+.empty-cell a,
+.empty-cell button {
+  border-radius: var(--qt-radius-pill);
+  font-weight: 600;
+}
+
+/* The links of the table are teal text, which would vanish on the filled button. */
+.data-table .empty-cell a[mat-flat-button] {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+  text-decoration: none;
+}
+
+.data-table a.environment-link {
+  font-weight: 500;
+}
+
+p[role='status'] {
+  margin: 0;
+  padding: 32px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
 .device-type {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #006e76;
+  color: var(--qt-primary-strong);
   font-weight: 600;
 }
 
 .device-type mat-icon {
-  font-size: 18px;
   width: 18px;
   height: 18px;
+  font-size: 18px;
+}
+
+.muted {
+  color: var(--qt-text-muted);
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--qt-warning-surface);
+  color: var(--qt-warning-text);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .status.operational {
-  color: #087957;
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
 }
 
 .status.out_of_service {
-  color: #a12d2d;
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
 }
 
 .status.inactive {
-  color: #5c7079;
+  background: var(--qt-neutral-surface);
+  color: var(--qt-neutral-text);
 }
 
-.filters mat-form-field {
-  min-width: 280px;
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

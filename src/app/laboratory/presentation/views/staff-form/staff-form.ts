@@ -1,9 +1,9 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,11 +14,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { LaboratoryStore } from '../../../application/laboratory.store';
+import { LaboratoryStore, errorStatus } from '../../../application/laboratory.store';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { RegisteredStaff } from '../../../domain/model/register-staff.command';
 import { StaffAccessRole } from '../../../domain/model/staff-member.entity';
-import { ApiError } from '../../../../shared/infrastructure/api-error';
+import { emailValidator } from '../../../../shared/presentation/validators/email.validator';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
+import { personNameValidator } from '../../../../shared/presentation/validators/person-name.validator';
 
 /**
  * Form with which a quality manager registers an operator or an auditor of the laboratory.
@@ -33,7 +35,7 @@ import { ApiError } from '../../../../shared/infrastructure/api-error';
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    TranslateModule,
+    TranslatePipe,
     MatFormFieldModule,
     MatCardModule,
     MatIconModule,
@@ -44,6 +46,7 @@ import { ApiError } from '../../../../shared/infrastructure/api-error';
     MatProgressSpinnerModule,
   ],
   templateUrl: './staff-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './staff-form.css',
 })
 export class StaffForm {
@@ -96,13 +99,28 @@ export class StaffForm {
    * Reactive form used to capture the staff member data.
    */
   protected readonly form = new FormGroup({
-    fullName: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
-    role: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    fullName: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        notBlankValidator,
+        personNameValidator,
+        Validators.minLength(2),
+        Validators.maxLength(150),
+      ],
+    }),
+    role: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, notBlankValidator, Validators.maxLength(100)],
+    }),
     email: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email, Validators.maxLength(150)],
+      validators: [Validators.required, emailValidator, Validators.maxLength(150)],
     }),
-    accessRole: new FormControl<StaffAccessRole>('OPERATOR', { nonNullable: true, validators: [Validators.required] }),
+    accessRole: new FormControl<StaffAccessRole>('OPERATOR', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
   });
 
   /**
@@ -115,15 +133,18 @@ export class StaffForm {
       return;
     }
     const value = this.form.getRawValue();
-    this.store.registerStaff(this.iamStore.requireLaboratoryId(), {
-      fullName: value.fullName.trim(),
-      role: value.role.trim(),
-      email: value.email.trim(),
-      accessRole: value.accessRole,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (registered) => this.registered.set(registered),
-      error: (error: unknown) => this.error.set(this.errorKey(error)),
-    });
+    this.store
+      .registerStaff(this.iamStore.requireLaboratoryId(), {
+        fullName: value.fullName.trim(),
+        role: value.role.trim(),
+        email: value.email.trim(),
+        accessRole: value.accessRole,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (registered) => this.registered.set(registered),
+        error: (error: unknown) => this.error.set(this.errorKey(error)),
+      });
   }
 
   /**
@@ -149,7 +170,7 @@ export class StaffForm {
    * Returns to the staff list.
    */
   protected onCancel(): void {
-    void this.router.navigate(['/laboratories/staff-list']);
+    void this.router.navigate(['/laboratories/staff']);
   }
 
   /**
@@ -159,7 +180,7 @@ export class StaffForm {
    * @returns Translation key that explains the error to the quality manager
    */
   private errorKey(error: unknown): string {
-    const status = error instanceof ApiError ? error.status : 0;
+    const status = errorStatus(error) ?? 0;
     if (status === 409) return 'staff-form.errors.email-taken';
     if (status === 400) return 'staff-form.errors.invalid';
     if (status === 403) return 'staff-form.errors.forbidden';

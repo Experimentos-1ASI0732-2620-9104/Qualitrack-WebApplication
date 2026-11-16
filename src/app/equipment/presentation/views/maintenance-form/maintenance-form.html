@@ -1,120 +1,111 @@
-<div class="form-container">
-  <mat-card class="maintenance-card">
-    <mat-card-header>
-      <mat-card-title>{{ 'maintenance-form.title' | translate }}</mat-card-title>
-      <mat-card-subtitle>
-        {{ 'maintenance-form.subtitle' | translate }}
-        @if (equipment(); as current) { — {{ current.name }} }
-      </mat-card-subtitle>
-    </mat-card-header>
+<main class="operations-page">
+  <a [routerLink]="['/equipments', equipmentId()]">{{ equipment()?.name || ('equipment-list.title' | translate) }}</a>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">build</mat-icon>{{ 'maintenance-form.title' | translate }}</h1>
+  </header>
+  <p class="muted">
+    {{ 'maintenance-form.subtitle' | translate }}
+    @if (equipment(); as current) { — {{ current.name }} }
+  </p>
 
-    <form [formGroup]="form" (ngSubmit)="onSave()" class="maintenance-form">
-      <mat-card-content>
-        @if (equipment() && !equipment()!.isLocated) {
-          <p class="error-msg" role="alert">
-            <mat-icon>location_off</mat-icon>
-            <span>{{ 'equipment-detail.requires-location' | translate }}</span>
-          </p>
+  @if (equipment() && !equipment()!.isLocated) {
+    <p class="notice" role="alert">{{ 'equipment-detail.requires-location' | translate }}</p>
+  }
+
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  }
+
+  <form class="editor form-grid" [formGroup]="form" (ngSubmit)="onSave()">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'maintenance-history.fields.date' | translate }}</mat-label>
+      <input matInput [matDatepicker]="picker" [min]="minDate" [max]="today" formControlName="maintenanceDate">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+
+      @if (form.get('maintenanceDate')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+      @if (form.get('maintenanceDate')?.hasError('matDatepickerMax')) {
+        <mat-error>{{ 'maintenance-form.errors.future-date' | translate }}</mat-error>
+      }
+      @if (form.get('maintenanceDate')?.hasError('matDatepickerMin')) {
+        <mat-error>{{ 'common.dateMin' | translate }}</mat-error>
+      }
+      @if (form.get('maintenanceDate')?.hasError('matDatepickerParse')) {
+        <mat-error>{{ 'common.dateInvalid' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'maintenance-history.fields.type' | translate }}</mat-label>
+      <mat-select formControlName="type">
+        @for (type of maintenanceTypes; track type) {
+          <mat-option [value]="type">
+            {{ 'maintenance-history.types.' + type.toLowerCase() | translate }}
+          </mat-option>
+        }
+      </mat-select>
+
+      @if (form.get('type')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'maintenance-history.fields.technician' | translate }}</mat-label>
+      <mat-select formControlName="technicianStaffId">
+        @for (member of technicians(); track member.id) {
+          <mat-option [value]="member.id">{{ member.fullName }} · {{ member.role }}</mat-option>
+        }
+      </mat-select>
+      <mat-icon matSuffix>person_outline</mat-icon>
+      <mat-hint>{{ 'maintenance-form.technician-hint' | translate }}</mat-hint>
+
+      @if (form.get('technicianStaffId')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (staffLoaded() && technicians().length === 0) {
+      <p class="notice full-width" role="alert">{{ 'maintenance-form.no-technicians' | translate }}</p>
+    }
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'maintenance-history.fields.description' | translate }}</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        [placeholder]="'maintenance-form.placeholders.description' | translate">
+      </textarea>
+      <mat-hint align="end">{{ form.get('description')?.value?.length || 0 }} / 1000</mat-hint>
+
+      @if (form.get('description')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+
+      @if (form.get('description')?.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+      }
+
+      @if (form.get('description')?.hasError('maxlength')) {
+        <mat-error>{{ 'maintenance-form.errors.description-maxlength' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="actions full-width">
+      <a mat-button [routerLink]="['/equipments', equipmentId()]">{{ 'common.cancel' | translate }}</a>
+
+      <button mat-flat-button type="submit" [disabled]="form.invalid || store.saving() || !equipment()?.isLocated">
+        @if (store.saving()) {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>build</mat-icon>
         }
 
-        <div class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'maintenance-history.fields.date' | translate }}</mat-label>
-            <input matInput [matDatepicker]="picker" [max]="today" formControlName="maintenanceDate">
-            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-
-            @if (form.get('maintenanceDate')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-            @if (form.get('maintenanceDate')?.hasError('matDatepickerMax')) {
-              <mat-error>{{ 'maintenance-form.errors.future-date' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'maintenance-history.fields.type' | translate }}</mat-label>
-            <mat-select formControlName="type">
-              @for (type of maintenanceTypes; track type) {
-                <mat-option [value]="type">
-                  {{ 'maintenance-history.types.' + type.toLowerCase() | translate }}
-                </mat-option>
-              }
-            </mat-select>
-
-            @if (form.get('type')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'maintenance-history.fields.technician' | translate }}</mat-label>
-            <mat-select formControlName="technicianStaffId">
-              @for (member of technicians(); track member.id) {
-                <mat-option [value]="member.id">{{ member.fullName }} · {{ member.role }}</mat-option>
-              }
-            </mat-select>
-            <mat-icon matSuffix>person_outline</mat-icon>
-            <mat-hint>{{ 'maintenance-form.technician-hint' | translate }}</mat-hint>
-
-            @if (form.get('technicianStaffId')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          @if (staffLoaded() && technicians().length === 0) {
-            <p class="error-msg full-width" role="alert">
-              <mat-icon>person_off</mat-icon>
-              <span>{{ 'maintenance-form.no-technicians' | translate }}</span>
-            </p>
-          }
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'maintenance-history.fields.description' | translate }}</mat-label>
-            <textarea
-              matInput
-              formControlName="description"
-              rows="4"
-              [placeholder]="'maintenance-form.placeholders.description' | translate">
-            </textarea>
-            <mat-hint align="end">{{ form.get('description')?.value?.length || 0 }} / 1000</mat-hint>
-
-            @if (form.get('description')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-
-            @if (form.get('description')?.hasError('maxlength')) {
-              <mat-error>{{ 'maintenance-form.errors.description-maxlength' | translate }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        @if (store.error()) {
-          <div class="error-msg" role="alert">
-            <mat-icon>error</mat-icon>
-            <span>{{ store.error()! | translate }}</span>
-          </div>
-        }
-      </mat-card-content>
-
-      <mat-card-actions align="end">
-        <button
-          mat-button
-          type="button"
-          [routerLink]="['/equipments/equipment-detail', equipmentId()]">
-          {{ 'common.cancel' | translate }}
-        </button>
-
-        <button mat-raised-button color="accent" type="submit" [disabled]="form.invalid || store.saving() || !equipment()?.isLocated">
-          @if (store.saving()) {
-            <mat-spinner diameter="18"></mat-spinner>
-          } @else {
-            <mat-icon>build</mat-icon>
-          }
-
-          {{ 'common.save' | translate }}
-        </button>
-      </mat-card-actions>
-    </form>
-  </mat-card>
-</div>
+        {{ 'common.save' | translate }}
+      </button>
+    </div>
+  </form>
+</main>

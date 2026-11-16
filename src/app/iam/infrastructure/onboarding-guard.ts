@@ -39,7 +39,7 @@ function guard(access: Access): CanActivateFn {
         if (destination === '/iam/change-password') return router.parseUrl(destination);
         if (access === 'subscription') return iam.canManageQuality() || router.parseUrl(destination);
         if (access === 'operational' && destination === '/dashboard') return true;
-        if (access === 'laboratory-setup' && destination === '/laboratories/create') return true;
+        if (access === 'laboratory-setup' && destination === '/laboratories/new') return true;
         return router.parseUrl(destination);
       }),
       catchError(() => of(router.parseUrl(

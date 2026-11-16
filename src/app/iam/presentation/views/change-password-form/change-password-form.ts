@@ -1,5 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -12,10 +11,13 @@ import {
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { groupErrorMatcher } from '../../../../shared/presentation/utils/group-error-matcher';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { IamStore } from '../../../application/iam.store';
-import { Toolbar } from '../../../../shared/presentation/components/toolbar/toolbar';
+import { IamStore, errorStatus } from '../../../application/iam.store';
 
 /** Password fields of the form whose visibility can be toggled. */
 type PasswordField = 'currentPassword' | 'newPassword' | 'confirmPassword';
@@ -32,11 +34,18 @@ type PasswordField = 'currentPassword' | 'newPassword' | 'confirmPassword';
 @Component({
   selector: 'app-change-password-form',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, MatIconModule, MatProgressSpinnerModule, Toolbar],
+  imports: [ReactiveFormsModule, TranslatePipe, MatIconModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './change-password-form.html',
-  styleUrls: ['../sign-in-form/sign-in-form.css'],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './change-password-form.css',
 })
 export class ChangePasswordForm {
+  /** Shows the error of the form that compares this field with another one. */
+  protected readonly newMatcher = groupErrorMatcher('samePassword');
+
+  /** Shows the error of the form that compares this field with another one. */
+  protected readonly confirmMatcher = groupErrorMatcher('passwordMismatch');
+
   /** Session store that changes the password. */
   protected readonly store = inject(IamStore);
   private readonly router = inject(Router);
@@ -56,13 +65,23 @@ export class ChangePasswordForm {
   /** Form with the current password, the new password and its confirmation. */
   protected readonly form = new FormGroup(
     {
-      currentPassword: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      currentPassword: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
       newPassword: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(8), Validators.maxLength(72),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)],
+        validators: [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.maxLength(72),
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/),
+        ],
       }),
-      confirmPassword: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      confirmPassword: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
     },
     { validators: [ChangePasswordForm.matches, ChangePasswordForm.differs] },
   );
@@ -84,7 +103,8 @@ export class ChangePasswordForm {
   protected newPasswordError(): string {
     const control = this.form.controls.newPassword;
     if (control.hasError('required')) return 'iam.change-password.errors.required';
-    if (control.hasError('minlength') || control.hasError('maxlength')) return 'iam.change-password.errors.length';
+    if (control.hasError('minlength') || control.hasError('maxlength'))
+      return 'iam.change-password.errors.length';
     if (control.hasError('pattern')) return 'iam.change-password.errors.strength';
     if (this.form.hasError('samePassword')) return 'iam.change-password.errors.same-password';
     return '';
@@ -101,15 +121,18 @@ export class ChangePasswordForm {
     }
     const { currentPassword, newPassword } = this.form.getRawValue();
     this.saving.set(true);
-    this.store.changePassword(currentPassword, newPassword)
+    this.store
+      .changePassword(currentPassword, newPassword)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => void this.router.navigateByUrl('/iam/onboarding', { replaceUrl: true }),
-        error: (error: HttpErrorResponse) => {
+        error: (error: unknown) => {
           this.saving.set(false);
-          this.error.set(error.status === 400
-            ? 'iam.change-password.errors.current-password'
-            : 'iam.change-password.errors.unavailable');
+          this.error.set(
+            errorStatus(error) === 400
+              ? 'iam.change-password.errors.current-password'
+              : 'iam.change-password.errors.unavailable',
+          );
         },
       });
   }
@@ -127,7 +150,8 @@ export class ChangePasswordForm {
    */
   private static matches(group: AbstractControl): ValidationErrors | null {
     return group.get('newPassword')?.value === group.get('confirmPassword')?.value
-      ? null : { passwordMismatch: true };
+      ? null
+      : { passwordMismatch: true };
   }
 
   /**

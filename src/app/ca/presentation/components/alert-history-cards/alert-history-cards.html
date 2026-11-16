@@ -1,0 +1,63 @@
+@let metrics = summary();
+<dl class="cards">
+  <div class="card">
+    <dt>
+      <mat-icon aria-hidden="true">notifications</mat-icon>
+      {{ 'ca-alerts.history.metrics.alerts' | translate }}
+    </dt>
+    <dd>
+      <strong>{{ metrics.total }}</strong>
+      <small>
+        @for (severity of severities; track severity; let last = $last) {
+          {{ severityChips[severity].labelKey | translate }} {{ metrics.bySeverity[severity] }}
+          @if (!last) {
+            <span aria-hidden="true">·</span>
+          }
+        }
+      </small>
+    </dd>
+  </div>
+  <div class="card">
+    <dt>
+      <mat-icon aria-hidden="true">task_alt</mat-icon>
+      {{ 'ca-alerts.history.metrics.resolved' | translate }}
+    </dt>
+    <dd>
+      <strong>{{
+        'ca-alerts.history.metrics.percent' | translate: { value: metrics.resolvedPercent ?? 0 }
+      }}</strong>
+      <small>{{
+        'ca-alerts.history.metrics.resolved-of'
+          | translate: { resolved: metrics.resolved, total: metrics.total }
+      }}</small>
+    </dd>
+  </div>
+  <div class="card">
+    <dt>
+      <mat-icon aria-hidden="true">pan_tool</mat-icon>
+      {{ 'ca-alerts.history.metrics.attention' | translate }}
+    </dt>
+    <dd>
+      @if (metrics.averageAttentionTime !== null) {
+        <strong>{{ start | elapsedTime: after(metrics.averageAttentionTime) }}</strong>
+      } @else {
+        <strong>{{ 'ca-alerts.history.metrics.no-time' | translate }}</strong>
+      }
+      <small>{{ 'ca-alerts.history.metrics.attention-hint' | translate }}</small>
+    </dd>
+  </div>
+  <div class="card">
+    <dt>
+      <mat-icon aria-hidden="true">timer</mat-icon>
+      {{ 'ca-alerts.history.metrics.resolution' | translate }}
+    </dt>
+    <dd>
+      @if (metrics.averageResolutionTime !== null) {
+        <strong>{{ start | elapsedTime: after(metrics.averageResolutionTime) }}</strong>
+      } @else {
+        <strong>{{ 'ca-alerts.history.metrics.no-time' | translate }}</strong>
+      }
+      <small>{{ 'ca-alerts.history.metrics.resolution-hint' | translate }}</small>
+    </dd>
+  </div>
+</dl>

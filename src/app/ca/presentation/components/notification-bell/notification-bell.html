@@ -6,15 +6,15 @@
   #origin="cdkOverlayOrigin"
   aria-haspopup="dialog"
   [attr.aria-expanded]="open()"
-  [attr.aria-label]="(store.hasUnread() ? 'notifications.open-unread' : 'notifications.open') | translate: { count: store.unreadCount() }"
+  [attr.aria-label]="(store.hasUnreadNotifications() ? 'notifications.open-unread' : 'notifications.open') | translate: { count: store.unreadNotifications() }"
   (click)="toggle()"
 >
   <mat-icon
     aria-hidden="true"
     [matBadge]="badge()"
-    [matBadgeHidden]="!store.hasUnread()"
+    [matBadgeHidden]="!store.hasUnreadNotifications()"
     matBadgeColor="warn"
-  >{{ store.hasUnread() ? 'notifications_active' : 'notifications' }}</mat-icon>
+  >{{ store.hasUnreadNotifications() ? 'notifications_active' : 'notifications' }}</mat-icon>
 </button>
 
 <ng-template
@@ -31,19 +31,19 @@
   <section class="panel" role="dialog" [attr.aria-label]="'notifications.title' | translate">
     <header class="panel-header">
       <h2>{{ 'notifications.title' | translate }}</h2>
-      @if (store.hasUnread()) {
-        <button mat-button type="button" class="mark-all" (click)="store.markAllAsRead()">
+      @if (store.hasUnreadNotifications()) {
+        <button mat-button type="button" class="mark-all" (click)="store.markAllNotificationsAsRead()">
           {{ 'notifications.mark-all' | translate }}
         </button>
       }
     </header>
 
     <div class="panel-body">
-      @if (store.loading() && store.notifications().length === 0) {
+      @if (store.notificationsLoading() && store.notifications().length === 0) {
         <div class="state">
           <mat-spinner diameter="28" [attr.aria-label]="'notifications.loading' | translate"></mat-spinner>
         </div>
-      } @else if (store.failed()) {
+      } @else if (store.notificationsFailed()) {
         <p class="state error" role="alert">{{ 'notifications.load-error' | translate }}</p>
       } @else if (store.notifications().length === 0) {
         <div class="state empty">
@@ -76,7 +76,7 @@
     </div>
 
     <footer class="panel-footer">
-      <a routerLink="/profile" fragment="notifications" (click)="close()">
+      <a routerLink="/alerts/notification-settings" (click)="close()">
         <mat-icon aria-hidden="true">tune</mat-icon>{{ 'notifications.preferences' | translate }}
       </a>
     </footer>

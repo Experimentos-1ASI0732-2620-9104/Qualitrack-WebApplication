@@ -1,0 +1,210 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  box-sizing: border-box;
+}
+
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+/* Contenido proyectado en el encabezado */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.history p {
+  margin: 0;
+}
+
+.history > p[role='status'] {
+  padding: 32px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.error,
+.notice {
+  padding: 16px;
+  border: 1px solid;
+  border-radius: var(--qt-radius-medium);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
+}
+
+.notice {
+  background: var(--qt-warning-surface);
+  border-color: var(--qt-warning);
+  color: var(--qt-warning-text);
+}
+
+/* Botones proyectados (exportar, limpiar en estado vacío) */
+.operations-page a[mat-stroked-button],
+app-empty-state button[mat-stroked-button] {
+  min-height: 40px;
+  height: auto;
+  padding: 8px 16px;
+  border-color: var(--qt-border);
+  border-radius: var(--qt-radius-pill);
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.operations-page a[mat-stroked-button]:focus-visible,
+app-empty-state button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* The chip groups fill the row, so the search comes under them on the left, where they start */
+app-list-toolbar ::ng-deep .find {
+  justify-content: flex-start;
+}
+
+/* The groups of chips of the toolbar: period, severity, status and origin */
+.chip-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 28px;
+  min-width: 0;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.group-label {
+  flex: 0 0 100%;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+/* Under the chips: the days of a custom period, clearing the filters and the note about the report */
+.more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.custom-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.custom-period mat-form-field {
+  flex: 1 1 180px;
+  max-width: 240px;
+}
+
+.clear-filters {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius-pill);
+  color: var(--qt-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.export-note {
+  flex-basis: 100%;
+  color: var(--qt-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Métricas y gráfico */
+.insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+}
+
+.insights > * {
+  min-width: 0;
+}
+
+/* Paginador (tarjeta) */
+
+@media (max-width: 900px) {
+  .insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 16px;
+  }
+
+  .history {
+    gap: 16px;
+  }
+
+  .custom-period {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* In a column the flex basis would become a height */
+  .custom-period mat-form-field {
+    flex: none;
+    max-width: none;
+  }
+
+  .clear-filters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .operations-page a[mat-stroked-button] {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

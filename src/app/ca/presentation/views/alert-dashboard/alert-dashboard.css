@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.inbox {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inbox p {
+  margin: 0;
+}
+
+.feedback {
+  position: sticky;
+  top: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.success {
+  padding: 16px;
+  background: var(--qt-success-surface);
+  border: 1px solid var(--qt-success);
+  border-radius: var(--qt-radius-medium);
+  color: var(--qt-success-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.loading {
+  padding: 32px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* The order of the inbox, at the end of its toolbar */
+.sort {
+  width: 170px;
+}
+
+.result-count {
+  color: var(--qt-text-muted);
+  font-size: 13px;
+}
+
+.alert-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.group-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  background: var(--qt-neutral-surface);
+  border-radius: var(--qt-radius-pill);
+  color: var(--qt-neutral-text);
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The alerts of a group are rows of one card */
+.alert-list {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius-medium);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+  list-style: none;
+}
+
+.alert-list li + li {
+  border-top: 1px solid var(--qt-border);
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+
+  .sort {
+    width: 140px;
+  }
+
+  /* On a phone the alerts are separate cards */
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .alert-list li + li {
+    border-top: 0;
+  }
+
+  .alert-list li {
+    overflow: hidden;
+    border: 1px solid var(--qt-border);
+    border-radius: var(--qt-radius-medium);
+    box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+  }
+}

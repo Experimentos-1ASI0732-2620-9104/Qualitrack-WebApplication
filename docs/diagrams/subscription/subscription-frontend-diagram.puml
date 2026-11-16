@@ -5,6 +5,7 @@ skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
 package "shared" <<External>> {
+  class TablePaginator <<component>>
   interface BaseEntity
   interface BaseResource
   interface BaseResponse
@@ -87,6 +88,12 @@ package "subscription" {
       +paidAt?: string
     }
 
+    interface PlanSwitch {
+      +chosen: SelectPlanCommand
+      +current: Subscription
+      +plans: SubscriptionPlan[]
+    }
+
     interface SelectPlanCommand {
       +planCode: string
       +billingCycle: BillingCycle
@@ -127,9 +134,11 @@ package "subscription" {
       +hasActiveSubscription: Signal<boolean>
       +loadPlans(): void
       +loadCurrentSubscription(laboratoryId: number): void
+      +loadCurrentPlan(laboratoryId: number): void
       +loadPayments(subscriptionId: number): void
       +selectPlan(command: SelectPlanCommand): void
       +clearSelectedPlan(): void
+      +findPlanSwitch(laboratoryId: number): Promise<PlanSwitch | null>
       +createCheckoutSession(command: CreateCheckoutSessionCommand): void
       +cancelRenewal(subscriptionId: number): void
       +clearMessages(): void
@@ -267,14 +276,22 @@ package "subscription" {
       +checkout: Checkout
       +success: PaymentSuccess
       +cancel: PaymentCancel
-      +billing-summary: BillingSummary
+      +billing: BillingSummary
     }
 
     class PlanList {
       -store: SubscriptionStore
       -iamStore: IamStore
       -router: Router
+      +billingPeriod: Signal<"MONTHLY | YEARLY">
+      +visiblePlans: Signal<SubscriptionPlan[]>
+      #subscribed: Signal<boolean>
+      #hasLaboratory: Signal<boolean>
+      #currentSubscription: Signal<Subscription | null>
+      -periodChosen: boolean
       +ngOnInit(): void
+      #choosePeriod(period: BillingCycle): void
+      #isCurrent(plan: SubscriptionPlan): boolean
       +onSelectPlan(plan: SubscriptionPlan): void
       +formatPrice(plan: SubscriptionPlan): string
     }
@@ -288,6 +305,17 @@ package "subscription" {
       +ngOnInit(): void
       +onCheckout(): void
       -toBillingCycle(value: string | null): BillingCycle | null
+    }
+
+    class PlanSwitchNotice {
+      -store: SubscriptionStore
+      -iam: IamStore
+      -dialog: MatDialog
+      +ngOnInit(): Promise<void>
+    }
+
+    class PlanSwitchDialog {
+      #data: PlanSwitchData
     }
 
     class BillingSummary {
@@ -342,6 +370,10 @@ SubscriptionStore ..> SubscriptionPlan
 SubscriptionStore ..> Subscription
 SubscriptionStore ..> Payment
 SubscriptionStore ..> SelectPlanCommand
+SubscriptionStore ..> PlanSwitch
+PlanSwitch ..> SelectPlanCommand
+PlanSwitch ..> Subscription
+PlanSwitch ..> SubscriptionPlan
 SubscriptionStore ..> CreateCheckoutSessionCommand
 SubscriptionStore ..> CreateCheckoutSessionRequest
 SubscriptionStore ..> CheckoutSessionResource
@@ -349,8 +381,18 @@ SubscriptionStore ..> CheckoutSessionResource
 PlanList --> SubscriptionStore
 PlanList --> IamStore
 PlanList ..> SubscriptionPlan
+PlanList ..> Subscription
+note bottom of PlanList
+  While the account pays for a plan, nothing can be bought: the card of the
+  paid plan (loadCurrentPlan) shows its renewal or end date and opens on its
+  billing period; the other cards link to /subscriptions/billing.
+end note
 Checkout --> SubscriptionStore
 Checkout --> IamStore
+PlanSwitchNotice --> SubscriptionStore
+PlanSwitchNotice --> IamStore
+PlanSwitchNotice ..> PlanSwitch
+PlanSwitchNotice ..> PlanSwitchDialog
 BillingSummary --> SubscriptionStore
 BillingSummary --> IamStore
 
@@ -365,5 +407,18 @@ note bottom of SubscriptionApiEndpoint
   POST /subscriptions/{subscriptionId}/cancellation-requests (TS11): cancels the renewal;
   the subscription keeps its access until currentPeriodEnd (US23)
 end note
+
+note left of SubscriptionRoutes
+  Source: subscription/presentation/subscription.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+note bottom of PlanSwitchNotice
+  app.routes.ts composes the contexts: it hands this component to the
+  dashboard of ra (resolve.noticeComponent) and runs planPreselectionGuard
+  before the pages of iam (canActivateChild), so neither imports subscription.
+end note
+
+BillingSummary ..> TablePaginator
 
 @enduml

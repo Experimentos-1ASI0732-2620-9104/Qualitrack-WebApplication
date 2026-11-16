@@ -45,7 +45,7 @@ export type NotificationSubject = 'ALERT' | 'BATCH';
  * });
  *
  * console.log(notification.isRead); // false
- * console.log(notification.link); // ['/alerts/deviation-detail', '7']
+ * console.log(notification.link); // ['/alerts', '7']
  * ```
  */
 export class Notification implements BaseEntity {
@@ -123,8 +123,8 @@ export class Notification implements BaseEntity {
   /** Route of the alert or the batch the notification is about. */
   get link(): string[] {
     return this.subjectType === 'ALERT'
-      ? ['/alerts/deviation-detail', String(this.subjectId)]
-      : ['/batches/batch-detail', String(this.subjectId)];
+      ? ['/alerts', String(this.subjectId)]
+      : ['/batches', String(this.subjectId)];
   }
 
   /**

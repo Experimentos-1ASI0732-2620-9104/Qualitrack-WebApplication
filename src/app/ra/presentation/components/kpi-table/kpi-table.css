@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+.numeric {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

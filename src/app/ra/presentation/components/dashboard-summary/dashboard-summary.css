@@ -1,0 +1,127 @@
+/* ==========================================================================
+   Dashboard summary tiles (clickable KPI cards)
+   ========================================================================== */
+
+:host {
+  display: block;
+  color: var(--qt-text);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Tile (same radius, border and shadow as the other cards)
+   -------------------------------------------------------------------------- */
+.summary-item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px 10px;
+  min-height: 82px;
+  padding: 18px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.summary-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--qt-primary);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.summary-item:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.summary-label {
+  align-self: center;
+  color: var(--qt-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.summary-item strong {
+  grid-column: 2;
+  color: var(--qt-text);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-item small {
+  grid-column: 2;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Icon colors by category
+   -------------------------------------------------------------------------- */
+.blue mat-icon {
+  color: #2775b9;
+}
+
+.teal mat-icon {
+  color: var(--qt-primary);
+}
+
+.red mat-icon {
+  color: var(--qt-error);
+}
+
+.amber mat-icon {
+  color: #a57510;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .summary-item {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .summary-item {
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .summary-item mat-icon {
+    width: 22px;
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summary-item {
+    transition: none;
+  }
+
+  .summary-item:hover {
+    transform: none;
+  }
+}

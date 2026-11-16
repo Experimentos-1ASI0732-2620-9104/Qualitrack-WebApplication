@@ -1,0 +1,74 @@
+
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+h1,
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+/* The toolbar, the messages and the table, one under the other */
+.batches {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.error {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* Spinner of the first load */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+/* Empty states inside a card, like the table */
+.empty-card {
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.empty-card a[mat-stroked-button],
+.empty-card button[mat-stroked-button] {
+  margin-top: 16px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

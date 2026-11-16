@@ -10,9 +10,8 @@ package "shared" <<External>> {
   interface BaseEntity
   class BaseApi
   abstract class ErrorHandlingEnabledBaseType
-  class ApiError
+  class errorStatus <<function>>
   class Layout
-  class "operations-page.css" as OperationsPage <<stylesheet>>
 }
 
 package "iam.application" <<External>> {
@@ -23,10 +22,6 @@ package "iam.application" <<External>> {
     +updateAccount(command: UpdateAccountCommand): Observable<void>
     +changePassword(currentPassword: string, newPassword: string): Observable<void>
   }
-}
-
-package "ca.presentation.components" <<External>> {
-  class NotificationPreferencesForm <<component>>
 }
 
 package "profile.domain.model" {
@@ -134,6 +129,12 @@ end note
 
 package "profile.presentation" {
   class ProfileRoutes <<Routes>>
+  class StaffProfilePage {
+    #staffId
+    #loading
+    #profile: Signal<StaffProfile | null>
+    -showProfile(profile): void
+  }
 
   class ProfilePage {
     #personalForm
@@ -151,13 +152,42 @@ ProfileRoutes ..> Layout
 ProfileRoutes --> ProfilePage
 ProfilePage --> ProfileStore
 ProfilePage --> IamStore : account and password
-ProfilePage *-- NotificationPreferencesForm : #notifications
-ProfilePage ..> ApiError
-ProfilePage ..> OperationsPage
+ProfilePage ..> errorStatus
 note bottom of ProfilePage
   /profile, opened from the name in the toolbar: photo (JPG, PNG or WebP
   up to 2 MB), personal data, account (username and e-mail confirmed with
-  the current password), password and notification preferences.
+  the current password), password and a #notifications card linking to
+  /alerts/notification-settings. The legacy #notifications URL redirects there.
+  No CA component is imported.
+end note
+
+package "profile.presentation.components.user-profile-badge" {
+  class UserProfileBadge {
+    #canOpenProfile: Signal<boolean>
+    #roleKey: Signal<string | null>
+  }
+}
+UserProfileBadge --> ProfileStore : name, initials and photo
+UserProfileBadge --> IamStore : session, roles and onboarding
+Layout --> UserProfileBadge
+note bottom of UserProfileBadge
+  Opens /profile and calls ensureLoaded only when onboarding is READY.
+  The shared layout composes it beside the IAM sign-out action.
+  At mobile widths it keeps the previous identity sizing and visibility.
+end note
+
+StaffProfilePage --> ProfileStore : staffProfile(lab, staffId)
+StaffProfilePage --> IamStore : laboratory session
+ProfileRoutes --> StaffProfilePage : qualityManagerGuard
+note bottom of StaffProfilePage
+  /profile/staff/:staffId: photo and personal data, with a link
+  back to Laboratory staff detail. Cancels stale requests and
+  revokes photo object URLs on route changes and destruction.
+end note
+
+note left of ProfileRoutes
+  Source: profile/presentation/profile.routes.ts
+  Public paths and guards remain unchanged.
 end note
 
 @enduml

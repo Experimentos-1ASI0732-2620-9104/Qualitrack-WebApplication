@@ -1,98 +1,96 @@
-<div class="form-container">
-  <mat-card class="equipment-card">
-    <mat-card-header>
-      <mat-card-title>{{ 'equipment-form.title' | translate }}</mat-card-title>
-      <mat-card-subtitle>{{ 'equipment-form.subtitle' | translate }}</mat-card-subtitle>
-    </mat-card-header>
+<main class="operations-page">
+  <a routerLink="/equipments">{{ 'equipment-list.title' | translate }}</a>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">precision_manufacturing</mat-icon>{{ 'equipment-form.title' | translate }}</h1>
+  </header>
+  <p class="muted">{{ 'equipment-form.subtitle' | translate }}</p>
 
-    <form [formGroup]="form" (ngSubmit)="onSave()" class="equipment-form">
-      <mat-card-content>
-        @if (!store.canManage()) {
-          <p class="notice" role="note">{{ 'equipment-form.quality-only' | translate }}</p>
+  @if (!store.canManage()) {
+    <p class="notice" role="note">{{ 'equipment-form.quality-only' | translate }}</p>
+  }
+
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  }
+
+  <form class="editor form-grid" [formGroup]="form" (ngSubmit)="onSave()">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'equipment-list.fields.name' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        [placeholder]="'equipment-form.placeholders.name' | translate">
+
+      @if (form.get('name')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+
+      @if (form.get('name')?.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+      }
+
+      @if (form.get('name')?.hasError('minlength')) {
+        <mat-error>{{ 'equipment-form.errors.name-minlength' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'equipment-list.fields.type' | translate }}</mat-label>
+      <mat-select formControlName="type">
+        @for (type of equipmentTypes; track type) {
+          <mat-option [value]="type">{{ type }}</mat-option>
+        }
+      </mat-select>
+
+      @if (form.get('type')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'equipment-list.fields.model' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="model"
+        [placeholder]="'equipment-form.placeholders.model' | translate">
+
+      @if (form.get('model')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+
+      @if (form.get('model')?.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'equipment-list.fields.serial' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="serialNumber"
+        [placeholder]="'equipment-form.placeholders.serial' | translate">
+
+      @if (form.get('serialNumber')?.hasError('required')) {
+        <mat-error>{{ 'common.required' | translate }}</mat-error>
+      }
+
+      @if (form.get('serialNumber')?.hasError('pattern')) {
+        <mat-error>{{ 'equipment-form.errors.serial-pattern' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="actions full-width">
+      <a mat-button routerLink="/equipments">{{ 'common.cancel' | translate }}</a>
+
+      <button mat-flat-button type="submit" [disabled]="store.saving() || !store.canManage()">
+        @if (store.saving()) {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>save</mat-icon>
         }
 
-        <div class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'equipment-list.fields.name' | translate }}</mat-label>
-            <input
-              matInput
-              formControlName="name"
-              [placeholder]="'equipment-form.placeholders.name' | translate">
-
-            @if (form.get('name')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-
-            @if (form.get('name')?.hasError('minlength')) {
-              <mat-error>{{ 'equipment-form.errors.name-minlength' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'equipment-list.fields.type' | translate }}</mat-label>
-            <mat-select formControlName="type">
-              @for (type of equipmentTypes; track type) {
-                <mat-option [value]="type">{{ type }}</mat-option>
-              }
-            </mat-select>
-
-            @if (form.get('type')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'equipment-list.fields.model' | translate }}</mat-label>
-            <input
-              matInput
-              formControlName="model"
-              [placeholder]="'equipment-form.placeholders.model' | translate">
-
-            @if (form.get('model')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'equipment-list.fields.serial' | translate }}</mat-label>
-            <input
-              matInput
-              formControlName="serialNumber"
-              [placeholder]="'equipment-form.placeholders.serial' | translate">
-
-            @if (form.get('serialNumber')?.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-
-            @if (form.get('serialNumber')?.hasError('pattern')) {
-              <mat-error>{{ 'equipment-form.errors.serial-pattern' | translate }}</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        @if (store.error()) {
-          <div class="error-msg" role="alert">
-            <mat-icon>error</mat-icon>
-            <span>{{ store.error()! | translate }}</span>
-          </div>
-        }
-      </mat-card-content>
-
-      <mat-card-actions align="end">
-        <button mat-button type="button" routerLink="../equipment-list">
-          {{ 'common.cancel' | translate }}
-        </button>
-
-        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || store.saving() || !store.canManage()">
-          @if (store.saving()) {
-            <mat-spinner diameter="18"></mat-spinner>
-          } @else {
-            <mat-icon>save</mat-icon>
-          }
-
-          {{ 'common.save' | translate }}
-        </button>
-      </mat-card-actions>
-    </form>
-  </mat-card>
-</div>
+        {{ 'common.register' | translate }}
+      </button>
+    </div>
+  </form>
+</main>

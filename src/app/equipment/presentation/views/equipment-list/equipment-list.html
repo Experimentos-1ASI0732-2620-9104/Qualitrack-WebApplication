@@ -1,105 +1,143 @@
 <main class="operations-page">
-  <header class="page-heading">
-    <h1><mat-icon aria-hidden="true">precision_manufacturing</mat-icon>{{ 'equipment-list.title' | translate }}</h1>
-    <div class="actions">
-      <button mat-stroked-button type="button" (click)="reload()" [disabled]="store.isLoading()">
-        <mat-icon>refresh</mat-icon>{{ 'common.refresh' | translate }}
-      </button>
-      @if (store.canManage()) {
-        <a mat-stroked-button routerLink="../register-device">
-          <mat-icon>sensors</mat-icon>{{ 'device-form.add-button' | translate }}
-        </a>
-        <a mat-flat-button routerLink="../register-equipment">
-          <mat-icon>add</mat-icon>{{ 'equipment-list.add-button' | translate }}
-        </a>
+  <app-page-header
+    icon="precision_manufacturing"
+    titleKey="equipment-list.title"
+    [loading]="store.isLoading()"
+    (refresh)="reload()"
+  >
+    <div class="equipment">
+      <!-- The environment and how to register; then the kinds of equipment with their counts, and the search -->
+      <app-list-toolbar
+        searchKey="equipment-list.search"
+        [search]="search()"
+        [activeFilters]="(filter() === 'all' ? 0 : 1) + (attentionOnly() ? 1 : 0) + (search().trim() ? 1 : 0)"
+        (searchChange)="search.set($event)"
+      >
+        <app-environment-selector
+          toolbarContext
+          appearance="inline"
+          allOptionKey="environments.all"
+          [environments]="store.environments()"
+          [selectedId]="environmentId()"
+          (selectedChange)="environmentId.set($event)"
+          (allSelected)="environmentId.set(null)"
+        />
+        @if (store.canManage()) {
+          <a toolbarActions mat-stroked-button routerLink="/equipments/edge-gateways/new">
+            <mat-icon>router</mat-icon>
+            {{ 'edge-gateway.add-button' | translate }}
+          </a>
+        }
+        @if (store.canManage()) {
+          <a toolbarActions mat-stroked-button routerLink="/equipments/devices/new">
+            <mat-icon>sensors</mat-icon>
+            {{ 'device-form.add-button' | translate }}
+          </a>
+        }
+        @if (store.canManage()) {
+          <a toolbarActions mat-flat-button routerLink="/equipments/new">
+            <mat-icon>add</mat-icon>
+            {{ 'equipment-list.add-button' | translate }}
+          </a>
+        }
+        <div toolbarFilters class="kind-chips" role="group" [attr.aria-label]="'equipment-list.filter.label' | translate">
+          @for (option of kinds; track option.value) {
+            <app-filter-chip
+              [labelKey]="option.labelKey"
+              [count]="summary()[option.value]"
+              [pressed]="filter() === option.value"
+              (toggled)="filter.set(filter() === option.value ? 'all' : option.value)"
+            />
+          }
+          <app-filter-chip
+            icon="build"
+            labelKey="equipment-list.summary.attention"
+            [tone]="summary().attention ? 'danger' : 'neutral'"
+            [count]="summary().attention"
+            [pressed]="attentionOnly()"
+            (toggled)="attentionOnly.set(!attentionOnly())"
+          />
+        </div>
+      </app-list-toolbar>
+
+      @if (store.error()) {
+        <p class="error" role="alert">{{ store.error()! | translate }}</p>
+      }
+
+      @if (store.isLoading() && !store.equipmentList().length) {
+        <p role="status">{{ 'common.status-loading' | translate }}</p>
+      } @else {
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ 'equipment-list.fields.name' | translate }}</th>
+                <th>{{ 'equipment-list.fields.type' | translate }}</th>
+                <th>{{ 'equipment-list.fields.environment' | translate }}</th>
+                <th>{{ 'equipment-list.fields.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (equipment of equipmentPage.rows(); track equipment.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/equipments', equipment.id]">{{ equipment.name }}</a>
+                    <small>{{ equipment.model }} · {{ equipment.serialNumber }}</small>
+                  </td>
+                  <td [attr.data-label]="'equipment-list.fields.type' | translate">
+                    @if (equipment.deviceType) {
+                      <span class="device-type">
+                        <mat-icon aria-hidden="true">sensors</mat-icon>{{ 'device-types.' + equipment.deviceType | translate }}
+                      </span>
+                      <small>{{ equipment.sensorExternalId }}</small>
+                    } @else if (equipment.isEdgeGateway) {
+                      <span class="device-type">
+                        <mat-icon aria-hidden="true">router</mat-icon>{{ 'edge-gateway.type' | translate }}
+                      </span>
+                      <small>{{ equipment.sensorExternalId }}</small>
+                    } @else {
+                      {{ equipment.type }}
+                    }
+                  </td>
+                  <td [attr.data-label]="'equipment-list.fields.environment' | translate">
+                    @if (environmentName(equipment); as name) {
+                      <a class="environment-link" [routerLink]="['/equipments/environments', equipment.environmentId]">{{ name }}</a>
+                    } @else {
+                      <span class="muted">{{ 'equipment-list.not-located' | translate }}</span>
+                    }
+                  </td>
+                  <td [attr.data-label]="'equipment-list.fields.status' | translate">
+                    <span class="status" [ngClass]="equipment.status.toLowerCase()">
+                      {{ 'equipment-status.' + equipment.status.toLowerCase() | translate }}
+                    </span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="empty-cell">
+                    @if (store.equipmentList().length && hasActiveFilters()) {
+                      <p>{{ 'equipment-list.empty-filtered' | translate }}</p>
+                      <button mat-stroked-button type="button" (click)="clearFilters()">
+                        <mat-icon aria-hidden="true">filter_alt_off</mat-icon>
+                        {{ 'equipment-list.clear-filters' | translate }}
+                      </button>
+                    } @else {
+                      <p>{{ 'equipment-list.empty' | translate }}</p>
+                      @if (!store.equipmentList().length && store.canManage()) {
+                        <a mat-flat-button routerLink="/equipments/new">
+                          <mat-icon aria-hidden="true">add</mat-icon>
+                          {{ 'equipment-list.add-button' | translate }}
+                        </a>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="equipmentPage" />
+        </div>
       }
     </div>
-  </header>
-
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error()! | translate }}</p>
-  }
-
-  <section class="summary-strip">
-    <div>
-      <span>{{ 'equipment-list.summary.equipment' | translate }}</span><strong>{{ store.processEquipment().length }}</strong>
-    </div>
-    <div>
-      <span>{{ 'equipment-list.summary.devices' | translate }}</span><strong>{{ store.iotDevices().length }}</strong>
-    </div>
-    <div>
-      <span>{{ 'equipment-list.summary.attention' | translate }}</span>
-      <strong [class.warning]="store.needsMaintenance().length > 0">{{ store.needsMaintenance().length }}</strong>
-    </div>
-  </section>
-
-  <div class="filters">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>{{ 'equipment-list.search' | translate }}</mat-label>
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)">
-    </mat-form-field>
-    <mat-button-toggle-group
-      [value]="filter()"
-      (change)="filter.set($event.value)"
-      [attr.aria-label]="'equipment-list.filter.label' | translate">
-      <mat-button-toggle value="all">{{ 'equipment-list.filter.all' | translate }}</mat-button-toggle>
-      <mat-button-toggle value="equipment">{{ 'equipment-list.filter.equipment' | translate }}</mat-button-toggle>
-      <mat-button-toggle value="devices">{{ 'equipment-list.filter.devices' | translate }}</mat-button-toggle>
-    </mat-button-toggle-group>
-    <mat-checkbox [checked]="attentionOnly()" (change)="attentionOnly.set($event.checked)">
-      {{ 'equipment-list.summary.attention' | translate }}
-    </mat-checkbox>
-  </div>
-
-  @if (store.isLoading() && !store.equipmentList().length) {
-    <p role="status">{{ 'common.status-loading' | translate }}</p>
-  } @else {
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>{{ 'equipment-list.fields.name' | translate }}</th>
-          <th>{{ 'equipment-list.fields.type' | translate }}</th>
-          <th>{{ 'equipment-list.fields.environment' | translate }}</th>
-          <th>{{ 'equipment-list.fields.status' | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (equipment of visibleEquipment(); track equipment.id) {
-          <tr>
-            <td>
-              <a [routerLink]="['../equipment-detail', equipment.id]">{{ equipment.name }}</a>
-              <small>{{ equipment.model }} · {{ equipment.serialNumber }}</small>
-            </td>
-            <td [attr.data-label]="'equipment-list.fields.type' | translate">
-              @if (equipment.deviceType) {
-                <span class="device-type">
-                  <mat-icon aria-hidden="true">sensors</mat-icon>{{ 'device-types.' + equipment.deviceType | translate }}
-                </span>
-                <small>{{ equipment.sensorExternalId }}</small>
-              } @else {
-                {{ equipment.type }}
-              }
-            </td>
-            <td [attr.data-label]="'equipment-list.fields.environment' | translate">
-              @if (environmentName(equipment); as name) {
-                {{ name }}
-              } @else {
-                <span class="muted">{{ 'equipment-list.not-located' | translate }}</span>
-              }
-            </td>
-            <td [attr.data-label]="'equipment-list.fields.status' | translate">
-              <span class="status" [ngClass]="equipment.status.toLowerCase()">
-                {{ 'equipment-status.' + equipment.status.toLowerCase() | translate }}
-              </span>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="4">{{ 'equipment-list.empty' | translate }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
+  </app-page-header>
 </main>

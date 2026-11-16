@@ -1,0 +1,11 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+/* Every batch and each status, as the chips of the toolbar */
+.kpi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -1,0 +1,291 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+/* One row of the inbox: what deviated, how far, since when and who has it, and what to do now */
+.alert-card {
+  position: relative;
+  display: grid;
+  /* The actions have a fixed width, so the columns of every row line up */
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr) minmax(0, 1.3fr) 200px;
+  grid-template-areas: 'what reading meta actions';
+  align-items: center;
+  gap: 12px 24px;
+  padding: 14px 16px 14px 22px;
+  background: var(--qt-surface);
+}
+
+/* The color of the severity runs down the left edge */
+.alert-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--qt-text-subtle);
+}
+
+.severity-critical::before { background: var(--qt-error); }
+.severity-warning::before  { background: var(--qt-warning); }
+
+.alert-card:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: -3px;
+}
+
+.is-new {
+  animation: arrived 3s ease-out;
+}
+
+@keyframes arrived {
+  from {
+    background: var(--qt-primary-surface);
+  }
+}
+
+.what { grid-area: what; min-width: 0; }
+.reading { grid-area: reading; min-width: 0; }
+.meta { grid-area: meta; }
+.actions { grid-area: actions; }
+
+h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+h2 a {
+  color: var(--qt-text);
+  text-decoration: none;
+}
+
+h2 a:hover {
+  color: var(--qt-primary-strong);
+  text-decoration: underline;
+}
+
+h2 a:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.origin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 12px;
+  margin: 4px 0 0;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.origin .severity {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.severity-critical .severity { color: var(--qt-error-text); }
+.severity-warning .severity  { color: var(--qt-warning-text); }
+
+.origin .environment {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.normalized {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--qt-success-text);
+  font-weight: 500;
+}
+
+.normalized mat-icon,
+.meta mat-icon,
+.excess mat-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.reading p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.value {
+  color: var(--qt-text);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.severity-critical .value { color: var(--qt-error-text); }
+.severity-warning .value  { color: var(--qt-warning-text); }
+
+.limit {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+}
+
+.excess {
+  display: inline-flex;
+  align-items: center;
+  color: var(--qt-error-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.severity-warning .excess { color: var(--qt-warning-text); }
+
+/* The reading against its limit: the bar is the reading, the mark is the limit */
+.gauge {
+  position: relative;
+  max-width: 240px;
+  height: 6px;
+  margin-top: 8px;
+  background: var(--qt-neutral-surface);
+  border-radius: var(--qt-radius-pill);
+}
+
+.gauge .fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--qt-text-subtle);
+  border-radius: var(--qt-radius-pill);
+}
+
+.severity-critical .gauge .fill { background: var(--qt-error); }
+.severity-warning .gauge .fill  { background: var(--qt-warning); }
+
+.gauge .limit-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--qt-text);
+  border-radius: 1px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.owner {
+  color: var(--qt-text);
+}
+
+.owner.unowned {
+  color: var(--qt-text-muted);
+}
+
+.severity-critical .owner.unowned {
+  color: var(--qt-error-text);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.primary-btn {
+  min-height: 36px;
+  height: auto;
+  padding: 6px 16px;
+  border-radius: var(--qt-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.actions a[mat-stroked-button] {
+  border-color: var(--qt-border);
+  color: var(--qt-text);
+}
+
+.more {
+  color: var(--qt-text-muted);
+}
+
+.actions a:focus-visible,
+.actions button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .alert-card {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 200px;
+    grid-template-areas:
+      'what what actions'
+      'reading meta actions';
+  }
+}
+
+/* On a phone each alert is a compact card: what, the reading, then who has it and the action */
+@media (max-width: 760px) {
+  .alert-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'what'
+      'reading'
+      'meta'
+      'actions';
+    gap: 10px;
+    padding: 14px 14px 14px 18px;
+  }
+
+  .gauge {
+    max-width: none;
+  }
+
+  .meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+  }
+
+  .actions .primary-btn,
+  .actions > a[mat-stroked-button] {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-new {
+    animation: none;
+    background: var(--qt-primary-surface);
+  }
+}

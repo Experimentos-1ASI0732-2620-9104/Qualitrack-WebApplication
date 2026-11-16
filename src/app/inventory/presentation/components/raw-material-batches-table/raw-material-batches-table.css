@@ -1,0 +1,76 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.data-table td strong {
+  font-weight: 600;
+}
+
+td a {
+  color: var(--qt-primary-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+td a:hover {
+  text-decoration: underline;
+}
+
+td a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--qt-warning-surface);
+  color: var(--qt-warning-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.released {
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
+}
+
+.status.rejected {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+td button[mat-button] {
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: var(--qt-primary-strong);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: normal;
+  transition: background-color 0.2s ease;
+}
+
+td button[mat-button]:hover:not(:disabled) {
+  background: var(--qt-primary-surface);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

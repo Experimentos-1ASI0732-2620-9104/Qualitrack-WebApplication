@@ -1,0 +1,54 @@
+<div class="cards-grid">
+  @for (summary of summaries(); track summary.deviceId + summary.metric) {
+    @let state = stateOf(summary);
+    <mat-card class="kpi-card"
+              [class.kpi-card--warning]="state === 'WARNING'"
+              [class.kpi-card--critical]="state === 'CRITICAL'"
+              [class.kpi-card--unconfigured]="state === 'UNCONFIGURED'">
+
+      <mat-card-header class="card-header">
+        <mat-card-title class="variable">
+          {{ 'tracking.metrics.' + summary.metric | translate }} · {{ deviceNameFn()(summary.deviceId) ?? '#' + summary.deviceId }}
+        </mat-card-title>
+
+        <span class="status-badge"
+              [class.status-badge--warning]="state === 'WARNING'"
+              [class.status-badge--critical]="state === 'CRITICAL'"
+              [class.status-badge--unconfigured]="state === 'UNCONFIGURED'"
+              [attr.aria-label]="statusLabelKey(state) | translate">
+          <mat-icon>{{ statusIcon(state) }}</mat-icon>
+          {{ statusLabelKey(state) | translate }}
+        </span>
+      </mat-card-header>
+
+      <mat-card-content class="card-content">
+        <div class="card-value">
+          <strong>{{ summary.average | number:'1.0-2' }}</strong>
+          <span class="unit">{{ summary.unit }} {{ 'reporting.summary.average' | translate }}</span>
+        </div>
+
+        <div class="range-bar">
+          <div class="range-track">
+            <div class="range-fill"
+                 [class.range-fill--warning]="state === 'WARNING'"
+                 [class.range-fill--critical]="state === 'CRITICAL'"
+                 [style.width.%]="100"></div>
+            <div class="range-dot"
+                 [class.range-dot--warning]="state === 'WARNING'"
+                 [class.range-dot--critical]="state === 'CRITICAL'"
+                 [style.left.%]="dotPosition(summary)"></div>
+          </div>
+          <div class="range-labels">
+            <span>{{ 'reporting.summary.min' | translate }} {{ summary.minimum | number:'1.0-2' }}</span>
+            <span>{{ 'reporting.summary.max' | translate }} {{ summary.maximum | number:'1.0-2' }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-footer class="card-footer">
+        <span>{{ summary.readings }} {{ 'reporting.summary.readings' | translate }}</span>
+        <span>{{ summary.lastMeasuredAt | dateTime }}</span>
+      </mat-card-footer>
+    </mat-card>
+  }
+</div>

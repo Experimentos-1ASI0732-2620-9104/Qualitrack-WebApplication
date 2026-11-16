@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
@@ -12,10 +12,15 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { groupErrorMatcher } from '../../../../shared/presentation/utils/group-error-matcher';
 
 import { IamStore } from '../../../application/iam.store';
 import { SignUpCommand } from '../../../domain/model/sign-up.command';
-import { Toolbar } from '../../../../shared/presentation/components/toolbar/toolbar';
+import { emailValidator } from '../../../../shared/presentation/validators/email.validator';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
 
 /**
  * Component responsible for rendering and processing the sign-up form.
@@ -34,14 +39,17 @@ import { Toolbar } from '../../../../shared/presentation/components/toolbar/tool
     ReactiveFormsModule,
     TranslatePipe,
     MatProgressSpinnerModule,
-    MatIconModule,
+    MatIconModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     RouterLink,
-    Toolbar,
   ],
   templateUrl: './sign-up-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sign-up-form.css'],
 })
 export class SignUpForm {
+  /** Shows the error of the form that compares this field with another one. */
+  protected readonly confirmMatcher = groupErrorMatcher('passwordMismatch');
+
   /**
    * Store responsible for authentication state and registration operations.
    */
@@ -70,15 +78,25 @@ export class SignUpForm {
     {
       username: new FormControl<string>('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(3)],
+        validators: [
+          Validators.required,
+          notBlankValidator,
+          Validators.minLength(3),
+          Validators.maxLength(80),
+        ],
       }),
       email: new FormControl<string>('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.email, Validators.maxLength(120)],
+        validators: [Validators.required, emailValidator, Validators.maxLength(120)],
       }),
       password: new FormControl<string>('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(8), Validators.maxLength(72), this.passwordStrengthValidator],
+        validators: [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.maxLength(72),
+          this.passwordStrengthValidator,
+        ],
       }),
       confirmPassword: new FormControl<string>('', {
         nonNullable: true,
@@ -110,8 +128,8 @@ export class SignUpForm {
     }
 
     const command: SignUpCommand = {
-      username: this.form.controls.username.value,
-      email: this.form.controls.email.value,
+      username: this.form.controls.username.value.trim(),
+      email: this.form.controls.email.value.trim(),
       password: this.form.controls.password.value,
       roles: [this.selectedRole],
       laboratoryId: null,
@@ -142,8 +160,10 @@ export class SignUpForm {
   protected getUsernameErrorKey(): string {
     const control = this.form.controls.username;
 
-    if (control.hasError('required')) return 'iam.sign-up.errors.username-required';
+    if (control.hasError('required') || control.hasError('notBlank'))
+      return 'iam.sign-up.errors.username-required';
     if (control.hasError('minlength')) return 'iam.sign-up.errors.username-minlength';
+    if (control.hasError('maxlength')) return 'iam.sign-up.errors.username-maxlength';
 
     return '';
   }
@@ -157,7 +177,8 @@ export class SignUpForm {
     const control = this.form.controls.email;
 
     if (control.hasError('required')) return 'iam.sign-up.errors.email-required';
-    if (control.hasError('email') || control.hasError('maxlength')) return 'iam.sign-up.errors.email-invalid';
+    if (control.hasError('email') || control.hasError('maxlength'))
+      return 'iam.sign-up.errors.email-invalid';
 
     return '';
   }
@@ -171,7 +192,8 @@ export class SignUpForm {
     const control = this.form.controls.password;
 
     if (control.hasError('required')) return 'iam.sign-up.errors.password-required';
-    if (control.hasError('minlength') || control.hasError('maxlength')) return 'iam.sign-up.errors.password-minlength';
+    if (control.hasError('minlength') || control.hasError('maxlength'))
+      return 'iam.sign-up.errors.password-minlength';
     if (control.hasError('passwordStrength')) return 'iam.sign-up.errors.password-strength';
 
     return '';

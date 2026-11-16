@@ -1,0 +1,74 @@
+:host {
+  display: inline-block;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius-pill);
+  color: var(--qt-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.filter-chip:hover {
+  background: var(--qt-background);
+}
+
+.filter-chip:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.filter-chip.pressed {
+  background: var(--qt-primary-surface);
+  border-color: var(--qt-primary);
+  color: var(--qt-primary-strong);
+  font-weight: 600;
+}
+
+mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+.count {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pressed .count {
+  color: inherit;
+}
+
+/* What needs attention right away, pressed or not. */
+.filter-chip.danger {
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
+}
+
+.filter-chip.danger.pressed {
+  box-shadow: inset 0 0 0 1px var(--qt-error);
+}
+
+.danger .count {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

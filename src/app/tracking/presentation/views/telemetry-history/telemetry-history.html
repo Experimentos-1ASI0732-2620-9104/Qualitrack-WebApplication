@@ -1,157 +1,180 @@
 <section class="operations-page">
-  <header class="page-heading">
-    <h1><mat-icon aria-hidden="true">timeline</mat-icon>{{ 'tracking.history.title' | translate }}</h1>
-    <div class="actions">
-      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
-    </div>
-  </header>
-  <p class="muted">{{ 'tracking.history.subtitle' | translate }}</p>
-
-  @if (environments.isEmpty()) {
-    <p class="notice">{{ 'tracking.no-environments' | translate }}</p>
-  } @else if (store.environmentId() !== null && !store.isLoading() && !store.devices().length) {
-    <p class="notice">{{ 'tracking.no-devices' | translate }}</p>
-  } @else {
-    <form class="filters" (ngSubmit)="search()">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'tracking.history.device' | translate }}</mat-label>
-        <mat-select [(ngModel)]="deviceId" name="device" (selectionChange)="changeDevice()">
-          @for (device of store.devices(); track device.id) {
-            <mat-option [value]="device.id">{{ device.name }} · {{ 'device-types.' + device.deviceType | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'tracking.history.metric' | translate }}</mat-label>
-        <mat-select [(ngModel)]="metric" name="metric">
-          <mat-option [value]="null">{{ 'tracking.history.all-metrics' | translate }}</mat-option>
-          @for (definition of deviceMetrics(); track definition.metric) {
-            <mat-option [value]="definition.metric">{{ 'tracking.metrics.' + definition.metric | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'tracking.history.from' | translate }}</mat-label>
-        <input matInput type="datetime-local" [(ngModel)]="from" name="from" required>
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'tracking.history.to' | translate }}</mat-label>
-        <input matInput type="datetime-local" [(ngModel)]="to" name="to" required>
-      </mat-form-field>
-      <button mat-flat-button type="submit" [disabled]="store.isLoading() || deviceId === null">
-        <mat-icon>search</mat-icon>{{ 'tracking.history.search' | translate }}
-      </button>
-    </form>
-
-    @if (periodError()) {
-      <p class="error" role="alert">{{ 'tracking.errors.period' | translate }}</p>
-    }
-    @if (store.error(); as error) {
-      <p class="error" role="alert">{{ error | translate }}</p>
-    }
-
-    @if (store.isLoading()) {
-      <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
-    } @else if (store.history(); as history) {
-      @if (!history.measurements.length && !history.actuationEvents.length) {
-        <p class="muted">{{ 'tracking.history.empty' | translate }}</p>
-      } @else {
-        @if (chartMetrics().length) {
-          <h2>{{ 'tracking.history.chart' | translate }}</h2>
-          @if (chartMetrics().length > 1) {
-            <mat-button-toggle-group [value]="activeChartMetric()" (change)="chartMetric.set($event.value)"
-                                     [attr.aria-label]="'tracking.history.metric' | translate">
-              @for (metric of chartMetrics(); track metric) {
-                <mat-button-toggle [value]="metric">{{ 'tracking.metrics.' + metric | translate }}</mat-button-toggle>
-              }
-            </mat-button-toggle-group>
-          }
-          <div class="chart-wrapper">
-            <canvas baseChart type="line" [data]="chartData()" [options]="chartOptions()" role="img"
-                    [attr.aria-label]="('tracking.history.chart' | translate) + ': ' + ('tracking.metrics.' + activeChartMetric() | translate)"></canvas>
-          </div>
-          @if (!history.profile?.threshold(activeChartMetric()!)) {
-            <p class="muted">{{ 'tracking.history.no-thresholds' | translate }}</p>
-          }
-        }
-
-        <h2>{{ 'tracking.history.readings' | translate }} ({{ history.measurements.length }})</h2>
-        @if (history.measurements.length) {
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>{{ 'tracking.history.moment' | translate }}</th>
-                <th>{{ 'tracking.history.metric' | translate }}</th>
-                <th>{{ 'tracking.history.value' | translate }}</th>
-                <th>{{ 'tracking.history.state' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (reading of history.measurements; track reading.id) {
-                <tr>
-                  <td [attr.data-label]="'tracking.history.moment' | translate">{{ reading.measuredAt | date: 'short' }}</td>
-                  <td [attr.data-label]="'tracking.history.metric' | translate">{{ 'tracking.metrics.' + reading.metric | translate }}</td>
-                  <td [attr.data-label]="'tracking.history.value' | translate">
-                    @if (reading.metric === 'RFID_TAG') {
-                      <span class="tag">{{ reading.textValue }}</span>
-                    } @else if (reading.metric === 'MOTION') {
-                      {{ (reading.value === 1 ? 'tracking.history.motion-detected' : 'tracking.history.motion-clear') | translate }}
-                    } @else {
-                      {{ reading.value | number: '1.0-2' }} {{ reading.unit }}
-                    }
-                  </td>
-                  <td [attr.data-label]="'tracking.history.state' | translate">
-                    @if (reading.state) {
-                      <span [class]="'state ' + reading.state.toLowerCase()">{{ 'tracking.states.' + reading.state | translate }}</span>
-                      @if (reading.thresholdValue !== null) {
-                        <small>{{ 'tracking.history.limit' | translate: { value: (reading.thresholdValue | number: '1.0-2'), unit: reading.unit } }}</small>
-                      }
-                    } @else {
-                      <span class="muted">—</span>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        } @else {
-          <p class="muted">{{ 'tracking.history.no-readings' | translate }}</p>
-        }
-
-        @if (history.device.deviceType === 'CONTAINER_MONITOR') {
-          <h2>{{ 'tracking.history.actions' | translate }} ({{ history.actuationEvents.length }})</h2>
-          @if (history.actuationEvents.length) {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>{{ 'tracking.history.moment' | translate }}</th>
-                  <th>{{ 'tracking.history.action' | translate }}</th>
-                  <th>{{ 'tracking.history.cause' | translate }}</th>
-                  <th>{{ 'tracking.history.result' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (event of history.actuationEvents; track event.id) {
-                  <tr>
-                    <td [attr.data-label]="'tracking.history.moment' | translate">{{ event.occurredAt | date: 'short' }}</td>
-                    <td [attr.data-label]="'tracking.history.action' | translate">{{ 'tracking.actions.' + event.action | translate }}</td>
-                    <td [attr.data-label]="'tracking.history.cause' | translate">
-                      @if (event.triggerMetric && event.triggerState) {
-                        {{ 'tracking.metrics.' + event.triggerMetric | translate }} · {{ 'tracking.states.' + event.triggerState | translate }}
-                      } @else {
-                        <span class="muted">—</span>
-                      }
-                    </td>
-                    <td [attr.data-label]="'tracking.history.result' | translate">{{ 'tracking.results.' + event.result | translate }}</td>
-                  </tr>
+  <app-page-header
+    icon="timeline"
+    titleKey="tracking.history.title"
+    subtitleKey="tracking.history.subtitle"
+    [tabs]="tabs"
+    activeTab="/tracking/history"
+    [loading]="store.isLoading()"
+    [refreshable]="deviceId !== null"
+    (refresh)="search()"
+  >
+    <div class="tracking">
+      <!-- The environment; then the device, the metric and the period of the query -->
+      <app-list-toolbar [searchKey]="null" [filterable]="canQuery()" [activeFilters]="metric ? 1 : 0">
+        <app-environment-selector
+          toolbarContext
+          appearance="inline"
+          [environments]="store.environments()"
+          [selectedId]="store.environmentId()"
+          (selectedChange)="changeEnvironment($event)"
+        />
+        @if (canQuery()) {
+          <form toolbarMore class="filters" (ngSubmit)="search()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'tracking.history.device' | translate }}</mat-label>
+              <mat-select [(ngModel)]="deviceId" name="device" (selectionChange)="changeDevice()">
+                @for (device of store.devices(); track device.id) {
+                  <mat-option [value]="device.id">{{ device.name }} · {{ 'device-types.' + device.deviceType | translate }}</mat-option>
                 }
-              </tbody>
-            </table>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'tracking.history.metric' | translate }}</mat-label>
+              <mat-select [(ngModel)]="metric" name="metric">
+                <mat-option [value]="null">{{ 'tracking.history.all-metrics' | translate }}</mat-option>
+                @for (definition of deviceMetrics(); track definition.metric) {
+                  <mat-option [value]="definition.metric">{{ 'tracking.metrics.' + definition.metric | translate }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'tracking.history.from' | translate }}</mat-label>
+              <input matInput type="datetime-local" [(ngModel)]="from" name="from" [attr.min]="minDateTime" required>
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'tracking.history.to' | translate }}</mat-label>
+              <input matInput type="datetime-local" [(ngModel)]="to" name="to" [attr.min]="minDateTime" required>
+            </mat-form-field>
+            <button mat-flat-button type="submit" [disabled]="store.isLoading() || deviceId === null">
+              <mat-icon>search</mat-icon>{{ 'tracking.history.search' | translate }}
+            </button>
+          </form>
+        }
+      </app-list-toolbar>
+
+      @if (store.environmentsEmpty()) {
+        <app-setup-notice messageKey="tracking.no-environments" [actionLink]="iam.canManageQuality() ? '/laboratories/environments/new' : null" />
+      } @else if (store.environmentId() !== null && !store.isLoading() && !store.devices().length) {
+        <p class="notice">{{ 'tracking.no-devices' | translate }}</p>
+      } @else {
+        @if (periodError()) {
+          <p class="error" role="alert">{{ 'tracking.errors.period' | translate }}</p>
+        }
+        @if (store.error(); as error) {
+          <p class="error" role="alert">{{ error | translate }}</p>
+        }
+
+        @if (store.isLoading()) {
+          <div class="loading"><mat-spinner diameter="40" [attr.aria-label]="'onboarding.loading-data' | translate" /></div>
+        } @else if (store.history(); as history) {
+          @if (!history.measurements.length && !history.actuationEvents.length) {
+            <p class="muted">{{ 'tracking.history.empty' | translate }}</p>
           } @else {
-            <p class="muted">{{ 'tracking.history.no-actions' | translate }}</p>
+            @if (chartMetrics().length) {
+              <h2>{{ 'tracking.history.chart' | translate }}</h2>
+              @if (chartMetrics().length > 1) {
+                <mat-button-toggle-group [value]="activeChartMetric()" (change)="chartMetric.set($event.value)"
+                                         [attr.aria-label]="'tracking.history.metric' | translate">
+                  @for (metric of chartMetrics(); track metric) {
+                    <mat-button-toggle [value]="metric">{{ 'tracking.metrics.' + metric | translate }}</mat-button-toggle>
+                  }
+                </mat-button-toggle-group>
+              }
+              <div class="chart-wrapper">
+                <canvas baseChart type="line" [data]="chartData()" [options]="chartOptions()" role="img"
+                        [attr.aria-label]="('tracking.history.chart' | translate) + ': ' + ('tracking.metrics.' + activeChartMetric() | translate)"></canvas>
+              </div>
+              @if (!history.profile?.threshold(activeChartMetric()!)) {
+                <p class="muted">{{ 'tracking.history.no-thresholds' | translate }}</p>
+              }
+            }
+
+            <h2>{{ 'tracking.history.readings' | translate }} ({{ history.measurements.length }})</h2>
+            @if (history.measurements.length) {
+              <div class="table-card">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'tracking.history.moment' | translate }}</th>
+                      <th>{{ 'tracking.history.metric' | translate }}</th>
+                      <th>{{ 'tracking.history.value' | translate }}</th>
+                      <th>{{ 'tracking.history.state' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (reading of readingPage.rows(); track reading.id) {
+                      <tr>
+                        <td [attr.data-label]="'tracking.history.moment' | translate">{{ reading.measuredAt | dateTime }}</td>
+                        <td [attr.data-label]="'tracking.history.metric' | translate">{{ 'tracking.metrics.' + reading.metric | translate }}</td>
+                        <td [attr.data-label]="'tracking.history.value' | translate">
+                          @if (reading.metric === 'RFID_TAG') {
+                            <span class="tag">{{ reading.textValue }}</span>
+                          } @else if (reading.metric === 'MOTION') {
+                            {{ (reading.value === 1 ? 'tracking.history.motion-detected' : 'tracking.history.motion-clear') | translate }}
+                          } @else {
+                            {{ reading.value | number: '1.0-2' }} {{ reading.unit }}
+                          }
+                        </td>
+                        <td [attr.data-label]="'tracking.history.state' | translate">
+                          @if (reading.state) {
+                            <span [class]="'state ' + reading.state.toLowerCase()">{{ 'tracking.states.' + reading.state | translate }}</span>
+                            @if (reading.thresholdValue !== null) {
+                              <small>{{ 'tracking.history.limit' | translate: { value: (reading.thresholdValue | number: '1.0-2'), unit: reading.unit } }}</small>
+                            }
+                          } @else {
+                            <span class="muted">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <app-table-paginator [page]="readingPage" />
+              </div>
+            } @else {
+              <p class="muted">{{ 'tracking.history.no-readings' | translate }}</p>
+            }
+
+            @if (history.device.deviceType === 'CONTAINER_MONITOR') {
+              <h2>{{ 'tracking.history.actions' | translate }} ({{ history.actuationEvents.length }})</h2>
+              @if (history.actuationEvents.length) {
+                <div class="table-card">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'tracking.history.moment' | translate }}</th>
+                        <th>{{ 'tracking.history.action' | translate }}</th>
+                        <th>{{ 'tracking.history.cause' | translate }}</th>
+                        <th>{{ 'tracking.history.result' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (event of eventPage.rows(); track event.id) {
+                        <tr>
+                          <td [attr.data-label]="'tracking.history.moment' | translate">{{ event.occurredAt | dateTime }}</td>
+                          <td [attr.data-label]="'tracking.history.action' | translate">{{ 'tracking.actions.' + event.action | translate }}</td>
+                          <td [attr.data-label]="'tracking.history.cause' | translate">
+                            @if (event.triggerMetric && event.triggerState) {
+                              {{ 'tracking.metrics.' + event.triggerMetric | translate }} · {{ 'tracking.states.' + event.triggerState | translate }}
+                            } @else {
+                              <span class="muted">—</span>
+                            }
+                          </td>
+                          <td [attr.data-label]="'tracking.history.result' | translate">{{ 'tracking.results.' + event.result | translate }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <app-table-paginator [page]="eventPage" />
+                </div>
+              } @else {
+                <p class="muted">{{ 'tracking.history.no-actions' | translate }}</p>
+              }
+            }
           }
         }
       }
-    }
-  }
+    </div>
+  </app-page-header>
 </section>

@@ -1,0 +1,37 @@
+<section class="review" role="region" [attr.aria-label]="'inventory.storeInContainer' | translate">
+  <h2>{{ 'inventory.storeInContainer' | translate }} · {{ receipt().batchNumber }}</h2>
+  @if (containers().length) {
+    <form [formGroup]="form()" (ngSubmit)="confirmRequested.emit()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'inventory.container' | translate }}</mat-label>
+          <mat-select formControlName="containerMonitorId">
+            @for (container of containers(); track container.id) {
+              <mat-option [value]="container.id">{{ container.name }} · {{ container.serialNumber }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>{{ 'inventory.required' | translate }}</mat-error>
+        </mat-form-field>
+      </div>
+      <p class="muted">{{ 'inventory.containerNotice' | translate }}</p>
+      <div class="actions">
+        <button mat-button type="button" (click)="cancelRequested.emit()" [disabled]="saving()">
+          {{ 'inventory.cancel' | translate }}
+        </button>
+        <button mat-flat-button class="primary-btn" type="submit" [disabled]="saving()">
+          <mat-icon>inventory</mat-icon>{{ 'inventory.confirmStorage' | translate }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p class="notice">{{ 'inventory.noContainers' | translate }}</p>
+    <div class="actions">
+      <a mat-stroked-button routerLink="/equipments">
+        <mat-icon>sensors</mat-icon>{{ 'inventory.manageContainers' | translate }}
+      </a>
+      <button mat-button type="button" (click)="cancelRequested.emit()">
+        {{ 'inventory.cancel' | translate }}
+      </button>
+    </div>
+  }
+</section>

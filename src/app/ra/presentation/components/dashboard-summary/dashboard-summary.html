@@ -1,0 +1,15 @@
+<div class="summary-grid">
+  @for (card of cards(); track card.key) {
+    <a class="summary-item" [class]="card.color + ' summary-item'" [routerLink]="card.route">
+      <mat-icon>{{ card.icon }}</mat-icon>
+      <span class="summary-label">{{ 'dashboard.overview.' + card.key | translate }}</span>
+      <strong>{{ card.state === 'ready' ? card.value : '—' }}</strong>
+      @if (card.state === 'error') {
+        <small>{{ 'dashboard.overview.unavailable' | translate }}</small>
+      }
+      @if (card.state === 'loading') {
+        <small>{{ 'dashboard.overview.loading' | translate }}</small>
+      }
+    </a>
+  }
+</div>

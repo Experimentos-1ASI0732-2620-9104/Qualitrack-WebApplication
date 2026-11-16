@@ -17,9 +17,17 @@
     <!-- Release date -->
     <mat-form-field appearance="outline">
       <mat-label>{{ 'batch-release.fields.release-date' | translate }}</mat-label>
-      <input matInput type="date" formControlName="releaseDate" />
+      <input matInput type="date" formControlName="releaseDate" [attr.min]="minDate" [attr.max]="maxDate" />
       @if (form.controls.releaseDate.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.releaseDate.hasError('invalidDate')) {
+        <mat-error>{{ 'common.dateInvalid' | translate }}</mat-error>
+      } @else if (form.controls.releaseDate.hasError('minDate')) {
+        <mat-error>{{ 'common.dateMin' | translate }}</mat-error>
+      } @else if (form.controls.releaseDate.hasError('futureDate')) {
+        <mat-error>{{ 'common.dateFuture' | translate }}</mat-error>
+      } @else if (form.controls.releaseDate.hasError('dateOrder')) {
+        <mat-error>{{ 'common.dateBeforeBatchStart' | translate }}</mat-error>
       }
     </mat-form-field>
     <!-- Quality control notes that justify the release -->
@@ -29,6 +37,8 @@
                 [placeholder]="'batch-release.placeholders.notes' | translate"></textarea>
       @if (form.controls.notes.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.notes.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
       } @else if (form.controls.notes.hasError('minlength')) {
         <mat-error>{{ 'batch-release.errors.notes-minlength' | translate }}</mat-error>
       }

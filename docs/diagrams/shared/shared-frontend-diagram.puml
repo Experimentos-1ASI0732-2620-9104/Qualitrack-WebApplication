@@ -6,15 +6,12 @@ skinparam classAttributeIconSize 0
 
 package "external bounded contexts" <<External>> {
   class IamStore
-  class LaboratoryApi
-  class InventoryApi
-  class EquipmentApi
-  class BatchApi
-  class CaApi
-  class TrackingApi
-  class SubscriptionApi
-  class recentPeriod <<function>>
   class AuthenticationSection
+}
+
+package "app (composition root)" <<External>> {
+  class App
+  class appConfig <<providers>>
 }
 
 package "shared" {
@@ -42,6 +39,21 @@ package "shared" {
     abstract class BaseApi {
     }
 
+    class ApiError {
+      +status: number
+      +details?: string
+    }
+
+    class EnvironmentPreference {
+      +choose(laboratoryId, environments, preferredUsage?)
+      +remember(laboratoryId, environmentId): void
+      +read(laboratoryId): number | null
+    }
+
+    class errorStatus <<function>> {
+      +errorStatus(error: unknown): number | null
+    }
+
     abstract class ErrorHandlingEnabledBaseType {
       #handleError(operation: string): Function
     }
@@ -58,47 +70,112 @@ package "shared" {
     }
   }
 
-  package "application" {
-    class DashboardStore <<view-scoped>> {
-      -iam: IamStore
-      -trackingApi: TrackingApi
-      +laboratory / equipment / batches / materials: Signal<LoadState>
-      +alerts / measurements / subscription / plans: Signal<LoadState>
-      +devices: Signal<Equipment[]>
-      +selectedEquipmentId: Signal<number | null>
-      +series / readings / latestReading / readingRange: Signal
-      +reload(): void
-      +loadSubscription(): void
-      +loadPlans(): void
-      +loadAlerts(): void
-      +selectEquipment(id: number | null): void
-      +equipmentName(id: number): string
-    }
-  }
-
   package "presentation.components" {
+    class EnvironmentSelector {
+      +environments: InputSignal<EnvironmentOption[]>
+      +selectedId: InputSignal<number | null>
+      +allOptionKey: InputSignal<string | null>
+      +appearance: InputSignal<'field' | 'inline'>
+      +selectedChange: OutputEmitterRef<number>
+      +allSelected: OutputEmitterRef<void>
+    }
+
+    interface EnvironmentOption {
+      +id: number
+      +code: string
+      +name: string
+      +usage?: string | null
+    }
+
     class LanguageSwitcher {
       #currentLang: string
       #languages: string[]
       #translate: TranslateService
-      #compact: Signal<boolean>
       +useLanguage(language: string): void
     }
 
-    class Toolbar {
-      -iam: IamStore
+    class Layout {
+      +isSignedIn: InputSignal<boolean>
+      +hasOperationalAccess: InputSignal<boolean>
+      +canManageQuality: InputSignal<boolean>
       #brandLink: Signal<string>
       #brandLabel: Signal<string>
-    }
-
-    class Layout {
       -router: Router
       #sidenavMode: 'side' | 'over'
       #sidenavOpened: boolean
-      -options: NavigationOption[]
-      #visibleOptions: Signal<NavigationOption[]>
+      -sections: NavigationSection[]
+      #visibleSections: Signal<NavigationSection[]>
       #navigateTo(link: string): void
       #isActive(link: string): boolean
+      #activeChildLink(option): string | undefined
+    }
+
+    class EmptyState {
+      +messageKey / titleKey / icon
+      +positive: InputSignal<boolean>
+    }
+    class ErrorBanner
+    class DashboardState
+    class StatusChip {
+      +tone / icon / labelKey
+    }
+    class FilterChip {
+      +labelKey / icon / count / pressed
+      +tone: InputSignal<'neutral' | 'danger'>
+      +toggled: OutputEmitterRef<void>
+    }
+    class PageHeader {
+      +icon / titleKey / title / subtitleKey
+      +tabs: InputSignal<readonly PageTab[]>
+      +activeTab / loading / updatedAt / refreshable
+      +refresh: OutputEmitterRef<void>
+      +tabChosen: OutputEmitterRef<string>
+    }
+    interface PageTab {
+      +labelKey: string
+      +link?: string
+      +queryParams?: Params
+      +id?: string
+    }
+    class ListToolbar {
+      +searchKey / search
+      +filterable / activeFilters
+      +searchChange: OutputEmitterRef<string>
+    }
+    class TablePaginator {
+      +page: InputSignal<TablePage<unknown>>
+    }
+    interface TablePage<T> {
+      +rows: Signal<readonly T[]>
+      +length: Signal<number>
+      +pageIndex / pageSize: WritableSignal<number>
+    }
+    class "paginate() / tablePaginatorIntl()" as Paginate <<functions>>
+    class SetupNotice {
+      +messageKey / icon
+      +actionLink / actionKey / actionIcon
+    }
+    class ActionBanner {
+      +icon / tone / actionKey
+      +action: OutputEmitterRef<void>
+    }
+    class SidePanel {
+      +titleText / subtitle
+      +trapFocus / focusTitleOnOpen
+      +closed: OutputEmitterRef<void>
+      +focusTitle(): void
+    }
+    class UndoToast {
+      #paused / secondsLeft
+      #undo(): void
+    }
+    class UndoToastOpener <<service>> {
+      +open(data): Observable<UndoToastOutcome>
+      +confirmNow(): void
+    }
+    class NavigationSection <<type>> {
+      +title?: string
+      +options: NavigationOption[]
     }
 
     class NavigationOption <<type>> {
@@ -120,6 +197,14 @@ package "shared" {
     end note
   }
 
+  package "presentation.pipes" {
+    class DateTimePipe
+    class RelativeTimePipe
+    class ElapsedTimePipe
+    class DateOnlyPipe
+    class "date-time-format" as DateTimeFormat <<functions>>
+  }
+
   package "presentation.views" {
     class Home {
     }
@@ -129,30 +214,33 @@ package "shared" {
 
     class PageNotFound {
       #invalidPath: string
-      -route: ActivatedRoute
+      #isSignedIn: Signal<boolean>
       -router: Router
       +ngOnInit(): void
-      #navigateToHome(): void
+      #goBack(): void
     }
+  }
 
-    class Dashboard {
-      #store: DashboardStore
-      -translate: TranslateService
-      #summaryCards: Signal<object[]>
-      #batchDistribution: Signal<object[]>
-      #recentBatches: Signal<Batch[]>
-      #chartData: Signal<ChartData>
-      #chartOptions: Signal<ChartOptions>
-      #reloadAll(): void
-      #retryTelemetry(): void
-      #retrySubscription(): void
-      #retryAlerts(): void
+  package "presentation.tokens" {
+    class SIGNED_IN <<InjectionToken<Signal<boolean>>>>
+  }
+
+  package "presentation.utils" {
+    class TranslatedTitleStrategy {
+      +updateTitle(snapshot: RouterStateSnapshot): void
     }
+    class "groupErrorMatcher()" as GroupErrorMatcher <<function>>
   }
 }
 
 BaseResource --|> BaseEntity
 BaseApiEndpoint --|> ErrorHandlingEnabledBaseType
+errorStatus ..> ApiError
+note bottom of EnvironmentPreference
+  Environment remembered in this browser per area (inventory, production,
+  tracking) under qualitrack.environment.{laboratoryId}.{scope}; each
+  bounded context passes its own environments.
+end note
 BaseApiEndpoint ..> BaseEntity
 BaseApiEndpoint ..> BaseResource
 BaseApiEndpoint ..> BaseResponse
@@ -166,49 +254,97 @@ package "iam.presentation.components" <<External>> {
   class UserSessionSection
 }
 
+package "profile.presentation.components" <<External>> {
+  class UserProfileBadge
+}
+
 package "ca.presentation.components" <<External>> {
   class NotificationBell
 }
 
-Toolbar --> LanguageSwitcher
 Layout --> LanguageSwitcher
-Layout --> UserSessionSection
-Layout --> NotificationBell : with operational access
-Layout *-- NavigationOption
-Toolbar --> IamStore
-note bottom of Toolbar
-  Pages before signing in (home, about, sign-in, sign-up) and onboarding pages.
-  The logo and the name lead to /home without a session and to /dashboard with one.
+Layout *-- NavigationSection
+NavigationSection *-- NavigationOption
+UndoToastOpener ..> UndoToast : opens
+DateTimePipe ..> DateTimeFormat
+RelativeTimePipe ..> DateTimeFormat
+ElapsedTimePipe ..> DateTimeFormat
+DateOnlyPipe ..> DateTimeFormat
+App *-- Layout
+App --> IamStore
+App ..> UserProfileBadge : projected into Layout
+App ..> UserSessionSection : projected into Layout
+App ..> NotificationBell : projected into Layout
+appConfig ..> SIGNED_IN : provides IamStore.isSignedIn
+appConfig ..> IamStore
+note bottom of SidePanel
+  Modal panel in an overlay: keeps the focus inside, closes with Escape, the close
+  button or a click outside, and gives the focus back. The view decides what closing means.
+end note
+note bottom of UndoToast
+  A few seconds to undo an action; the time stops under the pointer or the focus.
+  Opening another toast closes the previous one, which ends as confirmed.
+end note
+note bottom of DateTimePipe
+  Every date in the chosen language and the time zone of the laboratories.
+  dateOnly shows a day; a calendar day (yyyy-MM-dd) stays as it is.
 end note
 note bottom of Layout
-  The logo and the name lead to /dashboard. Menu labels only use nav.* keys:
+  Wraps every page from app.html. The side menu only shows with operational
+  access. Its options are grouped by how often the laboratory uses them, and an
+  option stays active whatever the query parameters of the address. The logo and the name lead to /home without a session and to
+  /dashboard with one. Menu labels only use nav.* keys:
   English Title Case, Spanish sentence case, "Catalog" spelling.
-  The toolbar shows the notification bell (ca) and the user section (iam),
-  whose photo and name open the profile. Up to 720px wide the brand is hidden
+  App projects the notification bell (ca), profile badge (profile)
+  and sign-out action (iam) into its slots, so shared imports no context.
+  The badge photo and name open the profile.
+  The layout keeps both user widgets inside one capsule. Up to 720px the brand is hidden
   so the user section stays complete; up to 480px the language switcher is
   compact (no check mark).
 end note
 NavigationOption *-- NavigationChild
 
-Home --> Toolbar
-Home --> AuthenticationSection
+Home ..> AuthenticationSection : route data, NgComponentOutlet
 PageNotFound --> Router
-PageNotFound --> ActivatedRoute
-
-Dashboard *-- DashboardStore
-DashboardStore --> IamStore
-DashboardStore --> LaboratoryApi
-DashboardStore --> InventoryApi
-DashboardStore --> EquipmentApi
-DashboardStore --> BatchApi
-DashboardStore --> CaApi : open alerts of every environment
-DashboardStore --> TrackingApi
-DashboardStore --> SubscriptionApi
-DashboardStore ..> recentPeriod
-note bottom of DashboardStore
-  Telemetry widget: readings of the last 24 hours of the selected IoT device,
-  from its environment (environmental device) or container monitor route.
+PageNotFound --> SIGNED_IN
+note bottom of SIGNED_IN
+  Whether a user is signed in, read by shared views without importing IAM;
+  false unless the composition root provides it.
 end note
-Dashboard --> TranslateService
+
+EnvironmentSelector ..> EnvironmentOption
+note bottom of EnvironmentSelector
+  Visual component without store: the views of inventory, products, alerts,
+  telemetry and reports pass the environments of their own context.
+end note
+
+PageHeader ..> PageTab
+TablePaginator ..> TablePage
+Paginate ..> TablePage
+note bottom of PageHeader
+  The heading of every page of a module: its icon and title, the time of the
+  last update with a refresh button and, when the module has several
+  operations, its tabs (links, or choices the page handles with tabChosen).
+end note
+note bottom of ListToolbar
+  Above a list: what it shows on the left (the environment), the buttons to
+  create at the right end, then the filter chips, the search with its x and
+  the order. On a phone the filters fold behind a toggle that counts them.
+end note
+note bottom of TablePaginator
+  Pages a table in the browser: 10, 25 or 50 rows, back to the first page
+  when the rows or the page size change. Tables use the global .table-card /
+  table.data-table style of styles.css: a column is never narrower than its
+  longest word, a wider table scrolls inside its card, and on a phone each
+  row becomes a card with the name of each field.
+end note
+note bottom of SetupNotice
+  Says what a page needs before it can work, such as an environment, and
+  links to where to add it for those who may.
+end note
+note bottom of GroupErrorMatcher
+  Marks a field as wrong when its form has an error that compares two
+  fields, such as a password and its confirmation.
+end note
 
 @enduml

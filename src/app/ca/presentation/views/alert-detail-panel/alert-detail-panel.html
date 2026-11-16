@@ -1,0 +1,148 @@
+<app-side-panel
+  [titleText]="title()"
+  [subtitle]="subtitle()"
+  [trapFocus]="!canReachUndoToast()"
+  [focusTitleOnOpen]="!openedToResolve"
+  (closed)="close()"
+>
+  @if (alert(); as alert) {
+    <div sidePanelOverline class="chips">
+      <app-status-chip
+        [tone]="severityChip()!.tone"
+        [icon]="severityChip()!.icon"
+        [labelKey]="severityChip()!.labelKey"
+      />
+      <app-status-chip
+        [tone]="statusChip()!.tone"
+        [icon]="statusChip()!.icon"
+        [labelKey]="statusChip()!.labelKey"
+      />
+    </div>
+  }
+
+  @if (store.error(); as error) {
+    <p class="message error" role="alert">{{ error | translate }}</p>
+  }
+  @if (store.notice(); as notice) {
+    <p class="message notice" role="status">{{ notice | translate: store.noticeParams() }}</p>
+  }
+
+  @if (alert(); as alert) {
+    <dl class="reading">
+      <div>
+        <dt>{{ 'ca-alerts.fields.recorded' | translate }}</dt>
+        <dd class="value">{{ alert.recordedValue | number: '1.0-2' }} {{ alert.unit }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'ca-alerts.fields.threshold' | translate }}</dt>
+        <dd>{{ alert.thresholdValue | number: '1.0-2' }} {{ alert.unit }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'ca-alerts.fields.deviations-label' | translate }}</dt>
+        <dd>{{ alert.deviationCount }}</dd>
+      </div>
+    </dl>
+    <!-- The reading against its limit, like in the row of the inbox -->
+    <div class="gauge" [class]="'gauge severity-' + alert.severity.toLowerCase()" aria-hidden="true">
+      <span class="fill" [style.width.%]="gauge()!.value"></span>
+      <span class="limit-mark" [style.left.%]="gauge()!.limit"></span>
+    </div>
+
+    @if (alert.isOpen && alert.isNormalized) {
+      <p class="message normalized" role="status">
+        {{ 'ca-alerts.detail.normalized' | translate: { date: (alert.normalizedAt | dateTime) } }}
+      </p>
+    }
+
+    <!-- Only the step the alert is in: first someone attends it, then that person records the corrective action -->
+    @if (alert.isOpen && store.canAttend()) {
+      <section class="next-step" [attr.aria-label]="'ca-alerts.detail.next.label' | translate">
+        <span class="next-label">{{ 'ca-alerts.detail.next.label' | translate }}</span>
+        @if (alert.status === 'UNRESOLVED') {
+          <h3>{{ 'ca-alerts.detail.next.attend-title' | translate }}</h3>
+          <p>{{ 'ca-alerts.detail.next.attend-text' | translate }}</p>
+          <div class="next-actions">
+            <button mat-flat-button type="button" [disabled]="store.saving()" (click)="attend()">
+              <mat-icon aria-hidden="true">pan_tool</mat-icon>
+              {{ 'ca-alerts.actions.acknowledge' | translate }}
+            </button>
+          </div>
+        } @else {
+          <app-alert-resolution-form [saving]="store.saving()" (resolve)="resolve($event)" />
+        }
+      </section>
+    }
+
+    <section>
+      <h3>{{ 'ca-alerts.detail.timeline' | translate }}</h3>
+      <app-alert-timeline
+        [alert]="alert"
+        [deviceName]="deviceLabel()"
+        [attendedBy]="attendedBy()"
+        [resolvedBy]="resolvedBy()"
+      />
+    </section>
+
+    <section>
+      <h3>{{ 'ca-alerts.detail.actions-title' | translate }}</h3>
+      @if (store.selectedAlertLoading()) {
+        <p class="muted" role="status">{{ 'common.status-loading' | translate }}</p>
+      } @else {
+        <ul class="actuations">
+          @for (action of alert.relatedActuations; track action.id) {
+            <li>
+              <strong>{{ 'tracking.actions.' + action.action | translate }}</strong>
+              <span class="result" [class.failed]="action.result === 'FAILED'">
+                {{ 'tracking.results.' + action.result | translate }}
+              </span>
+              <small>
+                @if (action.triggerState) {
+                  {{ 'tracking.states.' + action.triggerState | translate }} ·
+                }
+                {{ action.occurredAt | dateTime }}
+              </small>
+            </li>
+          } @empty {
+            <li class="muted">
+              {{
+                (alert.origin === 'CONTAINER'
+                  ? 'ca-alerts.detail.no-actions'
+                  : 'ca-alerts.detail.no-actions-environment'
+                ) | translate
+              }}
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+  } @else if (store.selectedAlertLoading()) {
+    <p class="muted" role="status">{{ 'common.status-loading' | translate }}</p>
+  }
+
+  <!-- What else can be done with the alert; the step it is in keeps the main action -->
+  @if (alert(); as alert) {
+    @let canNotify = store.canAttend() && alert.isOpen && alert.severity === 'CRITICAL';
+    @let hasConditions = alert.environmentId !== null && !!alert.origin;
+    @if (canNotify || hasConditions) {
+      <div sidePanelActions class="panel-actions">
+        @if (hasConditions) {
+          <a
+            mat-button
+            [routerLink]="['/tracking/history']"
+            [queryParams]="{ environmentId: alert.environmentId, deviceId: alert.equipmentId }"
+          >
+            <mat-icon aria-hidden="true">open_in_new</mat-icon>
+            {{ 'ca-alerts.actions.view-conditions' | translate }}
+          </a>
+        }
+        @if (canNotify) {
+          <button mat-stroked-button type="button" [disabled]="store.saving()" (click)="notify()">
+            <mat-icon aria-hidden="true">forward_to_inbox</mat-icon>
+            {{ 'ca-alerts.active.card.notify' | translate }}
+          </button>
+        }
+      </div>
+    }
+  }
+</app-side-panel>

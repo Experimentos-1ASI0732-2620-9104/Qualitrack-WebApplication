@@ -5,6 +5,14 @@ skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
 package "shared" <<External>> {
+  class PageHeader <<component>>
+  interface PageTab
+  class ListToolbar <<component>>
+  class TablePaginator <<component>>
+  class SetupNotice <<component>>
+  class ErrorHandlingEnabledBaseType
+  class EnvironmentSelector <<component>>
+  class EnvironmentPreference
   interface BaseEntity
   interface BaseResource
   interface BaseResponse
@@ -19,27 +27,30 @@ package "iam" <<External>> {
   }
 }
 
-package "equipment" <<External>> {
-  class EquipmentApi {
-    +getEquipment(laboratoryId: number): Observable<Equipment[]>
-  }
-  enum IotDeviceType {
-    ENVIRONMENTAL_DEVICE
-    CONTAINER_MONITOR
-  }
-}
-
-package "laboratory" <<External>> {
-  class EnvironmentStore {
-    +preferredEnvironment(usage?, scope): Environment | null
-    +rememberEnvironment(environmentId, scope): void
-  }
-  class EnvironmentSelector <<component>>
-}
-
 package "tracking" {
+  class "TRACKING_TABS" as TrackingTabs <<const>>
 
   package "domain.model" {
+    enum MonitoredDeviceType {
+      ENVIRONMENTAL_DEVICE
+      CONTAINER_MONITOR
+    }
+
+    class MonitoredDevice {
+      +id: number
+      +name: string
+      +deviceType: MonitoredDeviceType
+      +environmentId: number | null
+      +isContainerMonitor: boolean
+    }
+
+    class MonitoredEnvironment {
+      +id: number
+      +code: string
+      +name: string
+      +usage: string | null
+    }
+
     enum MonitoredMetric {
       AIR_QUALITY
       MOTION
@@ -58,7 +69,7 @@ package "tracking" {
     class MetricDefinition <<interface>> {
       +metric: MonitoredMetric
       +unit: string
-      +deviceType: IotDeviceType
+      +deviceType: MonitoredDeviceType
       +configurable: boolean
       +upperOnly: boolean
     }
@@ -149,7 +160,7 @@ package "tracking" {
 
   package "application" {
     class DeviceSnapshot <<interface>> {
-      +device: Equipment
+      +device: MonitoredDevice
       +readings: Map<MonitoredMetric, Measurement>
       +lastMotion: Measurement | null
       +lastAction: ActuationEvent | null
@@ -158,7 +169,7 @@ package "tracking" {
     }
 
     class DeviceHistory <<interface>> {
-      +device: Equipment
+      +device: MonitoredDevice
       +period: TelemetryPeriod
       +measurements: Measurement[]
       +actuationEvents: ActuationEvent[]
@@ -167,18 +178,22 @@ package "tracking" {
 
     class TrackingStore {
       -api: TrackingApi
-      -equipmentApi: EquipmentApi
       -iam: IamStore
+      +environments: Signal<MonitoredEnvironment[]>
+      +environmentsLoaded / environmentsEmpty: Signal<boolean>
       +environmentId: Signal<number | null>
-      +devices: Signal<Equipment[]>
-      +environmentalDevice: Signal<Equipment | null>
-      +containerMonitors: Signal<Equipment[]>
+      +devices: Signal<MonitoredDevice[]>
+      +environmentalDevice: Signal<MonitoredDevice | null>
+      +containerMonitors: Signal<MonitoredDevice[]>
       +snapshots: Signal<DeviceSnapshot[]>
       +history: Signal<DeviceHistory | null>
       +environmentProfile: Signal<EnvironmentalProfile | null>
       +containerProfiles: Signal<Map<number, EnvironmentalProfile>>
       +canConfigure: Signal<boolean>
       +isLoading / saving / error / notice
+      +loadEnvironments(): Promise<void>
+      +preferredEnvironmentId(): number | null
+      +rememberEnvironment(environmentId): void
       +selectEnvironment(environmentId): Promise<void>
       +loadSnapshots(): Promise<void>
       +loadHistory(device, period, metric): Promise<void>
@@ -194,6 +209,11 @@ package "tracking" {
   }
 
   package "infrastructure" {
+    class TelemetryRequest <<functions>> {
+      +targetPath(base, target): string
+      +periodParams(period, metric): HttpParams
+    }
+
     class DeviceTarget <<interface>> {
       +laboratoryId: number
       +environmentId: number
@@ -237,6 +257,18 @@ package "tracking" {
       +getConnection(laboratoryId, environmentId, deviceId): Observable<DeviceConnection>
     }
 
+    class MonitoredDeviceApiEndpoint {
+      +getDevices(laboratoryId, environmentId): Observable<MonitoredDevice[]>
+    }
+    class MonitoredDeviceAssembler {
+      +isMonitored(resource): boolean
+      +toEntityFromResource(resource): MonitoredDevice
+    }
+    class MonitoredEnvironmentApiEndpoint {
+      +getEnvironments(laboratoryId): Observable<MonitoredEnvironment[]>
+    }
+    class MonitoredEnvironmentAssembler
+
     class TrackingApi {
       +getMeasurements(target, period, metric?): Observable<Measurement[]>
       +getActuationEvents(target, period): Observable<ActuationEvent[]>
@@ -244,6 +276,8 @@ package "tracking" {
       +updateThresholds(target, thresholds): Observable<EnvironmentalProfile>
       +updateActuationRules(target, rules): Observable<EnvironmentalProfile>
       +getDeviceConnection(laboratoryId, environmentId, deviceId): Observable<DeviceConnection>
+      +getEnvironments(laboratoryId): Observable<MonitoredEnvironment[]>
+      +getDevices(laboratoryId, environmentId): Observable<MonitoredDevice[]>
     }
   }
 
@@ -305,7 +339,8 @@ EnvironmentalProfile *-- ActuationRule
 ActuationRule --> ActuationAction
 DeviceConnection --> DeviceConnectionStatus
 MonitoredMetrics ..> MetricDefinition
-MetricDefinition --> IotDeviceType
+MetricDefinition --> MonitoredDeviceType
+MonitoredDevice --> MonitoredDeviceType
 
 MeasurementResource --|> BaseResource
 ActuationEventResource --|> BaseResource
@@ -339,21 +374,32 @@ TrackingApi *-- MeasurementApiEndpoint
 TrackingApi *-- ActuationEventApiEndpoint
 TrackingApi *-- EnvironmentalProfileApiEndpoint
 TrackingApi *-- DeviceConnectionApiEndpoint
+TrackingApi *-- MonitoredDeviceApiEndpoint
+TrackingApi *-- MonitoredEnvironmentApiEndpoint
+MonitoredDeviceApiEndpoint --|> ErrorHandlingEnabledBaseType
+MonitoredEnvironmentApiEndpoint --|> ErrorHandlingEnabledBaseType
+MonitoredDeviceApiEndpoint --> MonitoredDeviceAssembler
+MonitoredEnvironmentApiEndpoint --> MonitoredEnvironmentAssembler
+MonitoredDeviceAssembler ..> MonitoredDevice
+MonitoredEnvironmentAssembler ..> MonitoredEnvironment
+note bottom of MonitoredDeviceApiEndpoint
+  Anti-Corruption Layer Equipment -> Tracking: reads
+  GET /laboratories/{id}/equipments and keeps the IoT devices
+  of one environment. Environments come from
+  GET /laboratories/{id}/environments (Laboratory -> Tracking).
+end note
 
 TrackingStore --> TrackingApi
-TrackingStore --> EquipmentApi
 TrackingStore --> IamStore
+TrackingStore --> EnvironmentPreference : "tracking"
 TrackingStore *-- DeviceSnapshot
 TrackingStore *-- DeviceHistory
 
 EnvironmentalMonitoring --> TrackingStore
-EnvironmentalMonitoring --> EnvironmentStore
 EnvironmentalMonitoring ..> EnvironmentSelector
 TelemetryHistory --> TrackingStore
-TelemetryHistory --> EnvironmentStore
 TelemetryHistory ..> EnvironmentSelector
 EnvironmentalProfiles --> TrackingStore
-EnvironmentalProfiles --> EnvironmentStore
 EnvironmentalProfiles ..> EnvironmentSelector
 EnvironmentalProfiles ..> ThresholdEditor
 EnvironmentalProfiles ..> ActuationRulesEditor
@@ -387,6 +433,42 @@ end note
 note bottom of EnvironmentalMonitoring
   Current conditions of the last 24 hours per device: latest reading per
   metric with its state, last motion, RFID tag, last action and connection.
+end note
+
+note left of TrackingRoutes
+  Source: tracking/presentation/tracking.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+MeasurementApiEndpoint ..> TelemetryRequest
+ActuationEventApiEndpoint ..> TelemetryRequest
+EnvironmentalProfileApiEndpoint ..> TelemetryRequest
+note bottom of TelemetryRequest
+  telemetry-request.ts holds shared URL and query construction.
+  device-target.ts and telemetry-period.ts declare request types.
+  Each endpoint and assembler has its own file:
+  measurement-api-endpoint.ts / measurement-assembler.ts
+  actuation-event-api-endpoint.ts / actuation-event-assembler.ts
+  environmental-profile-api-endpoint.ts / environmental-profile-assembler.ts
+end note
+
+TrackingTabs ..> PageTab
+EnvironmentalMonitoring ..> PageHeader
+EnvironmentalMonitoring ..> ListToolbar
+EnvironmentalMonitoring ..> SetupNotice
+EnvironmentalMonitoring ..> TrackingTabs
+EnvironmentalProfiles ..> PageHeader
+EnvironmentalProfiles ..> ListToolbar
+EnvironmentalProfiles ..> SetupNotice
+EnvironmentalProfiles ..> TrackingTabs
+TelemetryHistory ..> PageHeader
+TelemetryHistory ..> ListToolbar
+TelemetryHistory ..> SetupNotice
+TelemetryHistory ..> TablePaginator
+TelemetryHistory ..> TrackingTabs
+note bottom of TrackingTabs
+  Monitoring, History and Profiles are the tabs of the page header of the
+  tracking module.
 end note
 
 @enduml

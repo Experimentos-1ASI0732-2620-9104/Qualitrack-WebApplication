@@ -1,76 +1,83 @@
 <main class="operations-page">
-  <!-- Heading with the refresh button and the link to the products -->
-  <header class="page-heading">
-    <h1><mat-icon aria-hidden="true">list_alt</mat-icon>{{ 'batches.title' | translate }}</h1>
-    <div class="actions">
-      <button mat-stroked-button type="button" (click)="refresh()" [disabled]="store.isLoading()">
-        <mat-icon>refresh</mat-icon>{{ 'inventory.refresh' | translate }}
-      </button>
-      <a mat-flat-button routerLink="/batches">
-        <mat-icon>factory</mat-icon>{{ 'product-catalog.title' | translate }}
-      </a>
+  <app-page-header
+    icon="list_alt"
+    titleKey="batches.title"
+    subtitleKey="batches.subtitle"
+    [tabs]="tabs"
+    activeTab="/batches"
+    [loading]="store.isLoading()"
+    (refresh)="refresh()"
+  >
+    <div class="batches">
+      @if (store.error()) {
+        <p class="error" role="alert">{{ store.error()! | translate }}</p>
+      }
+
+      @if (store.batches().length) {
+        <!-- The environment, then the batches of each status with their counts, the search and the period -->
+        <app-list-toolbar
+          searchKey="batches.filters.search"
+          [search]="filter().search"
+          [activeFilters]="activeFilters()"
+          (searchChange)="patchFilter({ search: $event })"
+        >
+          <app-environment-selector
+            toolbarContext
+            appearance="inline"
+            allOptionKey="environments.all"
+            [environments]="environments()"
+            [selectedId]="filter().environmentId"
+            (selectedChange)="patchFilter({ environmentId: $event })"
+            (allSelected)="patchFilter({ environmentId: null })"
+          />
+          <app-batch-kpi-cards
+            toolbarFilters
+            [batches]="inContext()"
+            [selected]="filter().status"
+            (statusSelected)="chooseStatus($event)"
+          />
+          <app-batch-filters
+            toolbarMore
+            [filter]="filter()"
+            (filterChange)="filter.set($event)"
+            (cleared)="clearFilters()"
+          />
+        </app-list-toolbar>
+
+        @if (filtered().length) {
+          <!-- Table of batches with sorting and pagination -->
+          <app-batch-table [batches]="filtered()" [environments]="store.environments()" />
+        } @else {
+          <div class="empty-card">
+            <app-empty-state
+              icon="filter_alt_off"
+              titleKey="batches.empty-state.no-match-title"
+              messageKey="batches.empty-state.no-match-message"
+            >
+              <button mat-stroked-button type="button" (click)="clearFilters()">
+                {{ 'batches.filters.clear' | translate }}
+              </button>
+            </app-empty-state>
+          </div>
+        }
+      } @else if (store.isLoading()) {
+        <div class="loading" role="status">
+          <mat-spinner diameter="40" [attr.aria-label]="'common.status-loading' | translate" />
+        </div>
+      } @else if (!store.error()) {
+        <div class="empty-card">
+          <app-empty-state
+            icon="inventory_2"
+            titleKey="batches.empty-state.none-title"
+            messageKey="batches.empty-state.none-message"
+          >
+            <a mat-stroked-button routerLink="/batches/environments">
+              <mat-icon aria-hidden="true">factory</mat-icon>
+              {{ 'product-catalog.title' | translate }}
+            </a>
+          </app-empty-state>
+        </div>
+      }
     </div>
-  </header>
-  <p class="muted">{{ 'batches.subtitle' | translate }}</p>
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error()! | translate }}</p>
-  }
-  <!-- Filters: text search and status -->
-  <div class="filters">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>{{ 'common.search' | translate }}</mat-label>
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)" />
-    </mat-form-field>
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>{{ 'batches.fields.status' | translate }}</mat-label>
-      <mat-select [ngModel]="status()" (ngModelChange)="status.set($event)">
-        <mat-option value="">{{ 'batches.all-statuses' | translate }}</mat-option>
-        @for (value of statuses; track value) {
-          <mat-option [value]="value">{{ 'batches.status.' + statusKey(value) | translate }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </div>
-  @if (store.isLoading()) {
-    <p role="status">{{ 'common.status-loading' | translate }}</p>
-  } @else {
-    <!-- Table of batches -->
-    <table class="data-table">
-      <thead>
-      <tr>
-        <th>{{ 'batches.fields.number' | translate }}</th>
-        <th>{{ 'batches.fields.product' | translate }}</th>
-        <th>{{ 'batches.fields.quantity' | translate }}</th>
-        <th>{{ 'batches.fields.date' | translate }}</th>
-        <th>{{ 'batches.fields.status' | translate }}</th>
-      </tr>
-      </thead>
-      <tbody>
-        @for (batch of filtered(); track batch.id) {
-          <tr>
-            <!-- Batches without an environment cannot be opened -->
-            <td>
-              @if (batch.detailLink; as link) {
-                <a [routerLink]="link">{{ batch.batchNumber }}</a>
-              } @else {
-                {{ batch.batchNumber }}
-                <small>{{ 'batches.no-environment' | translate }}</small>
-              }
-            </td>
-            <td [attr.data-label]="'batches.fields.product' | translate">{{ batch.productName }}</td>
-            <td [attr.data-label]="'batches.fields.quantity' | translate">{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</td>
-            <td [attr.data-label]="'batches.fields.date' | translate">{{ batch.startDate | date: 'mediumDate' }}</td>
-            <td [attr.data-label]="'batches.fields.status' | translate">
-              <span class="status" [class.released]="batch.status === 'RELEASED'" [class.rejected]="batch.status === 'REJECTED'">
-                {{ 'batches.status.' + statusKey(batch.status) | translate }}
-              </span>
-            </td>
-          </tr>
-        } @empty {
-          <tr><td colspan="5">{{ 'batches.empty' | translate }}</td></tr>
-        }
-      </tbody>
-    </table>
-  }
+  </app-page-header>
 </main>

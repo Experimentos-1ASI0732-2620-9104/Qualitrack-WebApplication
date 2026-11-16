@@ -1,17 +1,28 @@
+:host {
+  display: block;
+}
+
 .landing-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background-color: #fafbfc;
+  min-height: 100%;
+  background: var(--qt-background);
 }
 
+/* Text and image stay side by side in a bounded, centered band, so a wide screen adds margin around them
+   instead of space between them */
 .landing-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 550px) minmax(0, 520px);
   flex: 1;
-  padding: 0 40px 40px 80px;
-  gap: 40px;
+  justify-content: center;
+  gap: clamp(40px, 6vw, 96px);
   align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px;
+  box-sizing: border-box;
 }
 
 .text-section {
@@ -19,41 +30,65 @@
 }
 
 .main-title {
-  font-size: 4rem;
-  font-weight: 800;
+  margin: 0 0 20px;
+  color: var(--qt-heading);
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 700;
   line-height: 1.1;
-  color: #1a1a1a;
-  margin-bottom: 20px;
-  letter-spacing: -1px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .sub-title {
-  font-size: 1.1rem;
-  color: #5f6368;
-  line-height: 1.6;
-  margin-bottom: 40px;
+  margin: 0 0 32px;
+  color: var(--qt-text-muted);
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 .image-section {
-  height: 100%;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
 .hero-image {
-  max-width: 100%;
+  width: 100%;
+  max-width: 520px;
   height: auto;
   max-height: 80vh;
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
   object-fit: cover;
-  box-shadow: -10px 10px 30px rgba(0,0,0,0.1);
+  /* It floats gently, like the image of the website */
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-image {
+    animation: none;
+  }
 }
 
 @media (max-width: 1024px) {
   .landing-content {
-    grid-template-columns: 1fr;
-    padding: 20px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 24px 16px;
   }
+
   .image-section {
     display: none;
   }

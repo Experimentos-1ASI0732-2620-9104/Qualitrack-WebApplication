@@ -1,9 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { TranslateModule } from '@ngx-translate/core';
-import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
+import { TranslatePipe } from '@ngx-translate/core';
+import { InventoryStore } from '../../../application/inventory.store';
+import { IamStore } from '../../../../iam/application/iam.store';
 
 /**
  * Entry point of the inventory: opens the raw materials of the environment the user works with.
@@ -15,40 +16,26 @@ import { EnvironmentStore } from '../../../../laboratory/application/environment
 @Component({
   selector: 'app-inventory-home',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatIconModule, TranslateModule],
-  template: `
-    <main class="operations-page">
-      <header class="page-heading">
-        <h1><mat-icon aria-hidden="true">inventory_2</mat-icon>{{ 'inventory.title' | translate }}</h1>
-      </header>
-      @if (environments.isLoading()) {
-        <p role="status">{{ 'inventory.loading' | translate }}</p>
-      } @else if (environments.error()) {
-        <p class="error" role="alert">{{ environments.error() }}</p>
-      } @else if (environments.isEmpty()) {
-        <section class="editor" role="status">
-          <h2>{{ 'inventory.noEnvironments' | translate }}</h2>
-          <p class="notice">{{ 'inventory.noEnvironmentsNotice' | translate }}</p>
-          @if (environments.canManage()) {
-            <a mat-flat-button routerLink="/laboratories/environments/new">
-              <mat-icon>add_location_alt</mat-icon>{{ 'environments.register' | translate }}
-            </a>
-          }
-        </section>
-      }
-    </main>
-  `,
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  imports: [RouterLink, MatButtonModule, MatIconModule, TranslatePipe],
+  templateUrl: './inventory-home.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './inventory-home.css',
 })
 export class InventoryHome implements OnInit {
-  protected readonly environments = inject(EnvironmentStore);
+  protected readonly store = inject(InventoryStore);
+  protected readonly iam = inject(IamStore);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   async ngOnInit(): Promise<void> {
-    await this.environments.loadEnvironments();
-    const environment = this.environments.preferredEnvironment('RAW_MATERIAL_STORAGE');
+    await this.store.loadEnvironments();
+    // Whoever left while the environments were loading stays where they went.
+    if (this.destroyRef.destroyed) return;
+    const environment = this.store.preferredEnvironment();
     if (environment) {
-      await this.router.navigate(['/inventory/environments', environment.id, 'raw-materials'], { replaceUrl: true });
+      await this.router.navigate(['/inventory/environments', environment.id, 'raw-materials'], {
+        replaceUrl: true,
+      });
     }
   }
 }

@@ -7,9 +7,16 @@ skinparam classAttributeIconSize 0
 hide empty members
 
 package "shared" {
+  class EnvironmentSelector <<component>>
+  class PageHeader <<component>>
+  interface PageTab
+  class ListToolbar <<component>>
+  class TablePaginator <<component>>
+  class SetupNotice <<component>>
   interface BaseEntity
   class BaseApi
   class BaseApiEndpoint
+  class ErrorHandlingEnabledBaseType
   interface BaseAssembler
   interface BaseResource
   interface BaseResponse
@@ -24,38 +31,30 @@ package "iam.application" {
   }
 }
 
-package "equipment" {
-  class EquipmentStore {
-    +equipmentList
-    +loadEquipment(labId: number): void
-  }
-  class EquipmentApi {
-    +getEquipment(laboratoryId: number)
-  }
-}
-
-package "batch.application" {
-  class BatchStore {
-    +batches
-    +loadBatches(labId: number): void
-  }
-}
-
-package "laboratory" {
-  class EnvironmentStore {
-    +environments
-    +isEmpty
-    +loadEnvironments(): Promise<void>
-    +preferredEnvironment(usage?, scope): Environment
-    +rememberEnvironment(environmentId, scope): void
-  }
-  class EnvironmentSelector {
-    +selectedId
-    +selectedChange
+package "shared.infrastructure" {
+  class EnvironmentPreference {
+    +choose(laboratoryId, environments, preferredUsage?)
+    +remember(laboratoryId, environmentId): void
   }
 }
 
 package "ra.domain.model" {
+  class OverviewEnvironmentalProfile {
+    +id / scope / laboratoryId
+    +environmentId / deviceId / version
+    +thresholds: OverviewEnvironmentalThreshold[]
+    +threshold(metric): OverviewEnvironmentalThreshold | undefined
+  }
+  interface OverviewEnvironmentalThreshold {
+    +metric: string
+    +normalMin / normalMax: number | null
+    +criticalMin / criticalMax: number | null
+  }
+  class AuditedStaffMember {
+    +id: number
+    +fullName: string
+    +role: string
+  }
   class KpiDashboard {
     +id: number
     +laboratoryId: number
@@ -157,10 +156,64 @@ package "ra.domain.model" {
     +endDate: string
     +format: "PDF | CSV"
   }
+
+  class ReportOrder <<type>> {
+    +type: "batch | compliance | inventory | equipment"
+    +command: the command of that type
+  }
+
+  class OverviewLaboratory {
+    +id: number
+    +name: string
+  }
+  class OverviewEnvironment {
+    +id / code / name
+    +usage: string | null
+  }
+  class OverviewEquipment {
+    +id / laboratoryId / environmentId
+    +name: string
+    +deviceType: string | null
+    +isIotDevice: boolean
+    +isContainerMonitor: boolean
+  }
+  class OverviewBatch {
+    +id / batchNumber / productName / status
+    +environmentId / productId
+    +detailLink
+  }
+  class OverviewRawMaterial {
+    +id / name / stockStatus
+    +isLowStock: boolean
+  }
+  class OverviewAlert {
+    +id / equipmentId / parameterName
+    +recordedValue / unit / severity / status / timestamp
+    +isOpen: boolean
+  }
+  class OverviewReading {
+    +deviceId / metric / value / unit / measuredAt
+    +isChartable: boolean
+  }
+  class OverviewSubscription {
+    +laboratoryId / planCode / billingCycle / status
+    +currentPeriodEnd: string | null
+  }
+  class OverviewPlan {
+    +code / name / billingPeriod
+    +priceAmount / currency
+    +maxEquipment: number | null
+  }
 }
 
 package "ra.infrastructure" {
+  interface AuditedStaffMemberResource
+  class AuditedStaffMemberAssembler
+  class AuditedStaffMemberApiEndpoint {
+    +getStaffMember(laboratoryId, staffId)
+  }
   class RaApi {
+    +getAuditedStaffMember(laboratoryId, staffId)
     -_kpiEndpoint: KpiApiEndpoint
     -_deviationTrendEndpoint: DeviationTrendApiEndpoint
     -_auditLogEndpoint: AuditLogApiEndpoint
@@ -309,12 +362,38 @@ package "ra.infrastructure" {
     +endDate: string
     +format: "PDF | CSV"
   }
+
+  class OperationalOverviewApiEndpoint {
+    +getLaboratory(laboratoryId)
+    +getEnvironments(laboratoryId)
+    +getLowStockMaterials(laboratoryId, environmentId)
+    +getBatches(laboratoryId)
+    +getEquipment(laboratoryId)
+    +getOpenAlerts(laboratoryId, environmentId)
+    +getReadings(laboratoryId, environmentId, containerMonitorId, period)
+    +getActiveSubscription(laboratoryId)
+    +getPlans()
+  }
+  class OperationalOverviewAssembler
+  note bottom of OperationalOverviewApiEndpoint
+    Anti-Corruption Layer: reads the REST resources of Laboratory, Inventory,
+    Product Batch, Equipment, Compliance & Alerting, Tracking & Telemetry and
+    Payments & Subscriptions and translates them into the Overview* models.
+  end note
 }
 
 package "ra.application" {
   class RaStore {
+    +profiles
+    +loadProfile(deviceId, environmentId): void
+    +clearProfiles(): void
+    +staffActivity
+    +auditedStaffMember
+    +staffActivityLoading
+    +staffActivityError
+    +loadStaffActivity(staffId): void
+    +clearStaffActivity(): void
     -api: RaApi
-    -equipmentApi: EquipmentApi
     -_dashboard
     -_deviationTrends
     -_devices
@@ -339,12 +418,52 @@ package "ra.application" {
     +generateComplianceReport(command: GenerateComplianceReportCommand): void
     +generateInventoryReport(command: GenerateInventoryReportCommand): void
     +exportEquipmentLog(command: ExportEquipmentLogCommand): void
+    +generateReport(order: ReportOrder): void
+    +previewReport(order: ReportOrder): Promise<Blob | null>
+    +downloadPreview(): void
+    +clearReportPreview(): void
     +clearMessages(): void
+
+    +environments: Signal<OverviewEnvironment[]>
+    +environmentsLoaded / environmentsEmpty
+    +loadEnvironments(): Promise<void>
+    +preferredEnvironmentId(): number | null
+    +rememberEnvironment(environmentId): void
+    +loadEquipment(): void
+    +loadBatches(): void
+
+    +overviewLaboratory / overviewEquipment / overviewBatches
+    +overviewMaterials / overviewAlerts / overviewMeasurements
+    +overviewSubscription / overviewPlans: Signal<OverviewState>
+    +overviewDevices / overviewOpenAlerts / overviewLowStock
+    +overviewSeries / overviewReadings / overviewReadingRange
+    +reloadOverview(): void
+    +loadOverviewSubscription(): void
+    +loadOverviewPlans(): void
+    +loadOverviewAlerts(): void
+    +selectOverviewDevice(deviceId: number | null): void
+    +selectOverviewSeries(key: string): void
   }
 }
 
 package "ra.presentation" {
+  class "REPORTS_TABS" as ReportsTabs <<const>>
+  class AuditLogTable <<component>>
+  class StaffActivity {
+    #entityFilter
+    #entityTypes
+    #visibleActivity
+    #lastActivity
+  }
   class RaRoutes
+
+  class Dashboard {
+    #store: RaStore
+    #noticeComponent: Type<unknown> | null
+    #summaryCards / batchDistribution / recentBatches
+    #chartData / chartOptions
+    #reloadAll(): void
+  }
 
   class KpiDashboardComponent {
     +periods
@@ -354,14 +473,27 @@ package "ra.presentation" {
     +ngOnInit(): Promise<void>
     +changePeriod(days: number): void
     +changeEnvironment(environmentId: number): void
+    +changeView(mode): void
     +reload(): void
+  }
+
+  class KpiSummaryCards <<component>> {
+    +summaries / deviceNameFn / profiles
+    #stateOf(summary): SummaryState
+    #dotPosition(summary): number
+  }
+
+  class KpiTable <<component>> {
+    +summaries / deviceNameFn
   }
 
   note bottom of KpiDashboardComponent
     Environmental summary (US93): average, minimum and maximum
     per environment, device and variable of the last 24 hours,
-    7 or 31 days; every environment or one. Without readings
-    it states that nothing is calculated.
+    7 or 31 days; every environment or one, as cards or a table. Each
+    card shows the worst state of the period, comparing the minimum and
+    the maximum with the thresholds of the device profile.
+    Without readings it states that nothing is calculated.
   end note
 
   class DeviationTrendChartComponent {
@@ -369,29 +501,93 @@ package "ra.presentation" {
     +days
     +environmentId
     +activeTrend
+    +activeThresholds
+    +thresholdsPending
     +chartData
     +chartOptions
     +ngOnInit(): Promise<void>
     +changeEnvironment(environmentId: number): void
     +changePeriod(days: number): void
     +select(trend: DeviationTrend): void
+    +openDetail(trend: DeviationTrend): void
   }
 
   note bottom of DeviationTrendChartComponent
     Deviation indicators (US94): time in range, deviations and
     critical deviations per device and variable, with the readings
-    of the selected one colored by condition.
+    of the selected one colored by condition. Environment, period and
+    variable live in the address (?env=&days=&selected=); the trends
+    are read again only when the environment or the period change.
   end note
 
+  class DeviationKpiCards <<component>> {
+    +trends
+    #averageTimeInRange: Signal<number | null>
+  }
+
+  class DeviationTable <<component>> {
+    +trends / deviceLabel / trendIcon / isActive
+    +select: output<DeviationTrend>
+  }
+
+  class DeviationChart <<component>> {
+    +trend / chartData / chartOptions
+    +thresholds / thresholdsPending
+    +openDetail: output<void>
+    #legend
+  }
+
+  class DeviationChartFactory {
+    +{static} createChartData(trend): ChartData
+    +{static} createChartOptions(trend, thresholds, translate): ChartOptions
+    +{static} createLegend(thresholds, unit): LegendEntry[]
+    +{static} createAnnotations(thresholds, unit, translate)
+  }
+
+  note bottom of DeviationChartFactory
+    Zones and lines of the configured limits on both sides, as the platform
+    evaluates them; nothing is drawn for a variable without limits.
+    The axis follows the readings, which can be below zero.
+  end note
+
+  class DeviationDetailPage {
+    #trend
+    #filteredPoints / counts
+    #fromDate / toDate / alertFilter
+    #clearFilters(): void
+    #goBack(): void
+  }
+
+  class DeviationEvents <<component>> {
+    +trend / points / thresholds
+    #limitOf(point): number | null
+  }
+
+  class "reportConfigFromQuery()" as ReportGeneratorQuery
+
   class ReportGeneratorComponent {
-    +batchForm
-    +complianceForm
-    +inventoryForm
-    +equipmentForm
-    +onGenerateBatchReport(): void
-    +onGenerateComplianceReport(): void
-    +onGenerateInventoryReport(): void
-    +onExportEquipmentLog(): void
+    +ngOnInit(): void
+    +ngOnDestroy(): void
+  }
+
+  class ReportGeneratorState <<view state>> {
+    +type: Signal<ReportType>
+    +form: Signal<ReportConfig>
+    +setType(type): void
+    +updateForm(partial): void
+  }
+
+  class ReportTypeSelector <<component>>
+
+  class ReportParamsForm <<component>> {
+    #onPreview(): Promise<void>
+    #onGenerate(): void
+    -order(): ReportOrder | null
+  }
+
+  class ReportPreviewDialog <<component>> {
+    #download(): void
+    #close(): void
   }
 
   class AuditLogViewerComponent {
@@ -431,7 +627,7 @@ AuditLogEntryResource ..|> BaseResource
 AuditLogEntriesResponse ..|> BaseResponse
 
 RaStore --> RaApi
-RaStore --> EquipmentApi : device names
+RaStore ..> OverviewEquipment : device names and equipment report
 RaStore --> IamStore
 
 RaStore ..> KpiDashboard
@@ -447,6 +643,25 @@ RaApi --> KpiApiEndpoint
 RaApi --> DeviationTrendApiEndpoint
 RaApi --> AuditLogApiEndpoint
 RaApi --> ReportApiEndpoint
+RaApi --> OperationalOverviewApiEndpoint
+OperationalOverviewApiEndpoint --|> ErrorHandlingEnabledBaseType
+OperationalOverviewApiEndpoint --> OperationalOverviewAssembler
+OperationalOverviewAssembler ..> OverviewLaboratory
+OperationalOverviewAssembler ..> OverviewEnvironment
+RaStore --> EnvironmentPreference
+note bottom of OverviewEnvironment
+  Laboratory -> Reporting & Audit: the environments of the indicators,
+  trends and reports; the trend chart remembers the environment with the
+  monitoring views ("tracking").
+end note
+OperationalOverviewAssembler ..> OverviewEquipment
+OperationalOverviewAssembler ..> OverviewBatch
+OperationalOverviewAssembler ..> OverviewRawMaterial
+OperationalOverviewAssembler ..> OverviewAlert
+OperationalOverviewAssembler ..> OverviewReading
+OperationalOverviewAssembler ..> OverviewSubscription
+OperationalOverviewAssembler ..> OverviewPlan
+Dashboard --> RaStore
 
 KpiApiEndpoint --> KpiAssembler
 DeviationTrendApiEndpoint --> DeviationTrendAssembler
@@ -472,26 +687,99 @@ AuditLogAssembler ..> AuditLogEntry
 AuditLogAssembler ..> AuditLogEntryResource
 
 KpiDashboardComponent --> RaStore
-KpiDashboardComponent --> EnvironmentStore
 KpiDashboardComponent ..> LastDays
+KpiDashboardComponent *-- KpiSummaryCards
+KpiDashboardComponent *-- KpiTable
+KpiSummaryCards ..> OverviewEnvironmentalProfile
+OverviewEnvironmentalProfile *-- OverviewEnvironmentalThreshold
+OverviewEnvironmentalProfile ..|> BaseEntity
+RaStore ..> OverviewEnvironmentalProfile
 
+DeviationTrendChartComponent *-- DeviationKpiCards
+DeviationTrendChartComponent *-- DeviationTable
+DeviationTrendChartComponent *-- DeviationChart
+DeviationTrendChartComponent ..> DeviationChartFactory
+DeviationChart ..> DeviationChartFactory : legend
+DeviationChartFactory ..> OverviewEnvironmentalThreshold
+DeviationDetailPage --> RaStore
+DeviationDetailPage *-- DeviationEvents
+DeviationEvents ..> DeviationChartFactory : limit crossed
 DeviationTrendChartComponent --> RaStore
-DeviationTrendChartComponent --> EnvironmentStore
 DeviationTrendChartComponent --> EnvironmentSelector
 DeviationTrendChartComponent ..> LastDays
 
-ReportGeneratorComponent --> RaStore
-ReportGeneratorComponent --> IamStore
-ReportGeneratorComponent --> BatchStore
-ReportGeneratorComponent --> EquipmentStore
-ReportGeneratorComponent --> EnvironmentStore
-ReportGeneratorComponent ..> LocalIsoDate : report days
+ReportGeneratorComponent --> RaStore : loadEquipment(), loadBatches()
+ReportGeneratorComponent *-- ReportGeneratorState : provides
+ReportGeneratorComponent ..> ReportGeneratorQuery : values of the address
+ReportGeneratorComponent *-- ReportTypeSelector
+ReportGeneratorComponent *-- ReportParamsForm
+ReportTypeSelector --> ReportGeneratorState
+ReportParamsForm --> ReportGeneratorState
+ReportParamsForm --> RaStore
+ReportParamsForm --> IamStore
+ReportParamsForm ..> ReportOrder
+ReportParamsForm ..> LocalIsoDate : report days
+ReportParamsForm ..> ReportPreviewDialog : opens
+ReportPreviewDialog --> RaStore : downloadPreview()
+note bottom of ReportPreviewDialog
+  The platform stores every generated report: the preview generates it once,
+  and downloading it (from the dialog or with the same parameters) reuses
+  that file until the parameters change or the view closes.
+end note
 
 AuditLogViewerComponent --> RaStore
 
 RaRoutes ..> KpiDashboardComponent
 RaRoutes ..> DeviationTrendChartComponent
+RaRoutes ..> DeviationDetailPage : deviation-trends/:equipmentId/:parameter
 RaRoutes ..> ReportGeneratorComponent
 RaRoutes ..> AuditLogViewerComponent
+
+AuditedStaffMember ..|> BaseEntity
+RaApi --> AuditedStaffMemberApiEndpoint
+AuditedStaffMemberApiEndpoint --|> ErrorHandlingEnabledBaseType
+AuditedStaffMemberApiEndpoint --> AuditedStaffMemberAssembler
+AuditedStaffMemberAssembler ..> AuditedStaffMemberResource
+AuditedStaffMemberAssembler ..> AuditedStaffMember
+RaStore ..> AuditedStaffMember
+StaffActivity --> RaStore
+RaRoutes ..> StaffActivity : staffActivityGuard
+note bottom of StaffActivity
+  /reports/staff/:staffId/activity: newest activity first, type filter,
+  latest activity and a link back to the Laboratory staff detail.
+  RA reads the staff identity through its own Laboratory ACL:
+  GET /laboratories/{lab}/staff/{staffId}.
+end note
+
+note left of RaRoutes
+  Source: ra/presentation/ra.routes.ts
+  Public paths and guards remain unchanged.
+end note
+
+ReportApiEndpoint --|> ErrorHandlingEnabledBaseType
+
+ReportsTabs ..> PageTab
+KpiDashboardComponent ..> PageHeader
+KpiDashboardComponent ..> ListToolbar
+KpiDashboardComponent ..> ReportsTabs
+DeviationTrendChartComponent ..> PageHeader
+DeviationTrendChartComponent ..> ListToolbar
+DeviationTrendChartComponent ..> SetupNotice
+DeviationTrendChartComponent ..> ReportsTabs
+ReportGeneratorComponent ..> PageHeader
+ReportGeneratorComponent ..> ReportsTabs
+AuditLogViewerComponent ..> PageHeader
+AuditLogViewerComponent ..> ListToolbar
+AuditLogViewerComponent ..> ReportsTabs
+AuditLogViewerComponent *-- AuditLogTable
+AuditLogTable ..> AuditLogEntry
+AuditLogTable ..> TablePaginator
+DeviationTable ..> TablePaginator
+KpiTable ..> TablePaginator
+StaffActivity ..> TablePaginator
+note bottom of ReportsTabs
+  Summary, Deviations, New report and Audit log are the tabs of the page
+  header of the reports module.
+end note
 
 @enduml

@@ -1,0 +1,28 @@
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>{{ 'material-history.date' | translate }}</th>
+      <th>{{ 'material-history.batch' | translate }}</th>
+      <th>{{ 'material-history.consumed' | translate }}</th>
+      <th>{{ 'material-history.before' | translate }}</th>
+      <th>{{ 'material-history.after' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      @for (usage of consumptionPage.rows(); track usage.id) {
+        <tr>
+          <td [attr.data-label]="'material-history.date' | translate">{{ usage.usageDate | dateTime }}</td>
+          <td [attr.data-label]="'material-history.batch' | translate">
+            <a [routerLink]="['/batches', usage.batchId]">{{ batchNames().get(usage.batchId) ?? '#' + usage.batchId }}</a>
+            @if (usage.stockAfter === null) {<small>{{ 'material-history.legacy' | translate }}</small>}
+          </td>
+          <td [attr.data-label]="'material-history.consumed' | translate" class="consumed">-{{ usage.quantityUsed | number:'1.0-3' }} {{ usage.unit }}</td>
+          <td [attr.data-label]="'material-history.before' | translate">{{ usage.stockBefore === null ? ('material-history.unrecorded' | translate) : (usage.stockBefore | number:'1.0-3') + ' ' + usage.unit }}</td>
+          <td [attr.data-label]="'material-history.after' | translate">{{ usage.stockAfter === null ? ('material-history.unrecorded' | translate) : (usage.stockAfter | number:'1.0-3') + ' ' + usage.unit }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <app-table-paginator [page]="consumptionPage" />
+</div>

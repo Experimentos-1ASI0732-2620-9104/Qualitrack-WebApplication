@@ -1,3 +1,4 @@
+import { ErrorHandlingEnabledBaseType } from '../../shared/infrastructure/error-handling-enabled-base-type';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -25,8 +26,8 @@ interface CreatedReportResource {
  * Generates reports from the persisted records. The platform answers 201 with the stored report (TS83, TS84, TS86)
  * and its PDF or CSV is then downloaded from /reports/{reportId}/content (TS87).
  */
-export class ReportApiEndpoint {
-  constructor(private readonly http: HttpClient) {}
+export class ReportApiEndpoint extends ErrorHandlingEnabledBaseType {
+  constructor(private readonly http: HttpClient) { super(); }
 
   generateBatchReport(request: GenerateBatchReportRequest): Observable<Blob> {
     const body: GenerateBatchReportBody = {
@@ -86,6 +87,10 @@ export class ReportApiEndpoint {
       else if (error.status === 401) message = 'report-generator.errors.session-expired';
       else if (error.status === 0) message = 'report-generator.errors.connection';
       else if (error.status === 400) message = 'report-generator.errors.invalid-request';
+      // Normalize HTTP failures centrally, then preserve the translation key consumed by the report view.
+      return this.handleError('Failed to create or download the report')(error).pipe(
+        catchError((cause: unknown) => throwError(() => new Error(message, { cause }))),
+      );
     }
     return throwError(() => new Error(message, { cause: error }));
   }

@@ -1,0 +1,80 @@
+<mat-card class="filter-card">
+  <mat-card-content class="filter-content">
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>{{ 'audit-log.filters.equipment' | translate }}</mat-label>
+      <input
+        matInput
+        type="number"
+        min="1"
+        step="1"
+        [(ngModel)]="filters.equipmentId"
+        placeholder="Ex. 1">
+      <mat-icon matSuffix>precision_manufacturing</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>{{ 'audit-log.filters.batch' | translate }}</mat-label>
+      <input
+        matInput
+        type="number"
+        min="1"
+        step="1"
+        [(ngModel)]="filters.batchId"
+        placeholder="Ex. 1">
+      <mat-icon matSuffix>inventory_2</mat-icon>
+    </mat-form-field>
+
+    <!-- Date range-->
+    <mat-form-field appearance="outline" class="filter-field date-field" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.date-range' | translate }}</mat-label>
+
+      <mat-date-range-input [rangePicker]="picker" [min]="minDate" [max]="maxDate">
+        <input
+          matStartDate
+          [(ngModel)]="filters.dateFrom"
+          placeholder="Start date"
+          (keydown)="$event.preventDefault()"
+          (click)="picker.open()"
+          (paste)="$event.preventDefault()">
+        <input
+          matEndDate
+          [(ngModel)]="filters.dateTo"
+          placeholder="End date"
+          (keydown)="$event.preventDefault()"
+          (click)="picker.open()"
+          (paste)="$event.preventDefault()">
+      </mat-date-range-input>
+
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-picker #picker></mat-date-range-picker>
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="loading()"
+        (click)="onClear()">
+        {{ 'common.clear' | translate }}
+      </button>
+
+      <button
+        mat-flat-button
+        class="primary-btn"
+        type="button"
+        [disabled]="loading() || !filtersValid"
+        (click)="onSearch()">
+        <mat-icon>search</mat-icon>
+        {{ 'common.search' | translate }}
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- Problems with filters -->
+@if (isInvalidId(filters.equipmentId) || isInvalidId(filters.batchId)) {
+  <p class="field-error" role="alert">{{ 'common.invalidId' | translate }}</p>
+}
+@if (periodProblem; as error) {
+  <p class="field-error" role="alert">{{ periodMessage(error) | translate }}</p>
+}

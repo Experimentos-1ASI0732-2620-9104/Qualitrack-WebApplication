@@ -1,6 +1,6 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, effect, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -21,12 +21,10 @@ interface RuleRow {
 @Component({
   selector: 'app-actuation-rules-editor',
   standalone: true,
-  imports: [FormsModule, TranslateModule, MatButtonModule, MatIconModule],
+  imports: [FormsModule, TranslatePipe, MatButtonModule, MatIconModule],
   templateUrl: './actuation-rules-editor.html',
-  styleUrls: [
-    '../../../../shared/presentation/styles/operations-page.css',
-    '../../views/tracking-views.css',
-  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './actuation-rules-editor.css',
 })
 export class ActuationRulesEditor {
   /**

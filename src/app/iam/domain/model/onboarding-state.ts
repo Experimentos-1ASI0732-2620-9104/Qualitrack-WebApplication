@@ -28,11 +28,11 @@ export const SUBSCRIPTION_PAUSED = '/iam/onboarding';
  * @param state - onboarding state returned by the platform
  * @param managesSubscription - whether the user can subscribe (quality managers); staff members
  *   cannot, so they wait until their laboratory has an active subscription
- * @returns `/iam/change-password`, `/subscriptions/plans`, {@link SUBSCRIPTION_PAUSED}, `/laboratories/create` or
+ * @returns `/iam/change-password`, `/subscriptions/plans`, {@link SUBSCRIPTION_PAUSED}, `/laboratories/new` or
  *   `/dashboard` when the onboarding is completed
  */
 export function onboardingDestination(state: OnboardingState, managesSubscription = true): string {
   if (state.nextStep === 'PASSWORD_CHANGE') return '/iam/change-password';
   if (state.subscriptionStatus !== 'ACTIVE') return managesSubscription ? '/subscriptions/plans' : SUBSCRIPTION_PAUSED;
-  return state.laboratoryId === null ? '/laboratories/create' : '/dashboard';
+  return state.laboratoryId === null ? '/laboratories/new' : '/dashboard';
 }

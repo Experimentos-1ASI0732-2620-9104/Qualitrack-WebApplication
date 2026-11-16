@@ -7,6 +7,7 @@ import {
 import { BaseApiEndpoint } from '../../shared/infrastructure/base-api-endpoint';
 import { environment } from '../../../environments/environment';
 import { Batch } from '../domain/model/batch.entity';
+import { BatchPath } from '../domain/model/batch-path';
 import {
   BatchContainer,
   BatchTraceability
@@ -37,28 +38,6 @@ import {
  * Base URL of the laboratories resource.
  */
 const laboratoriesEndpointUrl = `${environment.serverBasePath}${environment.laboratoryLabsEndpointPath}`;
-
-/**
- * Path of a batch inside its laboratory, environment and product.
- *
- * @author Qualitrack
- */
-export interface BatchPath {
-  /**
-   * The laboratory that owns the batch.
-   */
-  laboratoryId: number;
-
-  /**
-   * The environment where the product is manufactured.
-   */
-  environmentId: number;
-
-  /**
-   * The product the batch belongs to.
-   */
-  productId: number;
-}
 
 /**
  * HTTP client of the product batches of a laboratory.
@@ -218,7 +197,7 @@ export class BatchApiEndpoint extends BaseApiEndpoint<
         `${this.collection(path)}/${batchId}${environment.batchEquipmentUsagesEndpointPath}`,
         request,
       )
-      .pipe(catchError(this.handleError('Failed to register equipment usage')));
+      .pipe(map((resource) => new EquipmentUsage(resource)), catchError(this.handleError('Failed to register equipment usage')));
   }
 
   /**
@@ -239,7 +218,7 @@ export class BatchApiEndpoint extends BaseApiEndpoint<
         `${this.collection(path)}/${batchId}${environment.batchStaffParticipationsEndpointPath}`,
         request,
       )
-      .pipe(catchError(this.handleError('Failed to register staff participation')));
+      .pipe(map((resource) => new StaffParticipation(resource)), catchError(this.handleError('Failed to register staff participation')));
   }
 
   /**
@@ -281,7 +260,7 @@ export class BatchApiEndpoint extends BaseApiEndpoint<
         `${this.collection(path)}/${batchId}${environment.batchContainerAssignmentEndpointPath}`,
         request,
       )
-      .pipe(catchError(this.handleError(`Failed to store batch ${batchId} in the container`)));
+      .pipe(map((resource) => new BatchContainer(resource)), catchError(this.handleError(`Failed to store batch ${batchId} in the container`)));
   }
 
   /**

@@ -1,26 +1,21 @@
-import {
-  Component,
-  OnInit,
-  inject
-} from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink
-} from '@angular/router';
+import { Component, OnInit, effect, inject, ChangeDetectionStrategy } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
-import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
+import { TranslatePipe } from '@ngx-translate/core';
+import { todayInLima } from '../../../../shared/presentation/utils/local-date';
+import {
+  afterDateValidator,
+  MIN_DATE,
+  minDateValidator,
+  noFutureDateValidator,
+} from '../../../../shared/presentation/validators/date.validators';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
 import { BatchStore } from '../../../application/batch.store';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
+import { BatchPath } from '../../../domain/model/batch-path';
 
 /**
  * Rejects a batch and keeps the reason.
@@ -40,10 +35,11 @@ import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
     MatButtonModule,
     MatIconModule,
     MatInputModule,
-    TranslateModule,
+    TranslatePipe,
   ],
   templateUrl: './batch-reject-form.html',
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './batch-reject-form.css',
 })
 export class BatchRejectForm implements OnInit {
   protected readonly store = inject(BatchStore);
@@ -66,12 +62,52 @@ export class BatchRejectForm implements OnInit {
    * Form of the rejection: date (today by default) and reason (between 15 and 500 characters).
    */
   protected readonly form = this.fb.nonNullable.group({
-    rejectionDate: [localIsoDate(), Validators.required],
-    reason: ['', [Validators.required, Validators.minLength(15), Validators.maxLength(500)]],
+    rejectionDate: [
+      todayInLima(),
+      [
+        Validators.required,
+        minDateValidator(),
+        noFutureDateValidator(),
+        afterDateValidator(() => this.store.selectedBatch()?.startDate),
+      ],
+    ],
+    reason: [
+      '',
+      [Validators.required, notBlankValidator, Validators.minLength(15), Validators.maxLength(500)],
+    ],
   });
 
   /**
-   * Lifecycle hook that reads the route parameters.
+   * Earliest date accepted by the date input: 2020 or the start of the batch, whichever is later.
+   *
+   * @returns The date as yyyy-MM-dd.
+   */
+  protected get minDate(): string {
+    const start = this.store.selectedBatch()?.startDate ?? '';
+    return start > MIN_DATE ? start : MIN_DATE;
+  }
+
+  /**
+   * Latest date accepted by the date input: today in Lima.
+   *
+   * @returns The date as yyyy-MM-dd.
+   */
+  protected get maxDate(): string {
+    return todayInLima();
+  }
+
+  /**
+   * Checks the date again when the batch, and so its start date, finishes loading.
+   */
+  constructor() {
+    effect(() => {
+      this.store.selectedBatch();
+      this.form.controls.rejectionDate.updateValueAndValidity();
+    });
+  }
+
+  /**
+   * Lifecycle hook that reads the route parameters and loads the batch to know its start date.
    */
   ngOnInit(): void {
     const params = this.route.snapshot.paramMap;
@@ -82,6 +118,8 @@ export class BatchRejectForm implements OnInit {
     };
     this.batchId = Number(params.get('batchId'));
     this.store.clearMessages();
+    if (this.store.selectedBatch()?.id !== this.batchId)
+      void this.store.loadBatch(this.path, this.batchId);
   }
 
   /**

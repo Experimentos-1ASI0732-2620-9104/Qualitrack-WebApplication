@@ -54,7 +54,7 @@ async function apiCall(page, method, path, body) {
 
 try {
   await scenario('protected pages redirect anonymous visitors to sign in', async page => {
-    for (const path of ['/dashboard', '/equipments/equipment-list', '/alerts/alert-dashboard']) {
+    for (const path of ['/dashboard', '/equipments', '/alerts']) {
       await page.goto(origin + path);
       await page.waitForURL('**/iam/sign-in**');
     }
@@ -70,8 +70,8 @@ try {
   await scenario('quality manager completes onboarding, registers equipment and resolves a deviation', async page => {
     // 1. Sign in through the UI and complete the laboratory onboarding step.
     await signIn(page, username, password);
-    await page.waitForURL(url => /\/(laboratories\/create|dashboard)/.test(url.pathname), { timeout: 15000 });
-    if (new URL(page.url()).pathname.endsWith('/laboratories/create')) {
+    await page.waitForURL(url => /\/(laboratories\/new|dashboard)/.test(url.pathname), { timeout: 15000 });
+    if (new URL(page.url()).pathname.endsWith('/laboratories/new')) {
       await page.locator('[formcontrolname=name]').fill('System Test Laboratory');
       await page.locator('[formcontrolname=ruc]').fill('20' + String(Date.now()).slice(-9));
       await page.locator('[formcontrolname=address]').fill('Av. Javier Prado 123, Lima');
@@ -86,15 +86,15 @@ try {
 
     // 2. Register an equipment through the form and find it in the list.
     const serial = 'SYS-' + randomUUID().slice(0, 8).toUpperCase();
-    await page.goto(origin + '/equipments/register-equipment');
+    await page.goto(origin + '/equipments/new');
     await page.locator('[formcontrolname=name]').fill('Cold storage system test');
     await page.locator('mat-select[formcontrolname=type]').click();
     await page.getByRole('option', { name: 'Refrigerator' }).click();
     await page.locator('[formcontrolname=model]').fill('R-200');
     await page.locator('[formcontrolname=serialNumber]').fill(serial);
     await page.locator('button[type=submit]').click();
-    await page.waitForURL('**/equipments/equipment-detail/**', { timeout: 15000 });
-    await page.goto(origin + '/equipments/equipment-list');
+    await page.waitForURL(url => /\/equipments\/\d+$/.test(url.pathname), { timeout: 15000 });
+    await page.goto(origin + '/equipments');
     await page.getByText('Cold storage system test').first().waitFor();
     await page.screenshot({ path: `${output}/02-equipment-list.png`, fullPage: true });
 
@@ -120,26 +120,29 @@ try {
     });
     assert.equal(alert.status, 201);
 
-    // 4. Review the alert detail in the UI and resolve it with notes.
-    await page.goto(origin + `/alerts/deviation-detail/${alert.body.id}`);
-    await page.getByText('TEMPERATURE').first().waitFor();
-    await page.getByText('9.5 Celsius').waitFor();
-    await page.getByText('8 Celsius').waitFor();
-    const resolve = page.getByRole('button', { name: /resolve/i });
-    const notes = page.locator('[formcontrolname=resolutionNotes]');
+    // 4. Review the alert in its detail panel, register attention and resolve it with a corrective action.
+    const alertStatus = async () => (await apiCall(page, 'GET', `/deviation-alerts/${alert.body.id}`)).body.status;
+    await page.goto(origin + `/alerts/${alert.body.id}`);
+    const reading = page.locator('dl.reading');
+    await reading.getByText('9.5 Celsius', { exact: true }).waitFor();
+    await reading.getByText('8 Celsius', { exact: true }).waitFor();
+    const notes = page.locator('[formcontrolname=notes]');
+    assert.equal(await notes.count(), 0, 'The corrective action is only asked once someone attends the alert');
+    await page.getByRole('button', { name: 'Register attention', exact: true }).click();
+    // The attention can be undone for a few seconds, so the API may still answer UNRESOLVED here.
+    await notes.waitFor();
+    const resolve = page.locator('app-alert-resolution-form button[type=submit]');
     await resolve.click();
     await notes.waitFor();
-    assert.equal((await apiCall(page, 'GET', `/deviation-alerts/${alert.body.id}`)).body.status, 'UNRESOLVED',
-      'The alert must stay unresolved without notes');
+    assert.notEqual(await alertStatus(), 'RESOLVED', 'The alert must stay open without a corrective action');
     await notes.fill('Short');
     await resolve.click();
     await notes.waitFor();
-    assert.equal((await apiCall(page, 'GET', `/deviation-alerts/${alert.body.id}`)).body.status, 'UNRESOLVED',
-      'The alert must require at least ten characters of notes');
+    assert.notEqual(await alertStatus(), 'RESOLVED', 'The alert must require at least ten characters of notes');
     await notes.fill('Door closed and equipment recalibrated');
     await page.screenshot({ path: `${output}/03-alert-detail.png`, fullPage: true });
     await resolve.click();
-    await page.locator('[formcontrolname=resolutionNotes]').waitFor({ state: 'detached', timeout: 15000 });
+    await notes.waitFor({ state: 'detached', timeout: 15000 });
     await page.screenshot({ path: `${output}/04-alert-resolved.png`, fullPage: true });
 
     // 5. The resolution is persisted by the backend.

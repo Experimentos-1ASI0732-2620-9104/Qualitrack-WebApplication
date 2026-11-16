@@ -1,0 +1,282 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  box-sizing: border-box;
+}
+
+/* The environment and the query, then what they show */
+app-list-toolbar {
+  margin-bottom: 16px;
+}
+
+h2,
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+
+h2 {
+  margin: 24px 0 12px;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--qt-text-muted);
+}
+
+p.muted {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error,
+.notice {
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
+}
+
+.notice {
+  background: var(--qt-warning-surface);
+  border-color: var(--qt-warning);
+  color: var(--qt-warning-text);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.filters {
+  margin: 0 0 20px;
+}
+
+mat-form-field {
+  width: 100%;
+  min-width: 0;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
+}
+
+.filters mat-form-field {
+  flex: 1;
+  min-width: 200px;
+  max-width: 440px;
+}
+
+.filters input {
+  caret-color: var(--qt-primary);
+}
+
+.filters button[mat-flat-button] {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+.filters button[mat-flat-button]:hover:not([disabled]) {
+  background: var(--qt-primary-hover);
+}
+
+.filters button[mat-flat-button][disabled] {
+  background: var(--qt-border);
+  color: var(--qt-neutral-text);
+}
+
+.filters button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+mat-button-toggle-group {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--qt-border);
+  border-radius: 999px;
+  background: var(--qt-surface);
+  overflow: visible;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qt-text-muted);
+  font-family: inherit;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle + .mat-button-toggle {
+  border-left: 0;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  padding: 0 24px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 44px;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle:hover:not(.mat-button-toggle-checked) {
+  background: var(--qt-background);
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-checked .mat-button-toggle-label-content {
+  font-weight: 600;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle-focus-overlay {
+  border-radius: 999px;
+}
+
+mat-button-toggle-group ::ng-deep .mat-button-toggle:has(.mat-button-toggle-button:focus-visible) {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 320px;
+  margin: 0 0 16px;
+  padding: 16px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.tag {
+  font-family: monospace;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.state {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.state.normal {
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
+}
+
+.state.warning {
+  background: var(--qt-warning-surface);
+  color: var(--qt-warning-text);
+}
+
+.state.critical {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+.collapsible {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 24px 0 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+
+  .filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filters mat-form-field {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .filters button[mat-flat-button] {
+    width: 100%;
+  }
+
+  mat-button-toggle-group {
+    display: flex;
+    width: 100%;
+  }
+
+  mat-button-toggle-group ::ng-deep .mat-button-toggle {
+    flex: 1;
+  }
+
+  mat-button-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    padding: 0 12px;
+    text-align: center;
+  }
+
+  .chart-wrapper {
+    height: 260px;
+    padding: 12px;
+  }
+
+  .collapsible {
+    width: 100%;
+    margin-top: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .collapsible summary mat-icon {
+    transition: none !important;
+  }
+}

@@ -8,18 +8,18 @@ This repository contains the web application built by **IoTech**. It consumes th
 ## Features
 - **Identity & Access**: Sign up, sign in, role-based access (e.g. quality manager), onboarding of new accounts, password recovery with an e-mailed verification code and password change.
 - **Laboratory Management**: Laboratory profile, staff registration, details and deactivation, environments with their usage assignments, and raw material details.
-- **Equipment Management**: Equipment and device registration, BPM configuration, status changes and maintenance records.
+- **Equipment Management**: Equipment, device and Edge Gateway registration, Edge Gateway API keys and coverage per environment, BPM configuration, status changes and maintenance records.
 - **Inventory Management**: Raw material catalogue, material registration, raw material batches with quality review, container assignment, movements, usages and imports of pre-inventory records.
 - **Product Batch Management**: Product catalogue, batch creation, release and rejection, raw material and equipment usage, staff participation, storage assignment and full batch traceability.
 - **Tracking & Telemetry**: Environmental monitoring, telemetry history, environmental profiles, thresholds and actuation rules.
-- **Compliance & Alerting**: Deviation alert dashboard, alert history and detail, acknowledgement and resolution of alerts, in-app notifications and notification preferences.
+- **Compliance & Alerting**: Prioritized inbox of active alerts, alert history with filters and metrics, a detail panel to register attention and resolve an alert, in-app notifications and notification preferences.
 - **Reporting & Audit**: KPI dashboard, deviation trend charts, audit log viewer and report generator (including inventory reports).
 - **Payments & Subscriptions**: Plan catalogue, Stripe checkout, payment result pages, billing summary and cancellation requests.
 - **Profile**: Account and profile of the signed-in user, including the profile photo.
-- **Multilingual Support**: Switch between English (`en_US`) and Spanish (`es_419`).
+- **Multilingual Support**: Switch between English (`en`) and Spanish (`es`).
 
 ## Technologies
-- Angular framework (standalone components, lazy-loaded routes).
+- Angular 22 framework (standalone components, lazy-loaded routes).
 - TypeScript language.
 - Angular Material UI Component Library.
 - Angular HTTP client.
@@ -52,7 +52,7 @@ src/app/<context>/
 | `ra` | Reporting & Audit |
 | `subscription` | Payments & Subscriptions |
 | `profile` | Profile |
-| `shared` | Layout, dashboard, home, about and common components |
+| `shared` | Layout, home, about and common components |
 
 ## Documentation
 - **Class Diagrams**: The frontend class diagram of every bounded context is available in [docs/diagrams](docs/diagrams), one folder per context.
@@ -110,7 +110,7 @@ ng test
 
 ## Running browser tests
 
-The scripts in `tests/*.mjs` drive a real browser with Playwright to check the main views (dashboard, inventory, onboarding, report generator, Stripe catalog and responsive layout). With the web app running, execute one of them with Node, for example:
+The scripts in `tests/*.mjs` drive a real browser with Playwright to check the main views (alerts, dashboard, inventory, onboarding, report generator, Stripe catalog and responsive layout). With the web app running, execute one of them with Node, for example:
 
 ```bash
 node tests/responsive.mjs

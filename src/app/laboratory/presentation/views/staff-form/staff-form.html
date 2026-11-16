@@ -1,135 +1,130 @@
-<div class="form-container">
-  <mat-card class="staff-card mat-elevation-z4">
-    <mat-card-header>
-      <mat-icon mat-card-avatar class="header-icon">person_add</mat-icon>
-      <mat-card-title>{{ 'staff-form.title' | translate }}</mat-card-title>
-      <mat-card-subtitle>{{ 'staff-form.subtitle' | translate }}</mat-card-subtitle>
-    </mat-card-header>
+<main class="operations-page">
+  <button type="button" class="back-link" (click)="onCancel()">{{ 'staff-list.title' | translate }}</button>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">person_add</mat-icon>{{ 'staff-form.title' | translate }}</h1>
+  </header>
+  <p class="muted">{{ 'staff-form.subtitle' | translate }}</p>
 
-    <mat-card-content>
-      @if (!iamStore.canManageQuality()) {
-        <p class="error-box" role="alert">
-          <mat-icon aria-hidden="true">lock</mat-icon>
-          <span>{{ 'staff-form.errors.forbidden' | translate }}</span>
-        </p>
-      } @else if (registered(); as result) {
-        <section class="credentials" aria-live="polite">
-          <h3>
-            <mat-icon aria-hidden="true">check_circle</mat-icon>
-            {{ 'staff-form.credentials.registered' | translate: { name: result.staffMember.fullName } }}
-          </h3>
+  @if (!iamStore.canManageQuality()) {
+    <p class="notice" role="alert">{{ 'staff-form.errors.forbidden' | translate }}</p>
+  } @else if (registered(); as result) {
+    <section class="editor credentials" aria-live="polite">
+      <h2>
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        {{ 'staff-form.credentials.registered' | translate: { name: result.staffMember.fullName } }}
+      </h2>
 
-          @if (result.credentials.delivery === 'EMAIL') {
-            <p>{{ 'staff-form.credentials.emailed' | translate: { email: result.credentials.username } }}</p>
-          } @else {
-            <p class="notice" role="status">{{ 'staff-form.credentials.shown-once' | translate }}</p>
-            <dl>
-              <div class="credential">
-                <dt>{{ 'staff-form.credentials.username' | translate }}</dt>
-                <dd>
-                  <code>{{ result.credentials.username }}</code>
-                  <button mat-icon-button type="button" (click)="copy('username', result.credentials.username)"
-                    [matTooltip]="'staff-form.credentials.copy' | translate"
-                    [attr.aria-label]="'staff-form.credentials.copy' | translate">
-                    <mat-icon>{{ copied() === 'username' ? 'done' : 'content_copy' }}</mat-icon>
-                  </button>
-                </dd>
-              </div>
-              <div class="credential">
-                <dt>{{ 'staff-form.credentials.temporary-password' | translate }}</dt>
-                <dd>
-                  <code>{{ result.credentials.temporaryPassword }}</code>
-                  <button mat-icon-button type="button" (click)="copy('password', result.credentials.temporaryPassword)"
-                    [matTooltip]="'staff-form.credentials.copy' | translate"
-                    [attr.aria-label]="'staff-form.credentials.copy' | translate">
-                    <mat-icon>{{ copied() === 'password' ? 'done' : 'content_copy' }}</mat-icon>
-                  </button>
-                </dd>
-              </div>
-            </dl>
-          }
-          <p class="hint">{{ 'staff-form.credentials.first-sign-in' | translate }}</p>
-        </section>
-
-        <div class="form-actions">
-          <button mat-button type="button" (click)="registerAnother()">
-            {{ 'staff-form.register-another' | translate }}
-          </button>
-          <button mat-flat-button color="primary" type="button" (click)="onCancel()">
-            {{ 'staff-form.back-to-list' | translate }}
-          </button>
-        </div>
+      @if (result.credentials.delivery === 'EMAIL') {
+        <p>{{ 'staff-form.credentials.emailed' | translate: { email: result.credentials.username } }}</p>
       } @else {
-        @if (error(); as message) {
-          <div class="error-box" role="alert">
-            <mat-icon aria-hidden="true">error_outline</mat-icon>
-            <span>{{ message | translate }}</span>
+        <p class="notice" role="status">{{ 'staff-form.credentials.shown-once' | translate }}</p>
+        <dl>
+          <div class="credential">
+            <dt>{{ 'staff-form.credentials.username' | translate }}</dt>
+            <dd>
+              <code>{{ result.credentials.username }}</code>
+              <button mat-icon-button type="button" (click)="copy('username', result.credentials.username)"
+                      [matTooltip]="'staff-form.credentials.copy' | translate"
+                      [attr.aria-label]="'staff-form.credentials.copy' | translate">
+                <mat-icon>{{ copied() === 'username' ? 'done' : 'content_copy' }}</mat-icon>
+              </button>
+            </dd>
           </div>
-        }
-
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="staff-form">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'staff-form.fullName' | translate }}</mat-label>
-            <input matInput formControlName="fullName" maxlength="150" autocomplete="off">
-            <mat-icon matPrefix>person</mat-icon>
-            @if (form.controls.fullName.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'staff-form.role' | translate }}</mat-label>
-            <input matInput formControlName="role" maxlength="100"
-              [placeholder]="'staff-form.role-placeholder' | translate">
-            <mat-icon matPrefix>work_outline</mat-icon>
-            @if (form.controls.role.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'staff-form.email' | translate }}</mat-label>
-            <input matInput formControlName="email" type="email" maxlength="150" autocomplete="off">
-            <mat-icon matPrefix>email</mat-icon>
-            <mat-hint>{{ 'staff-form.email-hint' | translate }}</mat-hint>
-            @if (form.controls.email.hasError('required')) {
-              <mat-error>{{ 'common.required' | translate }}</mat-error>
-            }
-            @if (form.controls.email.hasError('email')) {
-              <mat-error>{{ 'common.invalidEmail' | translate }}</mat-error>
-            }
-          </mat-form-field>
-
-          <fieldset class="access-role">
-            <legend>{{ 'staff-form.access-role' | translate }}</legend>
-            <mat-radio-group formControlName="accessRole">
-              @for (accessRole of accessRoles; track accessRole) {
-                <mat-radio-button [value]="accessRole">
-                  <strong>{{ 'staff.access-roles.' + accessRole.toLowerCase() | translate }}</strong>
-                  <small>{{ 'staff.access-roles.' + accessRole.toLowerCase() + '-hint' | translate }}</small>
-                </mat-radio-button>
-              }
-            </mat-radio-group>
-          </fieldset>
-
-          <div class="form-actions">
-            <button mat-button type="button" (click)="onCancel()">
-              {{ 'common.cancel' | translate }}
-            </button>
-
-            <button mat-flat-button color="primary" type="submit" [disabled]="store.isLoading()">
-              @if (store.isLoading()) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <ng-container>
-                  <mat-icon>person_add</mat-icon>
-                  {{ 'common.register' | translate }}
-                </ng-container>
-              }
-            </button>
+          <div class="credential">
+            <dt>{{ 'staff-form.credentials.temporary-password' | translate }}</dt>
+            <dd>
+              <code>{{ result.credentials.temporaryPassword }}</code>
+              <button mat-icon-button type="button" (click)="copy('password', result.credentials.temporaryPassword)"
+                      [matTooltip]="'staff-form.credentials.copy' | translate"
+                      [attr.aria-label]="'staff-form.credentials.copy' | translate">
+                <mat-icon>{{ copied() === 'password' ? 'done' : 'content_copy' }}</mat-icon>
+              </button>
+            </dd>
           </div>
-        </form>
+        </dl>
       }
-    </mat-card-content>
-  </mat-card>
-</div>
+      <p class="hint">{{ 'staff-form.credentials.first-sign-in' | translate }}</p>
+
+      <div class="actions">
+        <button mat-button type="button" (click)="registerAnother()">
+          {{ 'staff-form.register-another' | translate }}
+        </button>
+        <button mat-flat-button type="button" (click)="onCancel()">
+          {{ 'staff-form.back-to-list' | translate }}
+        </button>
+      </div>
+    </section>
+  } @else {
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message | translate }}</p>
+    }
+
+    <form class="editor form-grid" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'staff-form.fullName' | translate }}</mat-label>
+        <input matInput formControlName="fullName" maxlength="150" autocomplete="off">
+        <mat-icon matPrefix>person</mat-icon>
+        @if (form.controls.fullName.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        } @else if (form.controls.fullName.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        } @else if (form.controls.fullName.hasError('personName') || form.controls.fullName.hasError('minlength')) {
+          <mat-error>{{ 'common.invalidPersonName' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'staff-form.role' | translate }}</mat-label>
+        <input matInput formControlName="role" maxlength="100"
+               [placeholder]="'staff-form.role-placeholder' | translate">
+        <mat-icon matPrefix>work_outline</mat-icon>
+        @if (form.controls.role.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        } @else if (form.controls.role.hasError('notBlank')) {
+          <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'staff-form.email' | translate }}</mat-label>
+        <input matInput formControlName="email" type="email" maxlength="150" autocomplete="off">
+        <mat-icon matPrefix>email</mat-icon>
+        <mat-hint>{{ 'staff-form.email-hint' | translate }}</mat-hint>
+        @if (form.controls.email.hasError('required')) {
+          <mat-error>{{ 'common.required' | translate }}</mat-error>
+        }
+        @if (form.controls.email.hasError('email')) {
+          <mat-error>{{ 'common.invalidEmail' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <fieldset class="access-role full-width">
+        <legend>{{ 'staff-form.access-role' | translate }}</legend>
+        <mat-radio-group formControlName="accessRole">
+          @for (accessRole of accessRoles; track accessRole) {
+            <mat-radio-button [value]="accessRole">
+              <strong>{{ 'staff.access-roles.' + accessRole.toLowerCase() | translate }}</strong>
+              <small>{{ 'staff.access-roles.' + accessRole.toLowerCase() + '-hint' | translate }}</small>
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+      </fieldset>
+
+      <div class="actions full-width">
+        <button mat-button type="button" (click)="onCancel()">
+          {{ 'common.cancel' | translate }}
+        </button>
+
+        <button mat-flat-button type="submit" [disabled]="store.isLoading()">
+          <!-- One element per branch, so Material places the icon in its slot, aligned with the text -->
+          @if (store.isLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            <mat-icon>save</mat-icon>
+          }
+          {{ 'common.register' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</main>

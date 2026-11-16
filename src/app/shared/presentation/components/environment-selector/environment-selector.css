@@ -1,0 +1,144 @@
+.environment-selector {
+  min-width: 280px;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
+}
+
+.environment-selector ::ng-deep .mat-mdc-select-value-text,
+.environment-selector ::ng-deep .mat-mdc-select-min-line {
+  white-space: normal;
+}
+
+:host(.full-width) {
+  display: block;
+}
+
+:host(.full-width) .environment-selector {
+  width: 100%;
+  min-width: 0;
+}
+
+.usage {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .environment-selector {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Inline appearance: a line of context under the title of a page */
+.environment-inline {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--qt-radius-small);
+  background: color-mix(in srgb, var(--qt-primary) 8%, transparent);
+  transition: background-color 150ms ease;
+}
+
+.environment-inline:hover {
+  background: color-mix(in srgb, var(--qt-primary) 16%, transparent);
+}
+
+.environment-inline:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* The chevron of the line replaces the arrow of the select */
+.environment-inline ::ng-deep .mat-mdc-select-arrow-wrapper {
+  display: none;
+}
+
+.inline-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 10px 5px 8px;
+  box-sizing: border-box;
+  color: var(--qt-primary-strong);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.inline-trigger mat-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.inline-trigger .code {
+  flex-shrink: 0;
+}
+
+.inline-trigger .name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--qt-neutral-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On a phone the line takes the whole width, like the buttons and fields under it, with the chevron at the end. */
+@media (max-width: 760px) {
+  /* Its width never comes from the name, so a long name is cut instead of widening the heading. */
+  :host:has(.environment-inline) {
+    display: block;
+    width: 100%;
+    contain: inline-size;
+  }
+
+  .environment-inline {
+    display: block;
+    width: 100%;
+  }
+
+  .environment-inline ::ng-deep .mat-mdc-select-value,
+  .environment-inline ::ng-deep .mat-mdc-select-value-text,
+  .environment-inline ::ng-deep .mat-mdc-select-min-line {
+    display: block;
+    width: 100%;
+  }
+
+  .inline-trigger {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .inline-trigger .chevron {
+    margin-left: auto;
+  }
+}
+
+/* Options of the inline list: code and usage, then the name */
+.option-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.option-usage {
+  padding: 2px 8px;
+  border-radius: var(--qt-radius-pill);
+  background: var(--qt-neutral-surface);
+  color: var(--qt-neutral-text);
+  font-size: 11px;
+}
+
+.option-name {
+  display: block;
+  color: var(--qt-text-muted);
+  font-size: 13px;
+}

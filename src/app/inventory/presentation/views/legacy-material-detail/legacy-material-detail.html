@@ -1,0 +1,43 @@
+<main class="operations-page">
+  <a class="back-link" routerLink="/inventory">{{ 'material-history.back' | translate }}</a>
+  <header class="page-heading">
+    <div>
+      <h1>
+        <mat-icon aria-hidden="true">history</mat-icon>
+        {{ store.legacyDetailMaterial()?.name ?? ('raw-material-list.title' | translate) }}
+      </h1>
+      <p class="muted">{{ 'material-history.title' | translate }}</p>
+    </div>
+    <button mat-icon-button type="button" (click)="reload()" [disabled]="store.legacyDetailLoading()"
+            [attr.aria-label]="'material-history.refresh' | translate" [matTooltip]="'material-history.refresh' | translate">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (store.legacyDetailLoading()) {
+    <div class="state" role="status"><mat-spinner diameter="32" />{{ 'material-history.loading' | translate }}</div>
+  } @else if (store.legacyDetailError()) {
+    <div class="state" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ store.legacyDetailError()! | translate }}</p>
+      <button mat-stroked-button type="button" (click)="reload()">{{ 'material-history.retry' | translate }}</button>
+    </div>
+  } @else if (store.legacyDetailMaterial(); as material) {
+    <app-legacy-material-summary [material]="material" />
+
+    <section class="history" [attr.aria-label]="'material-history.movements' | translate">
+      <h2>{{ 'material-history.movements' | translate }} <span>({{ store.legacyDetailConsumptions().length }})</span></h2>
+      @if (store.legacyDetailHasUnrecordedStock()) {
+        <p class="legacy-note" role="note"><mat-icon>info_outline</mat-icon>{{ 'material-history.legacy-note' | translate }}</p>
+      }
+      @if (store.legacyDetailConsumptions().length === 0) {
+        <p class="state">{{ 'material-history.empty' | translate }}</p>
+      } @else {
+        <app-legacy-consumption-history-table
+          [consumptions]="store.legacyDetailConsumptions()"
+          [batches]="store.legacyDetailBatches()"
+        />
+      }
+    </section>
+  }
+</main>

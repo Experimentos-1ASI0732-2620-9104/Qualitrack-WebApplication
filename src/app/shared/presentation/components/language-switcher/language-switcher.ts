@@ -1,11 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { map } from 'rxjs';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
-
-const NARROW_SCREEN = '(max-width: 480px)';
 
 /**
  * @summary Selector de idioma global de QualiTrack.
@@ -18,27 +13,20 @@ const NARROW_SCREEN = '(max-width: 480px)';
   selector: 'app-language-switcher',
   imports: [MatButtonToggleGroup, MatButtonToggle, TranslatePipe],
   templateUrl: './language-switcher.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './language-switcher.css',
 })
 export class LanguageSwitcher {
-  protected currentLang = 'en_US';
+  protected currentLang = 'en';
   protected languages = [
-    { code: 'en_US', label: 'EN', name: 'English' },
-    { code: 'es_419', label: 'ES', name: 'Español' },
+    { code: 'en', label: 'EN', name: 'English' },
+    { code: 'es', label: 'ES', name: 'Español' },
   ];
   protected translate: TranslateService;
-  private readonly breakpoints = inject(BreakpointObserver);
-
-  /**
-   * On narrow screens the check mark of the selected language is hidden so the toolbar keeps room for the user;
-   * the selected language is still shown by its highlighted button.
-   */
-  protected readonly compact = toSignal(this.breakpoints.observe(NARROW_SCREEN).pipe(map((state) => state.matches)),
-    { initialValue: this.breakpoints.isMatched(NARROW_SCREEN) });
 
   constructor() {
     this.translate = inject(TranslateService);
-    this.currentLang = this.translate.getCurrentLang();
+    this.currentLang = this.translate.getCurrentLang() ?? 'en';
   }
 
   useLanguage(language: string): void {

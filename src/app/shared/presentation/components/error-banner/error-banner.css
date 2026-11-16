@@ -1,0 +1,50 @@
+:host {
+  display: block;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 880px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--qt-error-surface);
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  color: var(--qt-error-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-message mat-icon {
+  flex-shrink: 0;
+}
+
+.error-message button {
+  flex-shrink: 0;
+  margin: -8px -8px -8px 0;
+  color: var(--qt-error-text);
+  transition: background-color 0.2s ease;
+}
+
+.error-message button:hover {
+  background: var(--qt-surface);
+}
+
+.error-message button:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

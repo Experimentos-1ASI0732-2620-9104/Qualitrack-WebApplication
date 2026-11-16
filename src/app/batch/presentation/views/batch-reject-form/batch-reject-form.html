@@ -17,9 +17,17 @@
     <!-- Rejection date -->
     <mat-form-field appearance="outline">
       <mat-label>{{ 'batch-reject.fields.rejection-date' | translate }}</mat-label>
-      <input matInput type="date" formControlName="rejectionDate" />
+      <input matInput type="date" formControlName="rejectionDate" [attr.min]="minDate" [attr.max]="maxDate" />
       @if (form.controls.rejectionDate.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.rejectionDate.hasError('invalidDate')) {
+        <mat-error>{{ 'common.dateInvalid' | translate }}</mat-error>
+      } @else if (form.controls.rejectionDate.hasError('minDate')) {
+        <mat-error>{{ 'common.dateMin' | translate }}</mat-error>
+      } @else if (form.controls.rejectionDate.hasError('futureDate')) {
+        <mat-error>{{ 'common.dateFuture' | translate }}</mat-error>
+      } @else if (form.controls.rejectionDate.hasError('dateOrder')) {
+        <mat-error>{{ 'common.dateBeforeBatchStart' | translate }}</mat-error>
       }
     </mat-form-field>
     <!-- Reason of the rejection, required and auditable -->
@@ -29,6 +37,8 @@
                 [placeholder]="'batch-reject.placeholders.reason' | translate"></textarea>
       @if (form.controls.reason.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.reason.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
       } @else if (form.controls.reason.hasError('minlength')) {
         <mat-error>{{ 'batch-reject.errors.reason-minlength' | translate }}</mat-error>
       }
