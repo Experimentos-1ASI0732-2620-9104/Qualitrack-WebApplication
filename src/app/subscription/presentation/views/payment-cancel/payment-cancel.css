@@ -3,13 +3,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: 32px 24px;
 }
 
 .result-card {
   width: 100%;
   max-width: 520px;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--qt-border);
+  background: var(--qt-surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   text-align: center;
 }
 
@@ -18,39 +21,99 @@
 }
 
 .icon-wrapper {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #fee2e2;
-  color: #991b1b;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 72px;
+  height: 72px;
   margin: 0 auto 24px;
+  border-radius: 50%;
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
 }
 
 .icon-wrapper mat-icon {
-  font-size: 44px;
   width: 44px;
   height: 44px;
+  font-size: 44px;
 }
 
 h1 {
   margin: 0;
-  color: #1a3a5c;
+  color: var(--qt-heading);
   font-size: 28px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 p {
   margin: 12px 0 28px;
-  color: #5f6368;
-  line-height: 1.5;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primary-btn,
+.secondary-btn {
+  height: 48px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.primary-btn {
+  padding: 0 28px;
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+.primary-btn:hover {
+  background: var(--qt-primary-hover);
+}
+
+.secondary-btn {
+  padding: 0 24px;
+  color: var(--qt-text);
+  border-color: var(--qt-border);
+}
+
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .payment-result-container {
+    padding: 16px 12px;
+  }
+
+  .result-card mat-card-content {
+    padding: 32px 20px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

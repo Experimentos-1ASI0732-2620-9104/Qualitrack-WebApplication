@@ -1,11 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { IamStore } from '../../iam/application/iam.store';
+import { errorStatus } from '../../shared/infrastructure/api-error';
 
 import { SubscriptionApi } from '../infrastructure/subscription-api';
 import { SubscriptionPlan } from '../domain/model/subscription-plan.entity';
 import { Subscription } from '../domain/model/subscription.entity';
 import { Payment } from '../domain/model/payment.entity';
+import { PlanSwitch } from '../domain/model/plan-switch';
 import { SelectPlanCommand } from '../domain/model/select-plan.command';
 import { CreateCheckoutSessionCommand } from '../domain/model/create-checkout-session.command';
 import { CreateCheckoutSessionRequest } from '../infrastructure/checkout.request';
@@ -142,6 +145,11 @@ export class SubscriptionStore {
    */
   readonly hasActiveSubscription = computed(() => this._currentSubscription()?.status === 'ACTIVE');
 
+  constructor() {
+    // The plan lives in sessionStorage, which a reload keeps: the next person on this tab must not inherit it.
+    this.iam.beforeSignOut(() => this.clearSelectedPlan());
+  }
+
   /**
    * Loads all available subscription plans.
    */
@@ -182,6 +190,20 @@ export class SubscriptionStore {
 
         this.failRequest(error, 'Failed to load current subscription');
       },
+    });
+  }
+
+  /**
+   * Reads the active subscription of a laboratory so the plans view can mark the plan it pays for. Unlike
+   * {@link loadCurrentSubscription} it leaves the loading and error state of the plans alone and reads no payments:
+   * when the subscription cannot be read, the plans are shown without the mark.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   */
+  loadCurrentPlan(laboratoryId: number): void {
+    this.api.getCurrentSubscription(laboratoryId).subscribe({
+      next: (subscription) => this._currentSubscription.set(subscription),
+      error: () => this._currentSubscription.set(null),
     });
   }
 
@@ -227,6 +249,33 @@ export class SubscriptionStore {
   }
 
   /**
+   * Compares the plan chosen on the website with the active subscription of the laboratory. That plan cannot be bought
+   * while another is paid, so an active subscription spends the choice; without one it stays for the plans view.
+   *
+   * @param laboratoryId - Numeric identifier of the laboratory
+   * @returns The switch to tell about, or null when no plan was chosen, it is the plan already paid for, or there is no
+   * active subscription that could be read
+   */
+  async findPlanSwitch(laboratoryId: number): Promise<PlanSwitch | null> {
+    const planCode = this._selectedPlanCode();
+    const billingCycle = this._selectedBillingCycle();
+    if (!planCode || !billingCycle) return null;
+
+    try {
+      const [current, plans] = await Promise.all([
+        firstValueFrom(this.api.getCurrentSubscription(laboratoryId)),
+        // The catalog only names the plans: without it the notice uses their codes.
+        firstValueFrom(this.api.getPlans()).catch((): SubscriptionPlan[] => []),
+      ]);
+      this.clearSelectedPlan();
+      if (current.planCode === planCode && current.billingCycle === billingCycle) return null;
+      return { chosen: { planCode, billingCycle }, current, plans };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Creates a checkout session for a selected plan.
    *
    * @param command - Command containing selected plan and user context
@@ -241,12 +290,19 @@ export class SubscriptionStore {
         this._checkoutSession.set(session);
         this._successMsg.set('Checkout session created successfully');
         this.finishRequest();
+        // The choice is spent: coming back from Stripe must not send the person to checkout again.
+        this.clearSelectedPlan();
 
         if (session.checkoutUrl) {
           window.location.href = session.checkoutUrl;
         }
       },
-      error: (error) => this.failRequest(error, 'Failed to create checkout session'),
+      error: (error) => {
+        if (errorStatus(error) === 409) {
+          this._error.set('subscription.plans.already-active');
+          this._isLoading.set(false);
+        } else this.failRequest(error, 'Failed to create checkout session');
+      },
     });
   }
 

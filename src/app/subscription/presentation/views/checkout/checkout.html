@@ -1,37 +1,41 @@
 <div class="checkout-container">
+  <!-- Page header: back button + title, same plain style as the plans view -->
   <header class="page-header">
-    <button mat-icon-button routerLink="../plans" color="primary">
+    <button class="back-link" routerLink="../plans"
+            [attr.aria-label]="'common.back' | translate">
       <mat-icon>arrow_back</mat-icon>
+      <span>{{ 'common.back' | translate }}</span>
     </button>
 
-    <div>
+    <div class="header-content">
       <h1>{{ 'subscription.checkout.title' | translate }}</h1>
       <p>{{ 'subscription.checkout.subtitle' | translate }}</p>
     </div>
   </header>
 
+  <!-- Loading state -->
   @if (store.isLoading()) {
     <div class="loading-shade">
       <mat-spinner diameter="50"></mat-spinner>
     </div>
   }
 
+  <!-- Error state -->
   @if (store.error()) {
     <div class="error-container">
       <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error() }}</p>
+      <p role="alert">{{ store.error() | translate }}</p>
     </div>
   }
 
-  <mat-card class="checkout-card mat-elevation-z2">
-    <mat-card-header>
-      <mat-card-title>
-        {{ store.selectedPlan()?.name || ('subscription.checkout.no-plan' | translate) }}
-      </mat-card-title>
-      <mat-card-subtitle>
-        {{ store.selectedPlan()?.description }}
-      </mat-card-subtitle>
-    </mat-card-header>
+  <mat-card class="checkout-card">
+    <!-- Selected plan name and description -->
+    <div class="card-head">
+      <h2>{{ store.selectedPlan()?.name || ('subscription.checkout.no-plan' | translate) }}</h2>
+      @if (store.selectedPlan()?.description) {
+        <p>{{ store.selectedPlan()?.description }}</p>
+      }
+    </div>
 
     <mat-card-content>
       @if (store.selectedPlan()) {
@@ -43,7 +47,7 @@
         <div class="summary-row">
           <span>{{ 'subscription.checkout.billing' | translate }}</span>
           <strong>
-            {{ 'subscription.billing-period.' + store.selectedPlan()?.billingPeriod?.toLowerCase() | translate }}
+            {{ 'subscription.billing-period.' + (store.selectedPlan()?.billingPeriod?.toLowerCase() ?? '') | translate }}
           </strong>
         </div>
 
@@ -54,6 +58,7 @@
           </strong>
         </div>
       } @else {
+        <!-- Empty state: no plan selected -->
         <div class="empty-state">
           <mat-icon>inventory_2</mat-icon>
           <p>{{ 'subscription.checkout.no-plan-message' | translate }}</p>
@@ -62,20 +67,21 @@
     </mat-card-content>
 
     <mat-card-actions align="end">
-      <button mat-button routerLink="../plans">
+      <button mat-stroked-button class="cancel-btn" routerLink="../plans">
         {{ 'common.cancel' | translate }}
       </button>
 
       <button
-        mat-raised-button
-        color="primary"
+        mat-flat-button
+        class="pay-btn"
         [disabled]="
-    !store.selectedPlan() ||
-    !store.selectedBillingCycle() ||
-    store.isLoading() ||
-    !iamStore.currentUserId()
-  "
-        (click)="onCheckout()">
+          !store.selectedPlan() ||
+          !store.selectedBillingCycle() ||
+          store.isLoading() ||
+          !iamStore.currentUserId()
+        "
+        (click)="onCheckout()"
+      >
         <mat-icon>payment</mat-icon>
         {{ 'subscription.checkout.pay' | translate }}
       </button>

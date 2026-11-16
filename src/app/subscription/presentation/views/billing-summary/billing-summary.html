@@ -1,33 +1,37 @@
 <div class="billing-container">
+  <!-- Page header: title on the left, primary action on the right -->
   <header class="page-header">
     <div>
       <h1>{{ 'subscription.billing.title' | translate }}</h1>
       <p>{{ 'subscription.billing.subtitle' | translate }}</p>
     </div>
 
-    <button mat-raised-button color="primary" routerLink="../plans">
+    <button mat-flat-button class="primary-btn" routerLink="../plans">
       <mat-icon>workspace_premium</mat-icon>
       {{ 'subscription.billing.change-plan' | translate }}
     </button>
   </header>
 
+  <!-- Loading state -->
   @if (store.isLoading()) {
     <div class="loading-shade">
       <mat-spinner diameter="50"></mat-spinner>
     </div>
   }
 
+  <!-- Error state -->
   @if (store.error()) {
     <div class="error-container">
       <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error()! | translate }}</p>
+      <p role="alert">{{ store.error()! | translate }}</p>
     </div>
   }
 
-  <mat-card class="subscription-card mat-elevation-z2">
-    <mat-card-header>
-      <mat-card-title>{{ 'subscription.billing.current-subscription' | translate }}</mat-card-title>
-    </mat-card-header>
+  <!-- Current subscription -->
+  <mat-card class="subscription-card">
+    <div class="card-head">
+      <h2>{{ 'subscription.billing.current-subscription' | translate }}</h2>
+    </div>
 
     <mat-card-content>
       @if (store.currentSubscription(); as subscription) {
@@ -47,30 +51,33 @@
           </div>
 
           <div>
-            <span class="label">{{ 'subscription.billing.started-at' | translate }}</span>
-            <strong>{{ subscription.currentPeriodStart | date:'mediumDate' }}</strong>
+            <span class="label">{{ 'subscription.billing.period-start' | translate }}</span>
+            <strong>{{ subscription.currentPeriodStart | dateOnly }}</strong>
           </div>
 
           <div>
             <span class="label">{{ (subscription.cancelAtPeriodEnd ? 'subscription.billing.access-until' : 'subscription.billing.renews-on') | translate }}</span>
-            <strong>{{ subscription.currentPeriodEnd | date:'mediumDate' }}</strong>
+            <strong>{{ subscription.currentPeriodEnd | dateOnly }}</strong>
           </div>
         </div>
 
         @if (store.successMsg(); as message) {
-          <p class="renewal-notice success" role="status">{{ message | translate }}</p>
+          <p class="renewal-notice success" role="status">
+            <mat-icon aria-hidden="true">check_circle</mat-icon>
+            {{ message | translate }}
+          </p>
         }
 
         @if (subscription.cancelAtPeriodEnd) {
           <p class="renewal-notice" role="status">
             <mat-icon aria-hidden="true">event_busy</mat-icon>
-            {{ 'subscription.billing.renewal-cancelled' | translate: { date: (subscription.currentPeriodEnd | date:'mediumDate') } }}
+            {{ 'subscription.billing.renewal-cancelled' | translate: { date: (subscription.currentPeriodEnd | dateOnly) } }}
           </p>
         } @else if (subscription.status === 'ACTIVE') {
           <div class="subscription-actions">
             <button
-              mat-button
-              color="warn"
+              mat-stroked-button
+              class="danger-btn"
               type="button"
               [disabled]="store.isLoading()"
               (click)="onCancelRenewal()">
@@ -88,57 +95,58 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Payment history -->
   <section class="payments-section">
     <h2>{{ 'subscription.billing.payment-history' | translate }}</h2>
 
     @if (store.payments().length > 0) {
-    <div class="table-card mat-elevation-z2">
-      <table mat-table [dataSource]="store.payments()" class="full-width-table">
-        <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef>
-            {{ 'subscription.payments.date' | translate }}
-          </th>
-          <td mat-cell *matCellDef="let payment">
-            {{ payment.paidAt | date:'mediumDate' }}
-          </td>
-        </ng-container>
+      <div class="table-card">
+        <table mat-table [dataSource]="paymentPage.rows()" class="data-table">
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'subscription.payments.date' | translate }}
+            </th>
+            <td mat-cell [attr.data-label]="'subscription.payments.date' | translate" *matCellDef="let payment">
+              {{ payment.paidAt | dateOnly }}
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef>
-            {{ 'subscription.payments.amount' | translate }}
-          </th>
-          <td mat-cell *matCellDef="let payment">
-            {{ payment.currency }} {{ payment.amount }}
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'subscription.payments.amount' | translate }}
+            </th>
+            <td mat-cell [attr.data-label]="'subscription.payments.amount' | translate" *matCellDef="let payment" class="amount-cell">
+              {{ payment.currency }} {{ payment.amount }}
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="provider">
-          <th mat-header-cell *matHeaderCellDef>
-            {{ 'subscription.payments.provider' | translate }}
-          </th>
-          <td mat-cell *matCellDef="let payment">
-            {{ payment.provider }}
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="provider">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'subscription.payments.provider' | translate }}
+            </th>
+            <td mat-cell [attr.data-label]="'subscription.payments.provider' | translate" *matCellDef="let payment">
+              {{ payment.provider }}
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>
-            {{ 'subscription.payments.status' | translate }}
-          </th>
-          <td mat-cell *matCellDef="let payment">
-            <mat-chip-set>
-              <mat-chip [class]="getStatusClass(payment.status)">
-                {{ 'subscription.payment-status.' + getStatusClass(payment.status) | translate }}
-              </mat-chip>
-            </mat-chip-set>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'subscription.payments.status' | translate }}
+            </th>
+            <td mat-cell [attr.data-label]="'subscription.payments.status' | translate" *matCellDef="let payment">
+              <mat-chip-set>
+                <mat-chip [class]="getStatusClass(payment.status)">
+                  {{ 'subscription.payment-status.' + getStatusClass(payment.status) | translate }}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-      </table>
-    </div>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+        <app-table-paginator [page]="paymentPage" />
+      </div>
     } @else if (!store.isLoading() && !store.error()) {
       <p class="empty-state" role="status">{{ 'subscription.billing.no-payments' | translate }}</p>
     }
