@@ -1,7 +1,287 @@
 /* You can add global styles to this file, and also import other style files */
 html, body { height: 100%; }
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { margin: 0; font-family: Rubik, "Helvetica Neue", sans-serif; }
 img, video { max-width: 100%; }
 mat-card, mat-card-content, mat-form-field { min-width: 0; }
 mat-card-title, mat-card-subtitle, h1, h2, h3, p { overflow-wrap: anywhere; }
+/* A title that wraps on a phone keeps its lines apart. */
+h1, h2, h3 { line-height: 1.25; }
+
+/* Design tokens of the QualiTrack style guide. */
+:root {
+  --qt-primary: #0d9488;
+  --qt-primary-strong: #0f766e; /* Reaches AA on white, so it is the one used for text and filled buttons. */
+  --qt-primary-hover: #115e59;
+  --qt-primary-surface: #f0fdfa;
+  --qt-primary-on-dark: #5eead4;
+  --qt-primary-soft: #99d5cf;
+  --qt-heading: #1a3a5c; /* Only the titles of the pages. */
+  --qt-text: #0f172a;
+  --qt-text-muted: #64748b; /* Reaches AA only on white; use --qt-neutral-text over other backgrounds. */
+  --qt-text-subtle: #94a3b8;
+  --qt-background: #f3f4f6;
+  --qt-surface: #ffffff;
+  --qt-border: #e2e8f0;
+
+  --qt-error: #f44336;
+  --qt-error-surface: #ffebee;
+  --qt-error-text: #b71c1c;
+  --qt-warning: #ffc107;
+  --qt-warning-surface: #fff8e1;
+  --qt-warning-text: #7a5a00;
+  --qt-success: #4caf50;
+  --qt-success-surface: #e8f5e9;
+  --qt-success-text: #1b5e20;
+  --qt-info-surface: #eff6ff;
+  --qt-info-text: #1e40af;
+  --qt-neutral-surface: #f1f5f9;
+  --qt-neutral-text: #475569;
+
+  --qt-radius-small: 8px;
+  --qt-radius-medium: 12px;
+  --qt-radius-pill: 999px;
+}
+
+/*
+ * Every outlined field of the application looks the same: the corners of the cards, an outline that reaches
+ * the 3:1 contrast WCAG asks of a control, and the focus in the color of the brand.
+ */
+:root {
+  --mat-form-field-outlined-container-shape: var(--qt-radius-small);
+  --mat-form-field-outlined-outline-color: var(--qt-text-muted);
+  --mat-form-field-outlined-hover-outline-color: var(--qt-text);
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary-strong);
+  --mat-form-field-outlined-label-text-color: var(--qt-text-muted);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-outlined-caret-color: var(--qt-primary-strong);
+  --mat-form-field-outlined-input-text-placeholder-color: var(--qt-text-subtle);
+  --mat-form-field-outlined-error-outline-color: var(--qt-error-text);
+  --mat-form-field-outlined-error-label-text-color: var(--qt-error-text);
+  --mat-form-field-outlined-error-focus-outline-color: var(--qt-error-text);
+  --mat-form-field-outlined-error-focus-label-text-color: var(--qt-error-text);
+  --mat-form-field-outlined-error-hover-outline-color: var(--qt-error-text);
+  --mat-form-field-error-text-color: var(--qt-error-text);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary-strong);
+
+  /* The main action of every page and form is the green of the brand, such as Register */
+  --mat-button-filled-container-color: var(--qt-primary-strong);
+  --mat-button-filled-label-text-color: var(--qt-surface);
+}
+
+/*
+ * Every table of the application has the format of the production batches: a card with muted uppercase
+ * headers and roomy rows, which on a phone become one card per row with the name of each field.
+ * A table goes inside `.table-card`, its cells carry `data-label`, and `app-table-paginator` goes after it.
+ */
+.table-card {
+  min-width: 0;
+  /* A table wider than its card scrolls inside it instead of being cut. */
+  overflow-x: auto;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius-medium);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--qt-surface);
+  font-size: 14px;
+}
+
+table.data-table th {
+  height: auto;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--qt-border);
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+table.data-table td {
+  height: auto;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--qt-border);
+  color: var(--qt-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  /*
+   * A column is never narrower than its longest word, so a status such as "Operational" or a role such as
+   * "Operator" is not split in two; `anywhere` let the table shrink a column below its words.
+   */
+  overflow-wrap: break-word;
+  vertical-align: middle;
+}
+
+/* Long values without spaces, such as e-mail addresses, may break anywhere so the table still fits. */
+table.data-table td.long-value {
+  overflow-wrap: anywhere;
+}
+
+table.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+table.data-table tbody tr:hover td {
+  background: var(--qt-background);
+}
+
+table.data-table tr.openable {
+  cursor: pointer;
+}
+
+table.data-table small {
+  display: block;
+  margin-top: 4px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+}
+
+table.data-table a:not([mat-button], [mat-flat-button], [mat-stroked-button], [mat-icon-button]) {
+  color: var(--qt-primary-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+table.data-table a:not([mat-button], [mat-flat-button], [mat-stroked-button], [mat-icon-button]):hover {
+  text-decoration: underline;
+}
+
+table.data-table a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Status chips are never split. */
+table.data-table td.chip-cell {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+/* The row that says the table is empty. */
+table.data-table td[colspan] {
+  padding: 32px 20px;
+  color: var(--qt-text-muted);
+  text-align: center;
+}
+
+table.data-table tbody tr:has(> td[colspan]):hover td {
+  background: transparent;
+}
+
+@media (max-width: 1100px) {
+  table.data-table th,
+  table.data-table td {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .table-card {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  table.data-table {
+    background: transparent;
+  }
+
+  table.data-table thead {
+    display: none;
+  }
+
+  table.data-table,
+  table.data-table > tbody,
+  table.data-table tr,
+  table.data-table td {
+    display: block;
+    width: auto;
+  }
+
+  table.data-table tr {
+    position: relative;
+    height: auto;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: var(--qt-surface);
+    border: 1px solid var(--qt-border);
+    border-radius: var(--qt-radius-medium);
+    box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+  }
+
+  table.data-table tbody tr:hover td {
+    background: transparent;
+  }
+
+  table.data-table td,
+  table.data-table tr:last-child td {
+    padding: 8px 4px;
+    border: 0;
+  }
+
+  table.data-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: var(--qt-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  table.data-table td[colspan] {
+    padding: 24px 12px;
+  }
+}
+
+/* Applies the palette of the style guide to the Angular Material components of a page that already adopted it. */
+.qt-theme {
+  --mat-sys-primary: var(--qt-primary-strong);
+  --mat-sys-on-primary: var(--qt-surface);
+  color: var(--qt-text);
+}
+
+/* The snack bar is rendered outside the component that opens it, so its colors are set here. */
+.undo-toast-panel {
+  --mat-snack-bar-container-color: var(--qt-text);
+  --mat-snack-bar-supporting-text-color: var(--qt-surface);
+  --mat-snack-bar-button-color: var(--qt-primary-on-dark);
+}
+
+/* The list of the inline environment selector is rendered outside the component, so its shape is set here. */
+.environment-panel.mat-mdc-select-panel {
+  min-width: 300px;
+  padding: 6px;
+  border-radius: var(--qt-radius-medium);
+  box-shadow:
+    0 10px 30px rgb(15 23 42 / 14%),
+    0 2px 6px rgb(15 23 42 / 8%);
+  --mat-select-panel-background-color: var(--qt-surface);
+  --mat-option-hover-state-layer-color: var(--qt-neutral-surface);
+  --mat-option-focus-state-layer-color: var(--qt-neutral-surface);
+  --mat-option-selected-state-layer-color: var(--qt-primary-surface);
+}
+
+.environment-panel .mat-mdc-option {
+  min-height: 56px;
+  border-radius: var(--qt-radius-small);
+}
+
+.environment-panel .mat-mdc-option .mat-pseudo-checkbox {
+  --mat-pseudo-checkbox-minimal-selected-checkmark-color: var(--qt-primary-strong);
+}
+
+/* The chosen environment stays tinted while the keyboard or the mouse is on it. */
+.environment-panel
+  .mat-mdc-option.mdc-list-item--selected:is(.mat-mdc-option-active, :focus, :hover) {
+  background-color: color-mix(in srgb, var(--qt-primary) 8%, transparent);
+}
