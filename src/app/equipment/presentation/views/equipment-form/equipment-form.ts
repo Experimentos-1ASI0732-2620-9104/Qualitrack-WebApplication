@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { EquipmentStore } from '../../../application/equipment.store';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
 
 /**
  * Registers an equipment of the laboratory (US45). IoT devices are registered with the device form.
@@ -33,6 +34,7 @@ import { EquipmentStore } from '../../../application/equipment.store';
     TranslatePipe,
   ],
   templateUrl: './equipment-form.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './equipment-form.css',
 })
 export class EquipmentForm {
@@ -53,10 +55,16 @@ export class EquipmentForm {
   ];
 
   protected readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
+    name: [
+      '',
+      [Validators.required, notBlankValidator, Validators.minLength(3), Validators.maxLength(150)],
+    ],
     type: ['', [Validators.required, Validators.maxLength(100)]],
-    model: ['', [Validators.required, Validators.maxLength(100)]],
-    serialNumber: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^[a-zA-Z0-9-]+$/)]],
+    model: ['', [Validators.required, notBlankValidator, Validators.maxLength(100)]],
+    serialNumber: [
+      '',
+      [Validators.required, Validators.maxLength(50), Validators.pattern(/^[a-zA-Z0-9-]+$/)],
+    ],
   });
 
   constructor() {
@@ -64,8 +72,12 @@ export class EquipmentForm {
   }
 
   protected async onSave(): Promise<void> {
-    if (this.form.invalid) return;
+    // The button stays usable; pressing it with something missing points at what is missing
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     const equipment = await this.store.registerEquipment(this.form.getRawValue());
-    if (equipment) await this.router.navigate(['/equipments/equipment-detail', equipment.id]);
+    if (equipment) await this.router.navigate(['/equipments', equipment.id]);
   }
 }

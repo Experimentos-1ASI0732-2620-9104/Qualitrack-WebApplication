@@ -1,46 +1,56 @@
-<div class="detail-container">
+<main class="operations-page">
+  <a routerLink="/equipments">{{ 'equipment-list.title' | translate }}</a>
+
   @if (store.isLoading() || store.saving()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
   }
 
-  <header class="detail-header">
-    <a
-      mat-icon-button
-      routerLink="../../equipment-list"
-      [attr.aria-label]="'common.back' | translate">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
-
-    <div class="title-group">
-      <h1>{{ equipment()?.name || ('common.status-loading' | translate) }}</h1>
-
-      @if (equipment()?.serialNumber) {
-        <span class="serial-badge">SN: {{ equipment()?.serialNumber }}</span>
-      }
-      @if (equipment()?.deviceType) {
-        <span class="device-badge">
-          <mat-icon aria-hidden="true">sensors</mat-icon>
-          {{ 'device-types.' + equipment()!.deviceType | translate }}
-        </span>
-      }
-    </div>
+  <header class="page-heading">
+    <h1><mat-icon aria-hidden="true">{{ equipment()?.isEdgeGateway ? 'router' : 'precision_manufacturing' }}</mat-icon>{{ equipment()?.name || ('common.status-loading' | translate) }}</h1>
   </header>
 
   @if (locationNotice()) {
-    <div class="error-container" role="alert">
-      <mat-icon>location_off</mat-icon>
-      <p>{{ 'equipment-detail.location.not-recorded' | translate }} {{ locationNotice()! | translate }}</p>
-    </div>
+    <p class="notice" role="alert">{{ 'equipment-detail.location.not-recorded' | translate }} {{ locationNotice()! | translate }}</p>
   }
 
   @if (store.error()) {
-    <div class="error-container" role="alert">
-      <mat-icon>error_outline</mat-icon>
-      <p>{{ store.error()! | translate }}</p>
-    </div>
+    <p class="error" role="alert">{{ store.error()! | translate }}</p>
   }
 
   @if (equipment(); as current) {
+    <section class="summary-strip">
+      <div>
+        <span>{{ 'equipment-list.fields.status' | translate }}</span>
+        <strong class="status" [ngClass]="current.status.toLowerCase()">
+          {{ 'equipment-status.' + current.status.toLowerCase() | translate }}
+        </strong>
+      </div>
+      <div>
+        <span>{{ 'equipment-list.fields.type' | translate }}</span>
+        <strong>
+          @if (current.deviceType) {
+            <span class="device-type">
+              <mat-icon aria-hidden="true">sensors</mat-icon>{{ 'device-types.' + current.deviceType | translate }}
+            </span>
+          } @else if (current.isEdgeGateway) {
+            <span class="device-type">
+              <mat-icon aria-hidden="true">router</mat-icon>{{ 'edge-gateway.type' | translate }}
+            </span>
+          } @else {
+            {{ current.type }}
+          }
+        </strong>
+      </div>
+      <div>
+        <span>{{ 'equipment-list.fields.serial' | translate }}</span>
+        <strong>{{ current.serialNumber }}</strong>
+      </div>
+      <div>
+        <span>{{ 'equipment-list.fields.environment' | translate }}</span>
+        <strong>{{ environmentName(current.environmentId) ?? ('equipment-list.not-located' | translate) }}</strong>
+      </div>
+    </section>
+
     <mat-tab-group animationDuration="0ms">
       <mat-tab>
         <ng-template mat-tab-label>
@@ -52,30 +62,8 @@
           <mat-card appearance="outlined">
             <mat-card-content class="info-grid">
               <div class="info-item">
-                <label>{{ 'equipment-list.fields.type' | translate }}</label>
-                <p>{{ current.deviceType ? ('device-types.' + current.deviceType | translate) : current.type }}</p>
-              </div>
-
-              <div class="info-item">
                 <label>{{ 'equipment-list.fields.model' | translate }}</label>
                 <p>{{ current.model }}</p>
-              </div>
-
-              <div class="info-item">
-                <label>{{ 'equipment-list.fields.status' | translate }}</label>
-                <p class="status-text" [ngClass]="current.status.toLowerCase()">
-                  {{ 'equipment-status.' + current.status.toLowerCase() | translate }}
-                </p>
-              </div>
-
-              <div class="info-item">
-                <label>{{ 'equipment-list.fields.serial' | translate }}</label>
-                <p>{{ current.serialNumber }}</p>
-              </div>
-
-              <div class="info-item">
-                <label>{{ 'equipment-list.fields.environment' | translate }}</label>
-                <p>{{ environmentName(current.environmentId) ?? ('equipment-list.not-located' | translate) }}</p>
               </div>
 
               @if (current.isIotDevice) {
@@ -89,11 +77,64 @@
                   <p>{{ current.firmwareVersion || '-' }}</p>
                 </div>
               }
+
+              @if (current.isEdgeGateway) {
+                <div class="info-item">
+                  <label>{{ 'device-form.fields.identifier' | translate }}</label>
+                  <p>{{ current.sensorExternalId || '-' }}</p>
+                </div>
+              }
             </mat-card-content>
           </mat-card>
 
+          @if (current.isEdgeGateway && store.canManage()) {
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>{{ 'edge-gateway.api-key.title' | translate }}</mat-card-title>
+                <mat-card-subtitle>{{ 'edge-gateway.api-key.hint' | translate }}</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="api-key">
+                  @if (apiKeyIssued() === true) {
+                    <p class="api-key-status issued">
+                      <mat-icon aria-hidden="true">verified_user</mat-icon>
+                      {{ 'edge-gateway.api-key.issued' | translate }}
+                    </p>
+                  } @else if (apiKeyIssued() === false) {
+                    <p class="api-key-status">
+                      <mat-icon aria-hidden="true">key_off</mat-icon>
+                      {{ 'edge-gateway.api-key.not-issued' | translate }}
+                    </p>
+                  } @else {
+                    <p class="api-key-status">{{ 'edge-gateway.api-key.unknown' | translate }}</p>
+                  }
+
+                  @if (apiKeyIssued() === false) {
+                    <button
+                      mat-flat-button
+                      class="primary-btn"
+                      type="button"
+                      (click)="onIssueApiKey(current)"
+                      [disabled]="!canIssueApiKey(current) || store.saving()">
+                      <mat-icon>key</mat-icon>
+                      {{ 'edge-gateway.api-key.generate' | translate }}
+                    </button>
+                  }
+                </div>
+
+                @if (apiKeyIssued() === false) {
+                  @if (!current.isLocated) {
+                    <p class="empty-msg">{{ 'edge-gateway.api-key.requires-location' | translate }}</p>
+                  } @else if (current.status !== 'OPERATIONAL') {
+                    <p class="empty-msg">{{ 'edge-gateway.api-key.requires-operational' | translate }}</p>
+                  }
+                }
+              </mat-card-content>
+            </mat-card>
+          }
+
           @if (store.canManage()) {
-            <mat-card appearance="outlined" class="action-card">
+            <mat-card appearance="outlined">
               <mat-card-header>
                 <mat-card-title>{{ 'equipment-detail.location.title' | translate }}</mat-card-title>
                 <mat-card-subtitle>
@@ -105,7 +146,7 @@
                   <mat-form-field appearance="outline">
                     <mat-label>{{ 'equipment-list.fields.environment' | translate }}</mat-label>
                     <mat-select formControlName="environmentId">
-                      @for (environment of environments.environments(); track environment.id) {
+                      @for (environment of store.environments(); track environment.id) {
                         <mat-option
                           [value]="environment.id"
                           [disabled]="environment.id === current.environmentId || isOccupied(current, environment.id)">
@@ -115,7 +156,7 @@
                       }
                     </mat-select>
                   </mat-form-field>
-                  <button mat-flat-button color="primary" type="submit" [disabled]="locationForm.invalid || store.saving()">
+                  <button mat-flat-button class="primary-btn" type="submit" [disabled]="locationForm.invalid || store.saving()">
                     <mat-icon>place</mat-icon>
                     {{ (current.isLocated ? 'equipment-detail.location.move' : 'equipment-detail.location.associate') | translate }}
                   </button>
@@ -125,72 +166,77 @@
           }
 
           @if (store.canOperate()) {
-          <mat-card appearance="outlined" class="action-card">
-            <mat-card-header>
-              <mat-card-title>{{ 'equipment-detail.status-change.title' | translate }}</mat-card-title>
-              <mat-card-subtitle>{{ 'equipment-detail.status-change.hint' | translate }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              @if (current.isLocated) {
-                <form class="inline-form" [formGroup]="statusForm" (ngSubmit)="onChangeStatus(current)">
-                  <mat-form-field appearance="outline">
-                    <mat-label>{{ 'equipment-detail.status-change.new-status' | translate }}</mat-label>
-                    <mat-select formControlName="status">
-                      @for (status of statusOptions(current); track status) {
-                        <mat-option [value]="status">{{ 'equipment-status.' + status.toLowerCase() | translate }}</mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline" class="grow">
-                    <mat-label>{{ 'equipment-detail.status-change.reason' | translate }}</mat-label>
-                    <input matInput formControlName="reason" maxlength="500">
-                  </mat-form-field>
-                  <button mat-flat-button color="primary" type="submit" [disabled]="statusForm.invalid || store.saving()">
-                    <mat-icon>published_with_changes</mat-icon>
-                    {{ 'equipment-detail.status-change.register' | translate }}
-                  </button>
-                </form>
-              } @else {
-                <p class="empty-msg">{{ 'equipment-detail.requires-location' | translate }}</p>
-              }
-            </mat-card-content>
-          </mat-card>
-          }
-        </div>
-      </mat-tab>
-
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon class="tab-icon">settings_input_component</mat-icon>
-          {{ 'equipment-detail.tabs.bpm' | translate }}
-        </ng-template>
-
-        <div class="tab-content">
-          <div class="tab-header">
-            <h3>{{ 'bpm-config.title' | translate }}</h3>
-
-            @if (store.canOperate()) {
-              <a mat-flat-button color="primary" [routerLink]="['../../bpm-config-form', current.id]">
-                <mat-icon>add</mat-icon>
-                {{ 'bpm-config.fields.parameter' | translate }}
-              </a>
-            }
-          </div>
-
-          @for (config of store.bpmConfigs(); track config.id) {
-            <mat-card class="config-card" appearance="outlined">
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>{{ 'equipment-detail.status-change.title' | translate }}</mat-card-title>
+                <mat-card-subtitle>{{ 'equipment-detail.status-change.hint' | translate }}</mat-card-subtitle>
+              </mat-card-header>
               <mat-card-content>
-                <div class="config-content">
-                  <strong>{{ config.parameterName }}</strong>
-                  <span>{{ config.minValue }} - {{ config.maxValue }} {{ config.unit }}</span>
-                </div>
+                @if (current.isLocated) {
+                  <form class="inline-form" [formGroup]="statusForm" (ngSubmit)="onChangeStatus(current)">
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'equipment-detail.status-change.new-status' | translate }}</mat-label>
+                      <mat-select formControlName="status">
+                        @for (status of statusOptions(current); track status) {
+                          <mat-option [value]="status">{{ 'equipment-status.' + status.toLowerCase() | translate }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="grow">
+                      <mat-label>{{ 'equipment-detail.status-change.reason' | translate }}</mat-label>
+                      <input matInput formControlName="reason" maxlength="500">
+                      @if (statusForm.controls.reason.hasError('notBlank')) {
+                        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
+                    <button mat-flat-button class="primary-btn" type="submit" [disabled]="statusForm.invalid || store.saving()">
+                      <mat-icon>published_with_changes</mat-icon>
+                      {{ 'equipment-detail.status-change.register' | translate }}
+                    </button>
+                  </form>
+                } @else {
+                  <p class="empty-msg">{{ 'equipment-detail.requires-location' | translate }}</p>
+                }
               </mat-card-content>
             </mat-card>
-          } @empty {
-            <p class="empty-msg">{{ 'bpm-config.empty' | translate }}</p>
           }
         </div>
       </mat-tab>
+
+      @if (!current.isEdgeGateway) {
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">settings_input_component</mat-icon>
+            {{ 'equipment-detail.tabs.bpm' | translate }}
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="tab-header">
+              <h3>{{ 'bpm-config.title' | translate }}</h3>
+
+              @if (store.canOperate()) {
+                <a mat-flat-button class="primary-btn" [routerLink]="['/equipments', current.id, 'bpm-configuration']">
+                  <mat-icon>add</mat-icon>
+                  {{ 'bpm-config.fields.parameter' | translate }}
+                </a>
+              }
+            </div>
+
+            @for (config of store.bpmConfigs(); track config.id) {
+              <mat-card class="config-card" appearance="outlined">
+                <mat-card-content>
+                  <div class="config-content">
+                    <strong>{{ config.parameterName }}</strong>
+                    <span>{{ config.minValue }} - {{ config.maxValue }} {{ config.unit }}</span>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            } @empty {
+              <p class="empty-msg">{{ 'bpm-config.empty' | translate }}</p>
+            }
+          </div>
+        </mat-tab>
+      }
 
       <mat-tab>
         <ng-template mat-tab-label>
@@ -203,7 +249,7 @@
             <h3>{{ 'maintenance-history.title' | translate }}</h3>
 
             @if (current.isLocated && store.canOperate()) {
-              <a mat-flat-button color="accent" [routerLink]="['../../maintenance-form', current.id]">
+              <a mat-flat-button class="primary-btn" [routerLink]="['/equipments', current.id, 'maintenances', 'new']">
                 <mat-icon>build</mat-icon>
                 {{ 'maintenance-history.add-button' | translate }}
               </a>
@@ -216,7 +262,7 @@
             <div class="maintenance-timeline">
               @for (record of store.maintenanceHistory(); track record.id) {
                 <div class="timeline-item">
-                  <div class="date">{{ record.maintenanceDate | date:'shortDate' }}</div>
+                  <div class="date">{{ record.maintenanceDate | dateOnly }}</div>
 
                   <mat-card appearance="outlined">
                     <mat-card-header>
@@ -243,4 +289,4 @@
       </mat-tab>
     </mat-tab-group>
   }
-</div>
+</main>
