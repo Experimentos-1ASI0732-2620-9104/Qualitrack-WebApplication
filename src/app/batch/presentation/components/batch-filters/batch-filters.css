@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+mat-form-field {
+  min-width: 0;
+  --mat-form-field-outlined-focus-outline-color: var(--qt-primary);
+  --mat-form-field-outlined-focus-label-text-color: var(--qt-primary-strong);
+  --mat-form-field-focus-select-arrow-color: var(--qt-primary);
+}
+
+.period {
+  flex: 0 1 300px;
+  cursor: pointer;
+}
+
+/* The days are picked in the calendar, so the inputs only show them */
+.period input {
+  cursor: pointer;
+}
+
+input {
+  caret-color: var(--qt-primary);
+}
+
+.clear {
+  height: auto;
+  min-height: 40px;
+  padding: 8px 20px;
+  border-radius: var(--qt-radius-pill);
+  border-color: var(--qt-border);
+  color: var(--qt-text);
+  font-weight: 600;
+}
+
+.clear:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .filters {
+    gap: 10px;
+  }
+
+  .period,
+  .clear {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.timeline {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 20px;
+}
+
+/* Line that joins the records */
+li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 36px;
+  bottom: 0;
+  left: 17px;
+  width: 2px;
+  background: var(--qt-border);
+}
+
+li:last-child {
+  padding-bottom: 0;
+}
+
+.marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--qt-neutral-surface);
+  color: var(--qt-neutral-text);
+}
+
+.marker mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.tone-info .marker {
+  background: var(--qt-primary-surface);
+  color: var(--qt-primary-strong);
+}
+
+.tone-success .marker {
+  background: var(--qt-success-surface);
+  color: var(--qt-success-text);
+}
+
+.tone-danger .marker {
+  background: var(--qt-error-surface);
+  color: var(--qt-error-text);
+}
+
+.content {
+  min-width: 0;
+  padding-top: 6px;
+}
+
+p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.title {
+  color: var(--qt-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.detail {
+  margin-top: 2px;
+  color: var(--qt-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.meta {
+  margin-top: 2px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

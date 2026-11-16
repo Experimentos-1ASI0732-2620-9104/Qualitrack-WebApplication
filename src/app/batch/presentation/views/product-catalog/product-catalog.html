@@ -1,61 +1,88 @@
 <main class="operations-page">
-  <!-- Heading with the environment selector and the actions -->
-  <header class="page-heading">
-    <h1><mat-icon aria-hidden="true">factory</mat-icon>{{ 'product-catalog.title' | translate }}</h1>
-    <div class="actions">
-      <app-environment-selector [selectedId]="store.environmentId()" (selectedChange)="changeEnvironment($event)" />
-      <a mat-stroked-button routerLink="/batches/batch-list">
-        <mat-icon>list_alt</mat-icon>{{ 'batches.title' | translate }}
-      </a>
-      <!-- Registering products is reserved to quality roles -->
-      @if (store.canManage()) {
-        <a mat-flat-button [routerLink]="['/batches/environments', store.environmentId(), 'products', 'new']">
-          <mat-icon>add</mat-icon>{{ 'product-catalog.add' | translate }}
-        </a>
+  <app-page-header
+    icon="factory"
+    titleKey="product-catalog.title"
+    [tabs]="tabs"
+    activeTab="/batches/environments"
+    [loading]="store.productsLoading()"
+    (refresh)="refresh()"
+  >
+    <div class="products">
+      <!-- The environment and the new product; then the products of each status, and the search -->
+      <app-list-toolbar
+        searchKey="product-catalog.search"
+        [search]="search()"
+        [activeFilters]="(status() === 'all' ? 0 : 1) + (search().trim() ? 1 : 0)"
+        (searchChange)="search.set($event)"
+      >
+        <app-environment-selector
+          toolbarContext
+          appearance="inline"
+          [environments]="store.environments()"
+          [selectedId]="store.productEnvironmentId()"
+          (selectedChange)="changeEnvironment($event)"
+        />
+        @if (store.canManageProducts()) {
+          <a
+            toolbarActions
+            mat-flat-button
+            [routerLink]="['/batches/environments', store.productEnvironmentId(), 'products', 'new']"
+          >
+            <mat-icon>add</mat-icon>
+            {{ 'product-catalog.add' | translate }}
+          </a>
+        }
+        <div toolbarFilters class="status-chips" role="group" [attr.aria-label]="'common.status' | translate">
+          @for (option of statusOptions; track option.value) {
+            <app-filter-chip
+              [labelKey]="option.labelKey"
+              [count]="counts()[option.value]"
+              [pressed]="status() === option.value"
+              (toggled)="status.set(status() === option.value ? 'all' : option.value)"
+            />
+          }
+        </div>
+      </app-list-toolbar>
+
+      @if (store.productError()) {
+        <p class="error" role="alert">{{ store.productError()! | translate }}</p>
+      }
+
+      @if (store.productsLoading()) {
+        <p role="status">{{ 'common.status-loading' | translate }}</p>
+      } @else {
+        <!-- Table of products -->
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th>{{ 'product-catalog.name' | translate }}</th>
+              <th>{{ 'product-catalog.specifications' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+            </tr>
+            </thead>
+            <tbody>
+              @for (product of productPage.rows(); track product.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/batches/environments', store.productEnvironmentId(), 'products', product.id]">{{ product.name }}</a>
+                    <small>{{ product.code }}</small>
+                  </td>
+                  <td [attr.data-label]="'product-catalog.specifications' | translate">{{ product.specifications }}</td>
+                  <td [attr.data-label]="'common.status' | translate">
+                    {{ (product.active ? 'common.active' : 'common.inactive') | translate }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">{{ 'product-catalog.empty' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-table-paginator [page]="productPage" />
+        </div>
       }
     </div>
-  </header>
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error()! | translate }}</p>
-  }
-  <!-- Text search by code or name -->
-  <div class="filters">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>{{ 'common.search' | translate }}</mat-label>
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)" />
-    </mat-form-field>
-  </div>
-  @if (store.loading()) {
-    <p role="status">{{ 'common.status-loading' | translate }}</p>
-  } @else {
-    <!-- Table of products -->
-    <table class="data-table">
-      <thead>
-      <tr>
-        <th>{{ 'product-catalog.name' | translate }}</th>
-        <th>{{ 'product-catalog.specifications' | translate }}</th>
-        <th>{{ 'common.status' | translate }}</th>
-      </tr>
-      </thead>
-      <tbody>
-        @for (product of filtered(); track product.id) {
-          <tr>
-            <td>
-              <a [routerLink]="['/batches/environments', store.environmentId(), 'products', product.id]">{{ product.name }}</a>
-              <small>{{ product.code }}</small>
-            </td>
-            <td [attr.data-label]="'product-catalog.specifications' | translate">{{ product.specifications }}</td>
-            <td [attr.data-label]="'common.status' | translate">
-              {{ (product.active ? 'common.active' : 'common.inactive') | translate }}
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="3">{{ 'product-catalog.empty' | translate }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
+  </app-page-header>
 </main>

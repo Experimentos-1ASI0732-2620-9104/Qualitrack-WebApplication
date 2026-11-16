@@ -1,0 +1,133 @@
+<div class="table-card">
+  <!-- On a phone the batches are cards without headers, so the order is chosen here -->
+  <div class="phone-sort">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'batches.sort.label' | translate }}</mat-label>
+      <mat-select [value]="sortColumn()" (selectionChange)="sortBy($event.value)">
+        <mat-option value="">{{ 'batches.sort.newest' | translate }}</mat-option>
+        @for (column of sortColumns; track column.id) {
+          <mat-option [value]="column.id">{{ column.labelKey | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'batches.sort.direction' | translate }}</mat-label>
+      <mat-select
+        [value]="sort().direction || 'asc'"
+        [disabled]="!sortColumn()"
+        (selectionChange)="sortDirection($event.value)"
+      >
+        <mat-option value="asc">{{ 'batches.sort.ascending' | translate }}</mat-option>
+        <mat-option value="desc">{{ 'batches.sort.descending' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <table
+    mat-table
+    matSort
+    class="data-table"
+    [dataSource]="page()"
+    [matSortActive]="sort().active"
+    [matSortDirection]="sort().direction"
+    (matSortChange)="sort.set($event)"
+  >
+    <caption class="visually-hidden">
+      {{
+        'batches.title' | translate
+      }}
+    </caption>
+
+    <ng-container matColumnDef="batchNumber">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'batches.fields.number' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let batch">
+        @if (batch.detailLink; as link) {
+          <a [routerLink]="link">{{ batch.batchNumber }}</a>
+        } @else {
+          <strong>{{ batch.batchNumber }}</strong>
+          <small>{{ 'batches.no-environment' | translate }}</small>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="product">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'batches.fields.product' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let batch" [attr.data-label]="'batches.fields.product' | translate">
+        {{ batch.productName }}
+        @if (environmentCode(batch.environmentId); as code) {
+          <small>{{ code }}</small>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="quantity">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'batches.fields.quantity' | translate }}
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let batch"
+        [attr.data-label]="'batches.fields.quantity' | translate"
+      >
+        {{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="startDate">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'batches.fields.date' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let batch" [attr.data-label]="'batches.fields.date' | translate">
+        {{ batch.startDate | dateOnly }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'batches.fields.status' | translate }}
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let batch"
+        class="chip-cell"
+        [attr.data-label]="'batches.fields.status' | translate"
+      >
+        <app-batch-status-chip [status]="batch.status" />
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="open">
+      <th mat-header-cell *matHeaderCellDef class="col-open">
+        <span class="visually-hidden">{{ 'batches.actions.view-detail' | translate }}</span>
+      </th>
+      <td mat-cell *matCellDef="let batch" class="col-open">
+        @if (batch.detailLink) {
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        }
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr
+      mat-row
+      *matRowDef="let batch; columns: columns"
+      [class.openable]="batch.detailLink"
+      (click)="open(batch, $event)"
+    ></tr>
+  </table>
+
+  @if (sorted().length > pageSizes[0]) {
+    <mat-paginator
+      [length]="sorted().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizes"
+      [showFirstLastButtons]="true"
+      (page)="changePage($event)"
+    />
+  }
+</div>

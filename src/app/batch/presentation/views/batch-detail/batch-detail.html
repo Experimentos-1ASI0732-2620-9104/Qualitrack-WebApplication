@@ -1,6 +1,13 @@
 <main class="operations-page">
-  <!-- Back link to the product of the batch -->
-  <a [routerLink]="productLink">{{ store.traceability()?.product?.name || ('product-catalog.title' | translate) }}</a>
+  <!-- Back to the product of the batch -->
+  <a mat-button class="back-link" [routerLink]="productLink">
+    <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    @if (productName(); as product) {
+      {{ 'batch-detail.back-to' | translate: { product } }}
+    } @else {
+      {{ 'product-catalog.title' | translate }}
+    }
+  </a>
   <!-- Error and success messages of the store -->
   @if (store.error()) {
     <p class="error" role="alert">{{ store.error()! | translate }}</p>
@@ -9,9 +16,15 @@
     <p class="success" role="status">{{ store.successMsg()! | translate }}</p>
   }
   @if (store.selectedBatch(); as batch) {
-    <!-- Heading with the release and reject actions, only for quality managers on open batches -->
+    <!-- Heading with the status and the release and reject actions, only for quality managers on open batches -->
     <header class="page-heading">
-      <h1><mat-icon aria-hidden="true">science</mat-icon>{{ 'batch-detail.title' | translate }}: {{ batch.batchNumber }}</h1>
+      <div class="heading-content">
+        <p class="eyebrow">{{ 'batch-detail.title' | translate }}</p>
+        <div class="title-row">
+          <h1><mat-icon aria-hidden="true">science</mat-icon>{{ batch.batchNumber }}</h1>
+          <app-batch-status-chip [status]="batch.status" />
+        </div>
+      </div>
       @if (batch.isOpen && store.canDecide()) {
         <div class="actions">
           <a mat-flat-button [routerLink]="decisionLink(batch.id, 'release')">
@@ -23,18 +36,36 @@
         </div>
       }
     </header>
-    <!-- Summary: status, quantity and dates -->
-    <section class="summary-strip">
-      <div>
-        <span>{{ 'batches.fields.status' | translate }}</span>
-        <strong class="status" [class.released]="batch.status === 'RELEASED'" [class.rejected]="batch.status === 'REJECTED'">
-          {{ 'batches.status.' + statusKey(batch.status) | translate }}
-        </strong>
+    <!-- Summary: product, environment, quantity and dates; on a phone the names take the whole width -->
+    <section class="summary-chips" [attr.aria-label]="'batch-detail.summary' | translate">
+      <div class="summary-chip wide">
+        <mat-icon aria-hidden="true">medication</mat-icon>
+        <span class="label">{{ 'batches.fields.product' | translate }}</span>
+        <strong>{{ productName() ?? batch.productName }}</strong>
       </div>
-      <div><span>{{ 'batches.fields.quantity' | translate }}</span><strong>{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</strong></div>
-      <div><span>{{ 'batches.fields.date' | translate }}</span><strong>{{ batch.startDate | date: 'mediumDate' }}</strong></div>
+      @if (environmentName(); as environment) {
+        <div class="summary-chip wide">
+          <mat-icon aria-hidden="true">meeting_room</mat-icon>
+          <span class="label">{{ 'batch-storage.environment' | translate }}</span>
+          <strong>{{ environment }}</strong>
+        </div>
+      }
+      <div class="summary-chip">
+        <mat-icon aria-hidden="true">scale</mat-icon>
+        <span class="label">{{ 'batches.fields.quantity' | translate }}</span>
+        <strong>{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</strong>
+      </div>
+      <div class="summary-chip">
+        <mat-icon aria-hidden="true">event</mat-icon>
+        <span class="label">{{ 'batches.fields.date' | translate }}</span>
+        <strong>{{ batch.startDate | dateOnly }}</strong>
+      </div>
       @if (batch.endDate) {
-        <div><span>{{ 'batch-detail.closed-on' | translate }}</span><strong>{{ batch.endDate | date: 'mediumDate' }}</strong></div>
+        <div class="summary-chip">
+          <mat-icon aria-hidden="true">event_available</mat-icon>
+          <span class="label">{{ 'batch-detail.closed-on' | translate }}</span>
+          <strong>{{ batch.endDate | dateOnly }}</strong>
+        </div>
       }
     </section>
     @if (!batch.isOpen) {
@@ -75,6 +106,8 @@
       </mat-tab>
     </mat-tab-group>
   } @else if (store.isLoading()) {
-    <p role="status">{{ 'common.status-loading' | translate }}</p>
+    <div class="loading" role="status">
+      <mat-spinner diameter="40" [attr.aria-label]="'common.status-loading' | translate" />
+    </div>
   }
 </main>

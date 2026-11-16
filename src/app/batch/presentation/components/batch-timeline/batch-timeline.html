@@ -1,0 +1,25 @@
+<ol class="timeline" [attr.aria-label]="'batch-timeline.title' | translate">
+  @for (entry of entries(); track entry.id) {
+    <li [class]="'tone-' + entry.tone">
+      <span class="marker" aria-hidden="true"
+        ><mat-icon>{{ entry.icon }}</mat-icon></span
+      >
+      <div class="content">
+        <p class="title">{{ entry.titleKey | translate: entry.titleParams }}</p>
+        @if (entry.detail) {
+          <p class="detail">{{ entry.detail }}</p>
+        }
+        <p class="meta">
+          <time [attr.datetime]="entry.at">{{
+            entry.dayOnly ? (entry.at | dateOnly) : (entry.at | dateTime)
+          }}</time>
+          @if (entry.actorUserId !== null) {
+            <span>
+              · {{ 'batch-timeline.by' | translate: { name: actor(entry.actorUserId) } }}</span
+            >
+          }
+        </p>
+      </div>
+    </li>
+  }
+</ol>

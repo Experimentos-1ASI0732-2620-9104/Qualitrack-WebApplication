@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+h1,
+h2,
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--qt-heading);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+h1 mat-icon {
+  flex-shrink: 0;
+  color: var(--qt-primary);
+}
+
+a[mat-stroked-button],
+a[mat-flat-button] {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+a[mat-stroked-button] {
+  color: var(--qt-text);
+  border-color: var(--qt-border);
+}
+
+a[mat-flat-button] {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+a[mat-flat-button]:hover {
+  background: var(--qt-primary-hover);
+}
+
+a[mat-stroked-button]:focus-visible,
+a[mat-flat-button]:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+p[role='status'] {
+  margin: 0;
+  padding: 32px 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.error {
+  max-width: 880px;
+  margin: 0 0 20px;
+  padding: 16px;
+  background: var(--qt-error-surface);
+  border: 1px solid var(--qt-error);
+  border-radius: 12px;
+  color: var(--qt-error-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.editor {
+  max-width: 880px;
+  margin: 0;
+  padding: 24px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.editor h2 {
+  margin: 0 0 12px;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.notice {
+  margin: 0 0 20px;
+  padding: 16px;
+  background: var(--qt-warning-surface);
+  border: 1px solid var(--qt-warning);
+  border-radius: 12px;
+  color: var(--qt-warning-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .editor {
+    padding: 16px;
+  }
+
+  .editor a[mat-flat-button] {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -16,8 +16,8 @@
       </div>
       <div>
         <span>{{ 'batch-storage.assigned-at' | translate }}</span>
-        <strong>{{ current.assignedAt | date: 'short' }}</strong>
-        <small class="muted">{{ 'batch-storage.assigned-by' | translate: { user: current.assignedBy } }}</small>
+        <strong>{{ current.assignedAt | dateTime }}</strong>
+        <small class="muted">{{ 'batch-storage.assigned-by' | translate: { user: person(current.assignedBy) } }}</small>
       </div>
     </section>
     <!-- Link to the conditions (telemetry history) of the container -->
