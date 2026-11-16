@@ -1,24 +1,14 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  inject
-} from '@angular/core';
-import {
-  DatePipe,
-  DecimalPipe
-} from '@angular/common';
-import {
-  ActivatedRoute,
-  RouterLink
-} from '@angular/router';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { TranslateModule } from '@ngx-translate/core';
-import { ProductStore } from '../../../application/product.store';
+import { TranslatePipe } from '@ngx-translate/core';
 import { BatchStore } from '../../../application/batch.store';
 import { IamStore } from '../../../../iam/application/iam.store';
+import { DateOnlyPipe } from '../../../../shared/presentation/pipes/date-only.pipe';
+import { TablePaginator, paginate } from '../../../../shared/presentation/components/table-paginator/table-paginator';
 
 /**
  * A pharmaceutical product and its manufacturing batches.
@@ -32,20 +22,15 @@ import { IamStore } from '../../../../iam/application/iam.store';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  providers: [ProductStore],
-  imports: [
-    DatePipe,
-    DecimalPipe,
-    RouterLink,
-    MatButtonModule,
-    MatIconModule,
-    TranslateModule
-  ],
+  imports: [TablePaginator, DateOnlyPipe, DecimalPipe, RouterLink, MatButtonModule, MatIconModule, TranslatePipe],
   templateUrl: './product-detail.html',
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './product-detail.css',
 })
 export class ProductDetail implements OnInit {
-  protected readonly products = inject(ProductStore);
+  /** Page of the table shown; ten rows unless the person chooses more. */
+  protected readonly batchPage = paginate(() => this.batches.productBatches());
+
   protected readonly batches = inject(BatchStore);
   private readonly iam = inject(IamStore);
   private readonly route = inject(ActivatedRoute);
@@ -68,7 +53,7 @@ export class ProductDetail implements OnInit {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
       this.environmentId = Number(params.get('environmentId'));
       this.productId = Number(params.get('productId'));
-      void this.products.loadProduct(this.environmentId, this.productId);
+      void this.batches.loadProduct(this.environmentId, this.productId);
       void this.batches.loadProductBatches({
         laboratoryId: this.iam.requireLaboratoryId(),
         environmentId: this.environmentId,

@@ -1,33 +1,20 @@
-import {
-  Component,
-  OnInit,
-  effect,
-  inject,
-  input
-} from '@angular/core';
-import {
-  DatePipe,
-  DecimalPipe
-} from '@angular/common';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
+import { Component, OnInit, effect, inject, input, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { BatchStore } from '../../../application/batch.store';
-import { RawMaterialConsumptionStore } from '../../../application/raw-material-consumption.store';
-import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
+import { BatchPath } from '../../../domain/model/batch-path';
 import { TracedRawMaterialUsage } from '../../../domain/model/batch-traceability.entity';
-import { EnvironmentStore } from '../../../../laboratory/application/environment.store';
-import { EnvironmentSelector } from '../../../../laboratory/presentation/components/environment-selector/environment-selector';
+import { EnvironmentSelector } from '../../../../shared/presentation/components/environment-selector/environment-selector';
 import { stockQuantityValidator } from '../../../../shared/presentation/validators/stock-quantity.validator';
+import { DateTimePipe } from '../../../../shared/presentation/pipes/date-time.pipe';
+import { TablePaginator, paginate } from '../../../../shared/presentation/components/table-paginator/table-paginator';
 
 /**
  * Raw material lots consumed by a batch, with the consumption form while the batch is open.
@@ -42,9 +29,8 @@ import { stockQuantityValidator } from '../../../../shared/presentation/validato
 @Component({
   selector: 'app-raw-material-usage',
   standalone: true,
-  providers: [RawMaterialConsumptionStore],
   imports: [
-    DatePipe,
+    TablePaginator, DateTimePipe,
     DecimalPipe,
     ReactiveFormsModule,
     RouterLink,
@@ -52,13 +38,17 @@ import { stockQuantityValidator } from '../../../../shared/presentation/validato
     MatIconModule,
     MatInputModule,
     MatSelectModule,
-    TranslateModule,
+    TranslatePipe,
     EnvironmentSelector,
   ],
   templateUrl: './raw-material-usage.html',
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './raw-material-usage.css',
 })
 export class RawMaterialUsageComponent implements OnInit {
+  /** Page of the table shown; ten rows unless the person chooses more. */
+  protected readonly usagePage = paginate(() => this.store.traceability()?.rawMaterials ?? []);
+
   /** Laboratory, environment and product of the batch. */
   readonly path = input.required<BatchPath>();
   /** Identifier of the batch. */
@@ -66,8 +56,6 @@ export class RawMaterialUsageComponent implements OnInit {
   /** Whether the consumption form is available (the batch is open and the user operates). */
   readonly open = input(false);
   protected readonly store = inject(BatchStore);
-  protected readonly consumption = inject(RawMaterialConsumptionStore);
-  private readonly environments = inject(EnvironmentStore);
   private readonly fb = inject(FormBuilder);
 
   /**
@@ -86,13 +74,13 @@ export class RawMaterialUsageComponent implements OnInit {
   constructor() {
     this.form.controls.rawMaterialId.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => {
       this.form.controls.lotId.reset();
-      void this.consumption.selectMaterial(id);
+      void this.store.selectConsumptionMaterial(id);
     });
     this.form.controls.lotId.valueChanges
       .pipe(takeUntilDestroyed())
-      .subscribe((id) => this.consumption.lotId.set(id));
+      .subscribe((id) => this.store.selectConsumptionLot(id));
     effect(() => {
-      const lot = this.consumption.selectedLot();
+      const lot = this.store.consumptionLot();
       this.form.controls.amount.setValidators([
         Validators.required,
         Validators.min(0.001),
@@ -108,9 +96,10 @@ export class RawMaterialUsageComponent implements OnInit {
    * material storage.
    */
   async ngOnInit(): Promise<void> {
+    this.store.clearConsumption();
     if (!this.open()) return;
-    if (!this.environments.loaded()) await this.environments.loadEnvironments();
-    const storage = this.environments.preferredEnvironment('RAW_MATERIAL_STORAGE');
+    await this.store.loadEnvironments();
+    const storage = this.store.preferredStorageEnvironment();
     if (storage) await this.changeEnvironment(storage.id);
   }
 
@@ -121,7 +110,7 @@ export class RawMaterialUsageComponent implements OnInit {
    */
   protected async changeEnvironment(environmentId: number): Promise<void> {
     this.form.reset();
-    await this.consumption.selectEnvironment(environmentId);
+    await this.store.selectConsumptionEnvironment(environmentId);
   }
 
   /**
@@ -130,13 +119,13 @@ export class RawMaterialUsageComponent implements OnInit {
   protected async consume(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
-    const saved = await this.consumption.consume(
+    const saved = await this.store.consumeRawMaterial(
       this.path(),
       this.batchId(),
       Number(this.form.controls.amount.value),
     );
     // The lot list was refreshed: keep the selection only while the lot is still usable.
-    this.form.controls.lotId.setValue(this.consumption.lotId(), { emitEvent: false });
+    this.form.controls.lotId.setValue(this.store.consumptionLotId(), { emitEvent: false });
     if (saved) {
       this.form.controls.amount.reset();
       await this.store.refreshTraceability(this.path(), this.batchId());
@@ -151,7 +140,7 @@ export class RawMaterialUsageComponent implements OnInit {
    */
   protected materialLink(usage: TracedRawMaterialUsage): (string | number)[] | null {
     if (usage.inventoryReceiptId === null)
-      return ['/laboratories/raw-materials', usage.rawMaterialId];
+      return ['/inventory/legacy-materials', usage.rawMaterialId];
     return usage.rawMaterialEnvironmentId === null
       ? null
       : [

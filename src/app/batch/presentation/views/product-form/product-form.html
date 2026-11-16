@@ -6,11 +6,11 @@
   </header>
   <p class="muted">{{ 'product-form.subtitle' | translate }}</p>
   <!-- Notice for users who cannot register products -->
-  @if (!store.canManage()) {
+  @if (!store.canManageProducts()) {
     <p class="notice" role="status">{{ 'product-form.quality-only' | translate }}</p>
   }
-  @if (store.error()) {
-    <p class="error" role="alert">{{ store.error()! | translate }}</p>
+  @if (store.productError()) {
+    <p class="error" role="alert">{{ store.productError()! | translate }}</p>
   }
   <!-- Registration form of the product -->
   <form class="editor form-grid" [formGroup]="form" (ngSubmit)="save()">
@@ -20,6 +20,10 @@
       <input matInput formControlName="code" maxlength="50" autocomplete="off" />
       @if (form.controls.code.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.code.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
+      } @else if (form.controls.code.hasError('code')) {
+        <mat-error>{{ 'common.invalidCode' | translate }}</mat-error>
       }
     </mat-form-field>
     <!-- Product name, unique in the laboratory -->
@@ -28,6 +32,8 @@
       <input matInput formControlName="name" maxlength="150" />
       @if (form.controls.name.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.name.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
       }
     </mat-form-field>
     <!-- Optional description -->
@@ -43,12 +49,14 @@
       <mat-hint>{{ 'product-form.specifications-hint' | translate }}</mat-hint>
       @if (form.controls.specifications.hasError('required')) {
         <mat-error>{{ 'common.required' | translate }}</mat-error>
+      } @else if (form.controls.specifications.hasError('notBlank')) {
+        <mat-error>{{ 'common.notBlank' | translate }}</mat-error>
       }
     </mat-form-field>
     <!-- Actions: the submit button is disabled for users who cannot register products -->
     <div class="actions full-width">
       <a mat-button [routerLink]="catalogueLink">{{ 'common.cancel' | translate }}</a>
-      <button mat-flat-button type="submit" [disabled]="store.saving() || !store.canManage()">
+      <button mat-flat-button type="submit" [disabled]="store.productSaving() || !store.canManageProducts()">
         <mat-icon>save</mat-icon>{{ 'common.register' | translate }}
       </button>
     </div>

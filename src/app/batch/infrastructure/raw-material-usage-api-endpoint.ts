@@ -13,7 +13,7 @@ import {
 } from './raw-material-usage-response';
 import { RawMaterialUsageAssembler } from './raw-material-usage-assembler';
 import { RegisterRawMaterialUsageRequest } from './raw-material-usage.request';
-import { BatchPath } from './batch-api-endpoint';
+import { BatchPath } from '../domain/model/batch-path';
 
 /**
  * Base URL of the laboratories resource.

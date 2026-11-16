@@ -1,9 +1,10 @@
+import { EquipmentUsage, StaffParticipation } from '../domain/model/batch-participation.entity';
 import { BaseAssembler } from '../../shared/infrastructure/base-assembler';
 import {
   Batch,
   BatchStatus
 } from '../domain/model/batch.entity';
-import { BatchTraceability } from '../domain/model/batch-traceability.entity';
+import { BatchTraceability, TracedRawMaterialUsage, ReleaseEvidence, RejectionEvidence, BatchContainer } from '../domain/model/batch-traceability.entity';
 import {
   BatchesResponse,
   BatchResource,
@@ -100,15 +101,15 @@ export class BatchAssembler implements BaseAssembler<
    * @returns The BatchTraceability; the batch is mapped to an entity and a missing container becomes null.
    */
   toTraceabilityFromResource(resource: BatchTraceabilityResource): BatchTraceability {
-    return {
+    return new BatchTraceability({
       batch: this.toEntityFromResource(resource.batch),
       product: resource.product,
-      rawMaterials: resource.rawMaterials,
-      equipment: resource.equipment,
-      staff: resource.staff,
-      release: resource.release,
-      rejection: resource.rejection,
-      container: resource.container ?? null,
-    };
+      rawMaterials: resource.rawMaterials.map((usage) => new TracedRawMaterialUsage(usage)),
+      equipment: resource.equipment.map((usage) => new EquipmentUsage(usage)),
+      staff: resource.staff.map((participation) => new StaffParticipation(participation)),
+      release: resource.release ? new ReleaseEvidence(resource.release) : null,
+      rejection: resource.rejection ? new RejectionEvidence(resource.rejection) : null,
+      container: resource.container ? new BatchContainer(resource.container) : null,
+    });
   }
 }

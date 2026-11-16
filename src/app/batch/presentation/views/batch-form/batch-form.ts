@@ -1,28 +1,25 @@
-import {
-  Component,
-  OnInit,
-  inject
-} from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink
-} from '@angular/router';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { TranslateModule } from '@ngx-translate/core';
-import { localIsoDate } from '../../../../shared/presentation/utils/local-date';
+import { TranslatePipe } from '@ngx-translate/core';
+import { todayInLima } from '../../../../shared/presentation/utils/local-date';
+import { codeValidator } from '../../../../shared/presentation/validators/code.validator';
+import {
+  addYears,
+  maxDateValidator,
+  MIN_DATE,
+  minDateValidator,
+} from '../../../../shared/presentation/validators/date.validators';
+import { notBlankValidator } from '../../../../shared/presentation/validators/not-blank.validator';
+import { stockQuantityValidator } from '../../../../shared/presentation/validators/stock-quantity.validator';
 import { BatchStore } from '../../../application/batch.store';
-import { ProductStore } from '../../../application/product.store';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
+import { BatchPath } from '../../../domain/model/batch-path';
 
 /**
  * Registers a manufacturing batch of the product taken from the route.
@@ -36,7 +33,6 @@ import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
 @Component({
   selector: 'app-batch-form',
   standalone: true,
-  providers: [ProductStore],
   imports: [
     ReactiveFormsModule,
     RouterLink,
@@ -44,18 +40,38 @@ import { BatchPath } from '../../../infrastructure/batch-api-endpoint';
     MatIconModule,
     MatInputModule,
     MatSelectModule,
-    TranslateModule,
+    TranslatePipe,
   ],
   templateUrl: './batch-form.html',
-  styleUrl: '../../../../shared/presentation/styles/operations-page.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './batch-form.css',
 })
 export class BatchForm implements OnInit {
   protected readonly store = inject(BatchStore);
-  protected readonly products = inject(ProductStore);
   private readonly iam = inject(IamStore);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * Earliest start date accepted by the date input.
+   */
+  protected readonly minDate = MIN_DATE;
+
+  /**
+   * Latest start date: a batch can be planned up to one year ahead.
+   *
+   * @returns The date as yyyy-MM-dd.
+   */
+  protected get maxDate(): string {
+    return addYears(todayInLima(), 1);
+  }
+
+  /**
+   * Largest quantity the form accepts.
+   */
+  protected readonly maxQuantity = 999_999_999;
 
   /**
    * Production units offered by the form.
@@ -68,16 +84,42 @@ export class BatchForm implements OnInit {
   protected path!: BatchPath;
 
   /**
-   * Form of the batch: number (up to 50 characters), quantity (at least 0.001), unit, start date (today by
-   * default) and optional notes (up to 500 characters).
+   * Production unit control, kept apart because the quantity rules depend on it.
+   */
+  private readonly unit = this.fb.nonNullable.control('units', Validators.required);
+
+  /**
+   * Form of the batch: number (a code of up to 50 characters), quantity (from 0.001 to 999999999, whole in units and
+   * with up to three decimals otherwise), unit, start date (today by default, from 2020 to one year ahead) and
+   * optional notes (up to 500 characters).
    */
   protected readonly form = this.fb.nonNullable.group({
-    batchNumber: ['', [Validators.required, Validators.maxLength(50)]],
-    quantity: [1, [Validators.required, Validators.min(0.001)]],
-    unit: ['units', Validators.required],
-    startDate: [localIsoDate(), Validators.required],
+    batchNumber: [
+      '',
+      [Validators.required, notBlankValidator, codeValidator, Validators.maxLength(50)],
+    ],
+    quantity: [
+      1,
+      [
+        Validators.required,
+        Validators.min(0.001),
+        Validators.max(this.maxQuantity),
+        (control: AbstractControl) => stockQuantityValidator(this.unit.value)(control),
+      ],
+    ],
+    unit: this.unit,
+    startDate: [
+      todayInLima(),
+      [Validators.required, minDateValidator(), maxDateValidator(() => this.maxDate)],
+    ],
     notes: ['', Validators.maxLength(500)],
   });
+
+  constructor() {
+    this.unit.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.form.controls.quantity.updateValueAndValidity());
+  }
 
   /**
    * Lifecycle hook that reads the route parameters and loads the product of the batch.
@@ -90,7 +132,7 @@ export class BatchForm implements OnInit {
       productId: Number(params.get('productId')),
     };
     this.store.clearMessages();
-    void this.products.loadProduct(this.path.environmentId, this.path.productId);
+    void this.store.loadProduct(this.path.environmentId, this.path.productId);
   }
 
   /**

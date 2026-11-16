@@ -22,24 +22,27 @@
     </div>
   }
   <!-- Equipment already associated, taken from the traceability -->
-  <table class="data-table">
-    <thead>
-    <tr>
-      <th>{{ 'batch-participants.equipment' | translate }}</th>
-      <th>{{ 'batch-participants.registered-at' | translate }}</th>
-    </tr>
-    </thead>
-    <tbody>
-      @for (usage of store.traceability()?.equipment ?? []; track usage.id) {
-        <tr>
-          <td>{{ usage.equipmentName }}</td>
-          <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ usage.registeredAt | date: 'short' }}</td>
-        </tr>
-      } @empty {
-        <tr><td colspan="2">{{ 'batch-participants.no-equipment' | translate }}</td></tr>
-      }
-    </tbody>
-  </table>
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>{{ 'batch-participants.equipment' | translate }}</th>
+        <th>{{ 'batch-participants.registered-at' | translate }}</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (usage of equipmentPage.rows(); track usage.id) {
+          <tr>
+            <td>{{ usage.equipmentName }}</td>
+            <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ usage.registeredAt | dateTime }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="2">{{ 'batch-participants.no-equipment' | translate }}</td></tr>
+        }
+      </tbody>
+    </table>
+    <app-table-paginator [page]="equipmentPage" />
+  </div>
 </section>
 
 <!-- Staff that took part in the batch -->
@@ -75,24 +78,27 @@
     </div>
   }
   <!-- Staff already associated, taken from the traceability -->
-  <table class="data-table">
-    <thead>
-    <tr>
-      <th>{{ 'batch-participants.staff' | translate }}</th>
-      <th>{{ 'batch-participants.role' | translate }}</th>
-      <th>{{ 'batch-participants.registered-at' | translate }}</th>
-    </tr>
-    </thead>
-    <tbody>
-      @for (participation of store.traceability()?.staff ?? []; track participation.id) {
-        <tr>
-          <td>{{ participation.staffName }}</td>
-          <td [attr.data-label]="'batch-participants.role' | translate">{{ participation.staffRole || '—' }}</td>
-          <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ participation.registeredAt | date: 'short' }}</td>
-        </tr>
-      } @empty {
-        <tr><td colspan="3">{{ 'batch-participants.no-staff' | translate }}</td></tr>
-      }
-    </tbody>
-  </table>
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>{{ 'batch-participants.staff' | translate }}</th>
+        <th>{{ 'batch-participants.role' | translate }}</th>
+        <th>{{ 'batch-participants.registered-at' | translate }}</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (participation of staffPage.rows(); track participation.id) {
+          <tr>
+            <td>{{ participation.staffName }}</td>
+            <td [attr.data-label]="'batch-participants.role' | translate">{{ participation.staffRole || '—' }}</td>
+            <td [attr.data-label]="'batch-participants.registered-at' | translate">{{ participation.registeredAt | dateTime }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="3">{{ 'batch-participants.no-staff' | translate }}</td></tr>
+        }
+      </tbody>
+    </table>
+    <app-table-paginator [page]="staffPage" />
+  </div>
 </section>

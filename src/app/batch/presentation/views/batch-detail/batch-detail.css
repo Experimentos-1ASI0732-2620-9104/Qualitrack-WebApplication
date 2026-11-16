@@ -1,0 +1,297 @@
+/* ==========================================================================
+   Batch detail view
+   Same visual language as the product detail, catalog and billing views.
+   ========================================================================== */
+
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--qt-background);
+  color: var(--qt-text);
+}
+
+/* Same width and padding as the other views, so the title lines up */
+.operations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+h1,
+h2,
+p,
+a {
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Back button to the product of the batch
+   -------------------------------------------------------------------------- */
+.back-link {
+  margin: 0 0 12px -12px;
+  color: var(--qt-primary-strong);
+  font-weight: 500;
+}
+
+.back-link:hover {
+  background: var(--qt-primary-surface);
+}
+
+.back-link:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Page heading: plain title on the left, decision actions on the right
+   -------------------------------------------------------------------------- */
+.page-heading,
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-heading {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--qt-heading);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+h1 mat-icon {
+  flex-shrink: 0;
+  color: var(--qt-primary);
+}
+
+.heading-content {
+  min-width: 0;
+}
+
+/* Small label above the batch number */
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Batch number and its status */
+.title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Both action buttons: pill shape, minimum touch target */
+.actions a[mat-flat-button],
+.actions a[mat-stroked-button] {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: normal;
+  text-decoration: none;
+}
+
+/* Release: solid teal (AA: white on #0f766e is 5.47:1) */
+.actions a[mat-flat-button] {
+  background: var(--qt-primary-strong);
+  color: var(--qt-surface);
+}
+
+.actions a[mat-flat-button]:hover {
+  background: var(--qt-primary-hover);
+}
+
+/* Reject: destructive action, outlined red with dark text for contrast */
+.actions a[mat-stroked-button] {
+  color: var(--qt-error-text);
+  border-color: var(--qt-error);
+}
+
+.actions a[mat-stroked-button]:hover {
+  background: var(--qt-error-surface);
+}
+
+.actions a:focus-visible {
+  outline: 3px solid var(--qt-primary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Messages: error, success and closed-batch notice
+   -------------------------------------------------------------------------- */
+.error,
+.success,
+.notice {
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  background: var(--qt-error-surface);
+  border-color: var(--qt-error);
+  color: var(--qt-error-text);
+}
+
+.success {
+  background: var(--qt-success-surface);
+  border-color: var(--qt-success);
+  color: var(--qt-success-text);
+}
+
+.notice {
+  background: var(--qt-warning-surface);
+  border-color: var(--qt-warning);
+  color: var(--qt-warning-text);
+}
+
+/* --------------------------------------------------------------------------
+   Summary chips: product, environment, quantity and dates
+   -------------------------------------------------------------------------- */
+.summary-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.summary-chip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.summary-chip mat-icon {
+  grid-row: 1 / 3;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--qt-primary-surface);
+  color: var(--qt-primary-strong);
+  font-size: 24px;
+}
+
+.summary-chip .label {
+  color: var(--qt-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.summary-chip strong {
+  min-width: 0;
+  color: var(--qt-text);
+  font-size: 16px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   Tabs: the whole group is a card, teal indicator and active label
+   -------------------------------------------------------------------------- */
+mat-tab-group {
+  overflow: hidden;
+  background: var(--qt-surface);
+  border: 1px solid var(--qt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.tab-content {
+  padding: 24px;
+}
+
+.tab-content h2 {
+  margin: 0 0 12px;
+  color: var(--qt-text);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.tab-content p {
+  margin: 0;
+  color: var(--qt-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Spinner while the batch loads */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .operations-page {
+    padding: 20px 16px 36px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .page-heading .actions {
+    width: 100%;
+  }
+
+  .actions a[mat-flat-button],
+  .actions a[mat-stroked-button] {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .summary-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .summary-chip {
+    padding: 12px;
+  }
+
+  .tab-content {
+    padding: 16px;
+  }
+}
+
+/* Two columns leave too little room for a product or environment name, so they take the whole row */
+@media (max-width: 480px) {
+  .summary-chip.wide {
+    grid-column: 1 / -1;
+  }
+}

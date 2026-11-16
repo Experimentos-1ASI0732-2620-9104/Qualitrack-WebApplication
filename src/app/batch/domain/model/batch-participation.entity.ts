@@ -1,3 +1,4 @@
+import { BaseEntity } from '../../../shared/domain/model/base-entity';
 /**
  * Equipment used in a product batch.
  *
@@ -7,19 +8,19 @@
  *
  * @example
  * ```typescript
- * const usage: EquipmentUsage = {
+ * const usage = new EquipmentUsage({
  *   id: 1,
  *   batchId: 101,
  *   equipmentId: 7,
  *   equipmentName: 'Mixer M-01',
  *   registeredByUserId: 4,
  *   registeredAt: '2026-10-05T09:30:00Z'
- * };
+ * });
  * ```
  *
  * @author Qualitrack
  */
-export interface EquipmentUsage {
+export class EquipmentUsage implements BaseEntity {
   /**
    * The unique numeric identifier of the usage record.
    */
@@ -49,6 +50,22 @@ export interface EquipmentUsage {
    * The ISO date string of the moment the usage was registered.
    */
   registeredAt: string;
+
+  constructor(params: {
+    id: number;
+    batchId: number;
+    equipmentId: number;
+    equipmentName: string;
+    registeredByUserId: number | null;
+    registeredAt: string;
+  }) {
+    this.id = params.id;
+    this.batchId = params.batchId;
+    this.equipmentId = params.equipmentId;
+    this.equipmentName = params.equipmentName;
+    this.registeredByUserId = params.registeredByUserId;
+    this.registeredAt = params.registeredAt;
+  }
 }
 
 /**
@@ -59,7 +76,7 @@ export interface EquipmentUsage {
  *
  * @example
  * ```typescript
- * const participation: StaffParticipation = {
+ * const participation = new StaffParticipation({
  *   id: 1,
  *   batchId: 101,
  *   staffId: 9,
@@ -67,12 +84,12 @@ export interface EquipmentUsage {
  *   staffRole: 'Operator',
  *   registeredByUserId: 4,
  *   registeredAt: '2026-10-05T09:35:00Z'
- * };
+ * });
  * ```
  *
  * @author Qualitrack
  */
-export interface StaffParticipation {
+export class StaffParticipation implements BaseEntity {
   /**
    * The unique numeric identifier of the participation record.
    */
@@ -107,4 +124,22 @@ export interface StaffParticipation {
    * The ISO date string of the moment the participation was registered.
    */
   registeredAt: string;
+
+  constructor(params: {
+    id: number;
+    batchId: number;
+    staffId: number;
+    staffName: string;
+    staffRole: string | null;
+    registeredByUserId: number | null;
+    registeredAt: string;
+  }) {
+    this.id = params.id;
+    this.batchId = params.batchId;
+    this.staffId = params.staffId;
+    this.staffName = params.staffName;
+    this.staffRole = params.staffRole;
+    this.registeredByUserId = params.registeredByUserId;
+    this.registeredAt = params.registeredAt;
+  }
 }

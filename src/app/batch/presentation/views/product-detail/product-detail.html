@@ -1,10 +1,10 @@
 <main class="operations-page">
   <!-- Back link to the products of the environment -->
   <a [routerLink]="['/batches/environments', environmentId, 'products']">{{ 'product-catalog.title' | translate }}</a>
-  @if (products.error()) {
-    <p class="error" role="alert">{{ products.error()! | translate }}</p>
+  @if (batches.productError()) {
+    <p class="error" role="alert">{{ batches.productError()! | translate }}</p>
   }
-  @if (products.product(); as product) {
+  @if (batches.product(); as product) {
     <!-- Heading with the new batch action, only for users who operate -->
     <header class="page-heading">
       <h1><mat-icon aria-hidden="true">medication</mat-icon>{{ product.name }}</h1>
@@ -36,36 +36,39 @@
     @if (batches.error()) {
       <p class="error" role="alert">{{ batches.error()! | translate }}</p>
     }
-    <table class="data-table">
-      <thead>
-      <tr>
-        <th>{{ 'batches.fields.number' | translate }}</th>
-        <th>{{ 'batches.fields.quantity' | translate }}</th>
-        <th>{{ 'batches.fields.date' | translate }}</th>
-        <th>{{ 'batches.fields.status' | translate }}</th>
-      </tr>
-      </thead>
-      <tbody>
-        @for (batch of batches.productBatches(); track batch.id) {
-          <tr>
-            <td><a [routerLink]="batchLink(batch.id)">{{ batch.batchNumber }}</a></td>
-            <td [attr.data-label]="'batches.fields.quantity' | translate">{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</td>
-            <td [attr.data-label]="'batches.fields.date' | translate">{{ batch.startDate | date: 'mediumDate' }}</td>
-            <td [attr.data-label]="'batches.fields.status' | translate">
-              <span class="status" [class.released]="batch.status === 'RELEASED'" [class.rejected]="batch.status === 'REJECTED'">
-                {{ 'batches.status.' + statusKey(batch.status) | translate }}
-              </span>
-            </td>
-          </tr>
-        } @empty {
-          <!-- While loading, the empty row shows the loading message -->
-          <tr>
-            <td colspan="4">{{ (batches.isLoading() ? 'common.status-loading' : 'product-detail.no-batches') | translate }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  } @else if (products.loading()) {
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>{{ 'batches.fields.number' | translate }}</th>
+          <th>{{ 'batches.fields.quantity' | translate }}</th>
+          <th>{{ 'batches.fields.date' | translate }}</th>
+          <th>{{ 'batches.fields.status' | translate }}</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (batch of batchPage.rows(); track batch.id) {
+            <tr>
+              <td><a [routerLink]="batchLink(batch.id)">{{ batch.batchNumber }}</a></td>
+              <td [attr.data-label]="'batches.fields.quantity' | translate">{{ batch.quantity | number: '1.0-3' }} {{ batch.unit }}</td>
+              <td [attr.data-label]="'batches.fields.date' | translate">{{ batch.startDate | dateOnly }}</td>
+              <td [attr.data-label]="'batches.fields.status' | translate">
+                <span class="status" [class.released]="batch.status === 'RELEASED'" [class.rejected]="batch.status === 'REJECTED'">
+                  {{ 'batches.status.' + statusKey(batch.status) | translate }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <!-- While loading, the empty row shows the loading message -->
+            <tr>
+              <td colspan="4">{{ (batches.isLoading() ? 'common.status-loading' : 'product-detail.no-batches') | translate }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <app-table-paginator [page]="batchPage" />
+    </div>
+  } @else if (batches.productsLoading()) {
     <p role="status">{{ 'common.status-loading' | translate }}</p>
   }
 </main>
