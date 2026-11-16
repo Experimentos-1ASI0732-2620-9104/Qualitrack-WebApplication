@@ -6,15 +6,15 @@ const origin = process.env.WEB_URL ?? 'http://localhost:4200';
 const populated = process.env.DATASET === 'recorded';
 const directory = process.env.OUTPUT_DIR ?? (populated ? 'test-results/visual-recorded' : 'test-results/visual');
 const widths = (process.env.WIDTHS ?? '320,360,375,390,412,768,1024,1280,1440').split(',').map(Number);
-const paths = process.env.ROUTES?.split(',') ?? ['/home', '/about', '/iam/sign-in', '/iam/sign-up', '/not-found',
+const paths = process.env.ROUTES?.split(',') ?? ['/home', '/about', '/iam/sign-in', '/iam/sign-up', '/iam/password-recovery', '/not-found',
   '/subscriptions/plans', '/subscriptions/checkout?plan=TEST&billingCycle=MONTHLY',
-  '/subscriptions/success', '/subscriptions/cancel', '/laboratories/create', '/dashboard',
-  '/laboratories/lab-profile', '/laboratories/staff-list', '/laboratories/staff-form',
+  '/subscriptions/success', '/subscriptions/cancel', '/laboratories/new', '/dashboard',
+  '/laboratories/profile', '/laboratories/staff', '/laboratories/staff/new',
   '/laboratories/product-catalog', '/laboratories/product-form', '/laboratories/raw-material-list',
-  '/laboratories/raw-material-form', '/equipments/equipment-list', '/equipments/register-equipment',
-  '/batches/batch-list', '/batches/batch-form', '/alerts/alert-dashboard', '/alerts/alert-history',
-  '/alerts/notification-settings', '/tracking/dashboard', '/tracking/analysis', '/tracking/history',
-  '/reports/kpi-dashboard', '/reports/deviation-trends', '/reports/report-generator', '/reports/audit-log'];
+  '/laboratories/raw-material-form', '/equipments', '/equipments/new',
+  '/batches', '/batches/environments', '/alerts', '/alerts/history',
+  '/alerts/notification-settings', '/tracking/monitoring', '/tracking/analysis', '/tracking/history',
+  '/reports/kpis', '/reports/deviation-trends', '/reports/new', '/reports/audit-log'];
 const plan = { id: 91, code: 'TEST', name: 'Browser test plan', description: 'Isolated test fixture',
   amount: 9, currency: 'USD', billingCycle: 'MONTHLY', stripePriceId: 'price_test_only',
   maxUsers: 5, maxEquipment: 10, active: true };
@@ -35,6 +35,11 @@ try {
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     await context.addInitScript(() => {
+      // Whoever has a session cannot open the pages meant for visitors.
+      if (['/home', '/iam/sign-in', '/iam/sign-up', '/iam/password-recovery'].includes(location.pathname)) {
+        localStorage.clear();
+        return;
+      }
       localStorage.setItem('token', 'test.' + btoa(JSON.stringify({ exp: Date.now() / 1000 + 3600 })) + '.test');
       localStorage.setItem('userId', '27');
       localStorage.setItem('username', 'Browser test user');
@@ -47,15 +52,17 @@ try {
       const path = new URL(route.request().url()).pathname;
       let body = [];
       if (path.endsWith('/users/me/onboarding')) {
-        const subscription = currentPath.startsWith('/subscriptions/') && currentPath !== '/subscriptions/billing-summary';
-        const setup = currentPath === '/laboratories/create';
+        const subscription = currentPath.startsWith('/subscriptions/') && currentPath !== '/subscriptions/billing';
+        const setup = currentPath === '/laboratories/new';
         body = { userId: 27, laboratoryId: subscription || setup ? null : 42,
           subscriptionId: subscription ? null : 73, subscriptionStatus: subscription ? null : 'ACTIVE',
           nextStep: subscription ? 'SUBSCRIPTION' : setup ? 'LABORATORY' : 'READY' };
-      } else if (path === '/api/v1/laboratories/42') body = laboratory;
+      } else if (path.endsWith('/users/me/profile')) body = { userId: 27, staffId: null, username: 'fixture', email: null, roles: [],
+        fullName: 'Browser Test User', dni: null, phoneNumber: null, location: null, position: null, hasPhoto: false };
+      else if (path === '/api/v1/laboratories/42') body = laboratory;
       else if (path.endsWith('/subscription-plans')) body = [plan];
       else if (path.endsWith('/kpi-dashboards')) body = { id: null, laboratoryId: 42,
-        timestamp: '2026-09-01T00:00:00Z', overallHealthScore: null, metrics: [] };
+        timestamp: '2026-09-01T00:00:00Z', overallHealthScore: null, metrics: [], measurementSummaries: [] };
       else if (path.endsWith('/notification-preferences')) body = { id: 89, userId: 27,
         emailEnabled: false, smsEnabled: false, inAppEnabled: false, minimumSeverity: 'WARNING' };
       if (populated) {
